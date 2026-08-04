@@ -65,7 +65,7 @@ namespace AccountManagementMaui.Api.Controllers
 
                     Districts = x.Districts
                     .OrderBy(district => district.Name)
-                    .Select(district => new DistrictListDto
+                    .Select(district => new CityDistrictDto
                     {
                         Id = district.Id,
                         DistrictCode = district.DistrictCode,
@@ -130,7 +130,7 @@ namespace AccountManagementMaui.Api.Controllers
                 Name = city.Name,
                 CreatedDate = city.CreatedDate,
                 ModifiedDate = city.ModifiedDate,
-                Districts = new List<DistrictListDto>()
+                Districts = new List<CityDistrictDto>()
             };
 
             return CreatedAtAction(nameof(GetById), new { id = city.Id }, response);
@@ -191,7 +191,7 @@ namespace AccountManagementMaui.Api.Controllers
                     .AsNoTracking()
                     .Where(d => d.CityId == city.Id)
                     .OrderBy(d => d.Name)
-                    .Select(d => new DistrictListDto
+                    .Select(d => new CityDistrictDto
                     {
                         Id = d.Id,
                         DistrictCode = d.DistrictCode,

@@ -12,10 +12,10 @@
 
         public DateTime? ModifiedDate { get; set; }
 
-        public List<DistrictListDto> Districts { get; set; } = [];
+        public List<CityDistrictDto> Districts { get; set; } = [];
     }
 
-    public class DistrictListDto
+    public class CityDistrictDto
     {
         public int Id { get; set; }
 
