@@ -77,7 +77,7 @@ Content-Type: application/json
 }
 ### Ayný þehir ekle (hata)
 
-POST {{AccountManagementMaui.Api_HostAddressost}}/api/cities
+POST {{AccountManagementMaui.Api_HostAddress}}/api/cities
 Content-Type: application/json
 
 {
@@ -85,7 +85,7 @@ Content-Type: application/json
 }
 ### Boþ þehir ekle (hata)
 
-POST {{AccountManagementMaui.Api_HostAddressost}}/api/cities
+POST {{AccountManagementMaui.Api_HostAddress}}/api/cities
 Content-Type: application/json
 
 {
@@ -93,3 +93,71 @@ Content-Type: application/json
 }
 ### 1 karakterli þehir ekle (hata) en az 2 harf olmalý
 
+
+POST {{AccountManagementMaui.Api_HostAddress}}/api/cities
+Content-Type: application/json
+
+{
+  "cityCode": "34",
+  "name": "Ýstanbul"
+}
+###
+
+
+POST {{AccountManagementMaui.Api_HostAddress}}/api/districts
+Content-Type: application/json
+
+{
+  "districtCode": "3415",
+  "name": "Esenyurt",
+  "cityId": 1
+}
+### 
+
+POST {{AccountManagementMaui.Api_HostAddress}}/api/districts
+Content-Type: application/json
+
+{
+  "districtCode": "3487",
+  "name": "Fatih",
+  "cityId": 1
+}
+###
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/districts
+Accept: application/json
+
+###
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/districts?cityId=1
+Accept: application/json
+
+###
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/districts?cityId=1
+Accept: application/json
+###
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/districts?search=esenyurt
+Accept: application/json
+###
+
+PUT {{AccountManagementMaui.Api_HostAddress}}/api/districts/1
+Content-Type: application/json
+
+{
+  "districtCode": "3425",
+  "name": "Esenyurt",
+  "cityId": 1
+}
+
+###
+
+DELETE {{AccountManagementMaui.Api_HostAddress}}/api/districts/1
+Content-Type: application/json
+
+{
+  "deleteReason": "Test amacýyla silindi."
+}
+
+###
