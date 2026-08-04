@@ -1,6 +1,95 @@
 @AccountManagementMaui.Api_HostAddress = http://localhost:5107
 
-GET {{AccountManagementMaui.Api_HostAddress}}/weatherforecast/
+GET {{AccountManagementMaui.Api_HostAddress}}/api/cities
+Accept: application/json
+### Tüm þehirleri getir
+
+POST {{AccountManagementMaui.Api_HostAddress}}/api/cities
+Content-Type: application/json
+
+{
+  "cityCode": "34",
+  "name": "Ýstanbul"
+}
+### Ýstanbul ekle
+
+POST {{AccountManagementMaui.Api_HostAddress}}/api/cities
+Content-Type: application/json
+
+{
+  "cityCode": "06",
+  "name": "Ankara"
+}
+### Ankara ekle
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/cities/1
 Accept: application/json
 
-###
+### Tek þehir getir
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/cities?search=istanbul
+Accept: application/json
+
+### Þehir ara
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/cities?search=34
+Accept: application/json
+### Þehir ara (cityCode)
+
+PUT {{AccountManagementMaui.Api_HostAddress}}/api/cities/1
+Content-Type: application/json
+
+{
+  "cityCode": "34",
+  "name": "Ýstanbul yeni"
+}
+### Þehir güncelle
+
+DELETE {{AccountManagementMaui.Api_HostAddress}}/api/cities/2
+Content-Type: application/json
+{
+  "deleteReason": "Test amaçlý silme"
+}
+
+### Þehir sil
+
+
+DELETE {{AccountManagementMaui.Api_HostAddress}}/api/cities/2
+Content-Type: application/json
+
+{}
+### Þehir sil
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/cities
+Accept: application/json
+### Tüm þehirleri getir
+
+GET {{AccountManagementMaui.Api_HostAddress}}/api/cities/99
+Accept: application/json
+### Tek þehir getir (olmayan id)
+
+POST {{AccountManagementMaui.Api_HostAddress}}/api/cities
+Content-Type: application/json
+
+{
+  "cityCode": "34"
+  "name": "Ýstanbul"
+}
+### Ayný þehir ekle (hata)
+
+POST {{AccountManagementMaui.Api_HostAddressost}}/api/cities
+Content-Type: application/json
+
+{
+  "name": ""
+}
+### Boþ þehir ekle (hata)
+
+POST {{AccountManagementMaui.Api_HostAddressost}}/api/cities
+Content-Type: application/json
+
+{
+  "name": "A"
+}
+### 1 karakterli þehir ekle (hata) en az 2 harf olmalý
+
