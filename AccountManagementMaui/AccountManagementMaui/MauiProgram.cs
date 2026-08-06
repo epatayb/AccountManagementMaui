@@ -4,6 +4,7 @@ using AccountManagementMaui.Shared.Services.CityServices;
 using Microsoft.Extensions.Logging;
 using AccountManagementMaui.Shared.Services.DistrictServices;
 using AccountManagementMaui.Shared.Services.UserServices;
+using AccountManagementMaui.Shared.Services.TaxOfficeServices;
 
 namespace AccountManagementMaui;
 
@@ -54,6 +55,12 @@ public static class MauiProgram
         });
 
         builder.Services.AddHttpClient<IUserService, UserService>(client =>
+        {
+            client.BaseAddress = new Uri(apiBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        builder.Services.AddHttpClient<ITaxOfficeService, TaxOfficeService>(client =>
         {
             client.BaseAddress = new Uri(apiBaseUrl);
             client.Timeout = TimeSpan.FromSeconds(30);

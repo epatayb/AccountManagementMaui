@@ -1,0 +1,773 @@
+﻿@page "/tax-offices"
+
+@using System.Globalization
+@using AccountManagementMaui.Shared.Components.Common
+@using AccountManagementMaui.Shared.Components.TaxOfficeComponents
+@using AccountManagementMaui.Shared.Models.CityModels
+@using AccountManagementMaui.Shared.Models.TaxOfficeModels
+@using AccountManagementMaui.Shared.Services.CityServices
+@using AccountManagementMaui.Shared.Services.Common
+@using AccountManagementMaui.Shared.Services.TaxOfficeServices
+
+@inject ICityService CityService
+@inject ITaxOfficeService TaxOfficeService
+
+<PageTitle>Vergi Daireleri</PageTitle>
+
+<div class="definition-page">
+    <header class="definition-toolbar">
+        <div class="toolbar-title">
+            <h1>Vergi Daireleri</h1>
+        </div>
+
+        <div class="toolbar-controls">
+            <form class="search-form"
+                  @onsubmit="SearchTaxOfficesAsync"
+                  @onsubmit:preventDefault>
+
+                <select class="city-filter"
+                        disabled="@_isLoading"
+                        @bind="_selectedCityId">
+
+                    <option value="">Tüm İller</option>
+
+                    @foreach (var city in _cities)
+                    {
+                        <option value="@city.Id">
+                            @city.CityCode - @city.Name
+                        </option>
+                    }
+                </select>
+
+                <input type="search"
+                       class="search-input"
+                       placeholder="Kod, vergi dairesi veya il ara..."
+                       maxlength="100"
+                       autocomplete="off"
+                       @bind="_search"
+                       @bind:event="oninput" />
+
+                <button type="submit"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading">
+                    Ara
+                </button>
+
+                @if (HasActiveFilter())
+                {
+                    <button type="button"
+                            class="compact-button secondary-button"
+                            disabled="@_isLoading"
+                            @onclick="ClearFiltersAsync">
+                        Temizle
+                    </button>
+                }
+
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="RefreshPageAsync">
+                    Yenile
+                </button>
+            </form>
+
+            <button type="button"
+                    class="compact-button primary-button"
+                    disabled="@IsAnyOperationRunning()"
+                    @onclick="OpenCreateModal">
+                Yeni Vergi Dairesi
+            </button>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="compact-message success-message">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_loadErrorMessage))
+    {
+        <div class="compact-message error-message">
+            <span>@_loadErrorMessage</span>
+
+            <button type="button"
+                    class="message-button"
+                    @onclick="RefreshPageAsync">
+                Tekrar Dene
+            </button>
+        </div>
+    }
+
+    <section class="table-shell">
+        <div class="table-scroll">
+            <table class="definition-table">
+                <thead>
+                    <tr>
+                        <th class="tax-office-column">
+                            Vergi Dairesi
+                        </th>
+
+                        <th class="city-column">
+                            İl
+                        </th>
+
+                        <th class="audit-column">
+                            Oluşturulma
+                        </th>
+
+                        <th class="audit-column">
+                            Güncellenme
+                        </th>
+
+                        <th class="actions-column">
+                            İşlemler
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (_isLoading && _taxOffices.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5"
+                                class="table-state">
+                                Vergi daireleri yükleniyor...
+                            </td>
+                        </tr>
+                    }
+                    else if (_taxOffices.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5"
+                                class="table-state">
+                                Vergi dairesi bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var taxOffice in _taxOffices)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="tax-office-cell">
+                                        <strong>
+                                            @taxOffice.Name
+                                        </strong>
+
+                                        <span>
+                                            #@taxOffice.Id ·
+                                            Kod: @taxOffice.TaxOfficeCode
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="city-cell">
+                                        <strong>
+                                            @taxOffice.CityCode
+                                        </strong>
+
+                                        <span>
+                                            @taxOffice.CityName
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="audit-cell">
+                                        <strong>
+                                            @GetAuditUserName(
+                                            taxOffice.CreatedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        taxOffice.CreatedDate)
+                                </span>
+                            </div>
+                        </td>
+
+                        <td>
+                            @if (taxOffice.ModifiedDate.HasValue)
+                                    {
+                                        <div class="audit-cell">
+                                            <strong>
+                                                @GetAuditUserName(
+                                                taxOffice.ModifiedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        taxOffice.ModifiedDate.Value)
+                                </span>
+                            </div>
+                                                        }
+                                    else
+                                    {
+                                        <span class="empty-value">
+                                            -
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="row-actions">
+                                        <button type="button"
+                                                class="row-button edit-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenEditModal(taxOffice)">
+                                            Güncelle
+                                        </button>
+
+                                        <button type="button"
+                                                class="row-button delete-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenDeleteModal(taxOffice)">
+                                            Sil
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<AppModal IsOpen="_showFormModal"
+          Title="@GetFormTitle()"
+          Description="@GetFormDescription()"
+          Size="medium"
+          DisableClose="_isSaving"
+          OnClose="CloseFormModal">
+
+    @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+    {
+        <div class="modal-message">
+            @_modalErrorMessage
+        </div>
+    }
+
+    <TaxOfficeForm Model="_formModel"
+                   Cities="_cities"
+                   SubmitText="@GetSubmitText()"
+                   IsSubmitting="_isSaving"
+                   OnValidSubmit="SaveTaxOfficeAsync"
+                   OnCancel="CloseFormModal" />
+</AppModal>
+
+<AppModal IsOpen="@(_taxOfficePendingDelete is not null)"
+          Title="Kaydı Sil"
+          Description="Silme işlemini tamamlamak için açıklama girin."
+          Size="small"
+          DisableClose="_isDeleting"
+          OnClose="CloseDeleteModal">
+
+    <div class="delete-modal-content">
+        @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+        {
+            <div class="modal-message inline-modal-error">
+                @_modalErrorMessage
+            </div>
+        }
+
+        @if (_taxOfficePendingDelete is not null)
+        {
+            <div class="delete-record-summary">
+                <strong>
+                    @_taxOfficePendingDelete.Name
+                </strong>
+
+                <span>
+                    @_taxOfficePendingDelete.TaxOfficeCode ·
+                    @_taxOfficePendingDelete.CityName
+                </span>
+            </div>
+
+            <p class="delete-confirmation">
+                Bu kaydı silmek istediğinize emin misiniz?
+            </p>
+
+            <EditForm Model="_deleteModel"
+                      OnValidSubmit="DeleteTaxOfficeAsync">
+
+                <DataAnnotationsValidator />
+
+                <div class="delete-field">
+                    <label for="delete-reason">
+                        Silme Açıklaması
+                    </label>
+
+                    <InputTextArea id="delete-reason"
+                                   class="form-control"
+                                   rows="4"
+                                   maxlength="500"
+                                   disabled="@_isDeleting"
+                                   @bind-Value="_deleteModel.DeleteReason" />
+
+                    <ValidationMessage For="@(() => _deleteModel.DeleteReason)" />
+                </div>
+
+                <div class="delete-modal-actions">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled="@_isDeleting"
+                            @onclick="CloseDeleteModal">
+                        Vazgeç
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-danger"
+                            disabled="@_isDeleting">
+
+                        @if (_isDeleting)
+                        {
+                            <span>Siliniyor...</span>
+                        }
+                        else
+                        {
+                            <span>Kaydı Sil</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</AppModal>
+
+@code {
+    private static readonly CultureInfo TurkishCulture =
+        CultureInfo.GetCultureInfo("tr-TR");
+
+    private List<CityListDto> _cities = [];
+    private List<TaxOfficeListDto> _taxOffices = [];
+
+    private TaxOfficeFormModel _formModel = new();
+    private DeleteTaxOfficeRequest _deleteModel = new();
+
+    private TaxOfficeListDto? _taxOfficePendingDelete;
+
+    private int? _editingTaxOfficeId;
+    private int? _selectedCityId;
+
+    private string _search = string.Empty;
+
+    private string? _loadErrorMessage;
+    private string? _modalErrorMessage;
+    private string? _successMessage;
+
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _isDeleting;
+    private bool _showFormModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPageAsync();
+    }
+
+    private async Task LoadPageAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var citiesTask =
+                CityService.GetAllAsync();
+
+            var taxOfficesTask =
+                TaxOfficeService.GetAllAsync(
+                    _search,
+                    _selectedCityId);
+
+            await Task.WhenAll(
+                citiesTask,
+                taxOfficesTask);
+
+            _cities = (await citiesTask)
+                .OrderBy(x => x.CityCode)
+                .ToList();
+
+            _taxOffices =
+                (await taxOfficesTask).ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Vergi dairesi bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadTaxOfficesAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var taxOffices =
+                await TaxOfficeService.GetAllAsync(
+                    _search,
+                    _selectedCityId);
+
+            _taxOffices =
+                taxOffices.ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Vergi daireleri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        ResetDeleteModal();
+
+        _editingTaxOfficeId = null;
+
+        _formModel = new TaxOfficeFormModel
+        {
+            CityId = _selectedCityId ?? 0
+        };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+        _showFormModal = true;
+    }
+
+    private void OpenEditModal(
+        TaxOfficeListDto taxOffice)
+    {
+        ResetDeleteModal();
+
+        _editingTaxOfficeId =
+            taxOffice.Id;
+
+        _formModel = new TaxOfficeFormModel
+        {
+            TaxOfficeCode =
+                taxOffice.TaxOfficeCode,
+
+            Name =
+                taxOffice.Name,
+
+            CityId =
+                taxOffice.CityId
+        };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+        _showFormModal = true;
+    }
+
+    private void CloseFormModal()
+    {
+        if (_isSaving)
+        {
+            return;
+        }
+
+        ResetFormModal();
+    }
+
+    private void ResetFormModal()
+    {
+        _showFormModal = false;
+        _editingTaxOfficeId = null;
+        _formModel = new TaxOfficeFormModel();
+        _modalErrorMessage = null;
+    }
+
+    private async Task SaveTaxOfficeAsync()
+    {
+        _isSaving = true;
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            if (_editingTaxOfficeId.HasValue)
+            {
+                var request =
+                    new UpdateTaxOfficeRequest
+                    {
+                        TaxOfficeCode =
+                            _formModel.TaxOfficeCode.Trim(),
+
+                        Name =
+                            _formModel.Name.Trim(),
+
+                        CityId =
+                            _formModel.CityId
+                    };
+
+                var updatedTaxOffice =
+                    await TaxOfficeService.UpdateAsync(
+                        _editingTaxOfficeId.Value,
+                        request);
+
+                _successMessage =
+                    $"{updatedTaxOffice.Name} güncellendi.";
+            }
+            else
+            {
+                var request =
+                    new CreateTaxOfficeRequest
+                    {
+                        TaxOfficeCode =
+                            _formModel.TaxOfficeCode.Trim(),
+
+                        Name =
+                            _formModel.Name.Trim(),
+
+                        CityId =
+                            _formModel.CityId
+                    };
+
+                var createdTaxOffice =
+                    await TaxOfficeService.CreateAsync(
+                        request);
+
+                _successMessage =
+                    $"{createdTaxOffice.Name} eklendi.";
+            }
+
+            ResetFormModal();
+
+            await LoadTaxOfficesAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Kayıt isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Vergi dairesi kaydedilirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void OpenDeleteModal(
+        TaxOfficeListDto taxOffice)
+    {
+        ResetFormModal();
+
+        _taxOfficePendingDelete =
+            taxOffice;
+
+        _deleteModel =
+            new DeleteTaxOfficeRequest();
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+    }
+
+    private void CloseDeleteModal()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+        ResetDeleteModal();
+    }
+
+    private void ResetDeleteModal()
+    {
+        _taxOfficePendingDelete = null;
+        _deleteModel =
+            new DeleteTaxOfficeRequest();
+
+        _modalErrorMessage = null;
+    }
+
+    private async Task DeleteTaxOfficeAsync()
+    {
+        if (_taxOfficePendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        var deletedName =
+            _taxOfficePendingDelete.Name;
+
+        try
+        {
+            _deleteModel.DeleteReason =
+                _deleteModel.DeleteReason.Trim();
+
+            await TaxOfficeService.DeleteAsync(
+                _taxOfficePendingDelete.Id,
+                _deleteModel);
+
+            ResetDeleteModal();
+
+            _successMessage =
+                $"{deletedName} silindi.";
+
+            await LoadTaxOfficesAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Silme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Vergi dairesi silinirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private async Task SearchTaxOfficesAsync()
+    {
+        _successMessage = null;
+
+        await LoadTaxOfficesAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _search = string.Empty;
+        _selectedCityId = null;
+        _successMessage = null;
+
+        await LoadTaxOfficesAsync();
+    }
+
+    private async Task RefreshPageAsync()
+    {
+        _successMessage = null;
+
+        await LoadPageAsync();
+    }
+
+    private bool HasActiveFilter()
+    {
+        return
+            !string.IsNullOrWhiteSpace(_search) ||
+            _selectedCityId.HasValue;
+    }
+
+    private bool IsAnyOperationRunning()
+    {
+        return
+            _isLoading ||
+            _isSaving ||
+            _isDeleting ||
+            _cities.Count == 0;
+    }
+
+    private static string GetAuditUserName(
+        string? fullName)
+    {
+        return string.IsNullOrWhiteSpace(fullName)
+            ? "Sistem"
+            : fullName;
+    }
+
+    private static string FormatDate(
+        DateTime date)
+    {
+        return date
+            .ToLocalTime()
+            .ToString(
+                "dd.MM.yyyy HH:mm",
+                TurkishCulture);
+    }
+
+    private string GetFormTitle()
+    {
+        return _editingTaxOfficeId.HasValue
+            ? "Vergi Dairesini Güncelle"
+            : "Yeni Vergi Dairesi";
+    }
+
+    private string GetFormDescription()
+    {
+        return _editingTaxOfficeId.HasValue
+            ? "Seçilen vergi dairesinin bilgilerini düzenleyin."
+            : "Vergi dairesi kodunu, adını ve bağlı olduğu ili girin.";
+    }
+
+    private string GetSubmitText()
+    {
+        return _editingTaxOfficeId.HasValue
+            ? "Kaydet"
+            : "Vergi Dairesi Ekle";
+    }
+}

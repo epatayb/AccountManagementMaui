@@ -24,6 +24,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
     public DbSet<District> Districts => Set<District>();
 
+    public DbSet<TaxOffice> TaxOffices => Set<TaxOffice>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -32,6 +34,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         ConfigureAppUser(modelBuilder);
         ConfigureCity(modelBuilder);
         ConfigureDistrict(modelBuilder);
+        ConfigureTaxOffice(modelBuilder);
     }
 
     private static void ConfigureIdentityTables(
@@ -185,6 +188,43 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .OnDelete(DeleteBehavior.NoAction);
 
         entity.HasQueryFilter(x => !x.IsDeleted);
+    }
+
+    private static void ConfigureTaxOffice(
+    ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TaxOffice>();
+
+        entity.ToTable("TaxOffices");
+
+        entity.HasKey(x => x.Id);
+
+        entity.Property(x => x.TaxOfficeCode)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        entity.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        ConfigureBaseEntity(entity);
+
+        entity.HasIndex(x => x.TaxOfficeCode)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        entity.HasIndex(x => new
+        {
+            x.CityId,
+            x.Name
+        })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        entity.HasOne(x => x.City)
+            .WithMany()
+            .HasForeignKey(x => x.CityId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     public override int SaveChanges()
