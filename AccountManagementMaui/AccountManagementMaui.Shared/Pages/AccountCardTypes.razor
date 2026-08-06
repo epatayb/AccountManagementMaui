@@ -9,13 +9,12 @@
 
 @inject IAccountCardTypeService AccountCardTypeService
 
-<PageTitle>Kart Tipleri</PageTitle>
+<PageTitle>Hesap Kart Tipleri</PageTitle>
 
 <div class="definition-page">
     <header class="definition-toolbar">
         <div class="toolbar-title">
-            <h1>Kart Tipleri</h1>
-            <span>@_items.Count kayıt</span>
+            <h1>Hesap Kart Tipleri</h1>
         </div>
 
         <div class="toolbar-controls">
@@ -25,7 +24,7 @@
 
                 <input type="search"
                        class="search-input"
-                       placeholder="Kod veya kart tip adı ara..."
+                       placeholder="Ana hesap tip kodu veya adı ara..."
                        maxlength="50"
                        autocomplete="off"
                        @bind="_search"
@@ -59,7 +58,7 @@
                     class="compact-button primary-button"
                     disabled="@IsAnyOperationRunning()"
                     @onclick="OpenCreateModal">
-                Yeni Kart Tipi
+                Yeni Hesap Tipi
             </button>
         </div>
     </header>
@@ -90,7 +89,7 @@
                 <thead>
                     <tr>
                         <th class="card-type-column">
-                            Kart Tipi
+                            Ana Hesap Tipi
                         </th>
 
                         <th class="audit-column">
@@ -606,21 +605,21 @@
     private string GetFormTitle()
     {
         return _editingId.HasValue
-            ? "Kart Tipini Güncelle"
-            : "Yeni Kart Tipi";
+            ? "Ana Hesap Tipini Güncelle"
+            : "Yeni Ana Hesap Tipi";
     }
 
     private string GetFormDescription()
     {
         return _editingId.HasValue
-            ? "Seçilen kart tipinin kodunu veya adını düzenleyin."
-            : "Yeni kart tipi için kod ve ad bilgilerini girin.";
+            ? "Hesabın ait olduğu ana sınıfın kodunu veya adını düzenleyin."
+            : "Hesap kartlarının ait olacağı ana hesap sınıfını tanımlayın.";
     }
 
     private string GetSubmitText()
     {
         return _editingId.HasValue
             ? "Kaydet"
-            : "Kart Tipi Ekle";
+            : "Hesap Tipi Ekle";
     }
 }

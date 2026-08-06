@@ -10,7 +10,7 @@
         <div class="form-grid">
             <div class="form-field type-field">
                 <label for="account-card-type">
-                    Kart Tipi
+                    Bağlı Ana Hesap Tipi
                     <span class="required-mark">*</span>
                 </label>
 
@@ -19,7 +19,7 @@
                              disabled="@IsSubmitting"
                              @bind-Value="Model.AccountCardTypeId">
 
-                    <option value="0">Kart tipi seçiniz</option>
+                    <option value="0">Ana hesap tipi seçiniz</option>
 
                     @foreach (var type in AccountCardTypes)
                     {
@@ -34,7 +34,7 @@
 
             <div class="form-field code-field">
                 <label for="kind-code">
-                    Kart Tür Kodu
+                    Hesap Kart Tür Kodu
                     <span class="required-mark">*</span>
                 </label>
 
@@ -51,7 +51,7 @@
 
             <div class="form-field name-field">
                 <label for="kind-name">
-                    Kart Tür Adı
+                    Hesap Kart Tür Adı
                     <span class="required-mark">*</span>
                 </label>
 

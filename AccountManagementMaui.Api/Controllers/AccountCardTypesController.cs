@@ -81,7 +81,7 @@ public class AccountCardTypesController : ControllerBase
         {
             return NotFound(new
             {
-                message = "Hesap kart tipi bulunamadı."
+                message = "Ana hesap tipi bulunamadı."
             });
         }
 
@@ -128,8 +128,7 @@ public class AccountCardTypesController : ControllerBase
         {
             return Conflict(new
             {
-                message =
-                    "Bu kart tip kodu veya kart tip adı kullanılıyor."
+                message = "Bu ana hesap tip kodu veya ana hesap tip adı kullanılıyor."
             });
         }
 
@@ -150,8 +149,7 @@ public class AccountCardTypesController : ControllerBase
         {
             return Conflict(new
             {
-                message =
-                    "Bu kart tip kodu veya kart tip adı başka bir kayıtta kullanılıyor."
+                message = "Bu ana hesap tip kodu veya ana hesap tip adı kullanılıyor."
             });
         }
 
@@ -234,8 +232,7 @@ public class AccountCardTypesController : ControllerBase
         {
             return Conflict(new
             {
-                message =
-                    "Bu kart tip kodu veya kart tip adı kullanılıyor."
+                message = "Bu ana hesap tip kodu veya ana hesap tip adı kullanılıyor."
             });
         }
 
@@ -251,8 +248,7 @@ public class AccountCardTypesController : ControllerBase
         {
             return Conflict(new
             {
-                message =
-                    "Bu kart tip kodu veya kart tip adı başka bir kayıtta kullanılıyor."
+                message = "Bu ana hesap tip kodu veya ana hesap tip adı kullanılıyor."
             });
         }
 
@@ -301,8 +297,7 @@ public class AccountCardTypesController : ControllerBase
         {
             return Conflict(new
             {
-                message =
-                    "Bu kart tipine bağlı kart türleri bulunduğu için kayıt silinemez."
+                message = "Bu ana hesap tipine bağlı hesap kart türleri bulunduğu için kayıt silinemez."
             });
         }
 

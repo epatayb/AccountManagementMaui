@@ -12,11 +12,11 @@
 @inject IAccountCardKindService AccountCardKindService
 @inject IAccountCardTypeService AccountCardTypeService
 
-<PageTitle>Kart Türleri</PageTitle>
+<PageTitle>Hesap Kart Türleri</PageTitle>
 
 <div class="definition-page">
     <header class="definition-toolbar">
-        <h1 class="toolbar-heading">Kart Türleri</h1>
+        <h1 class="toolbar-heading">Hesap Kart Türleri</h1>
 
         <div class="toolbar-controls">
             <form class="search-form"
@@ -27,7 +27,7 @@
                         disabled="@_isLoading"
                         @bind="_selectedTypeId">
 
-                    <option value="">Tüm Kart Tipleri</option>
+                    <option value="">Tüm Ana Hesap Tipleri</option>
 
                     @foreach (var type in _types)
                     {
@@ -39,7 +39,7 @@
 
                 <input type="search"
                        class="search-input"
-                       placeholder="Kod, tür adı veya kart tipi ara..."
+                       placeholder="Tür kodu, tür adı veya ana hesap tipi ara..."
                        maxlength="100"
                        autocomplete="off"
                        @bind="_search"
@@ -73,7 +73,7 @@
                     class="compact-button primary-button"
                     disabled="@IsAnyOperationRunning()"
                     @onclick="OpenCreateModal">
-                Yeni Kart Türü
+                Yeni Hesap Kart Türü
             </button>
         </div>
     </header>
@@ -104,11 +104,11 @@
                 <thead>
                     <tr>
                         <th class="card-kind-column">
-                            Kart Türü
+                            Hesap Kart Türü
                         </th>
 
                         <th class="card-type-column">
-                            Bağlı Kart Tipi
+                            Bağlı Ana Hesap Tipi
                         </th>
 
                         <th class="audit-column">
@@ -709,21 +709,21 @@
     private string GetFormTitle()
     {
         return _editingId.HasValue
-            ? "Kart Türünü Güncelle"
-            : "Yeni Kart Türü";
+            ? "Hesap Kart Türünü Güncelle"
+            : "Yeni Hesap Kart Türü";
     }
 
     private string GetFormDescription()
     {
         return _editingId.HasValue
-            ? "Kart türünün bağlı olduğu tipi, kodunu veya adını düzenleyin."
-            : "Kart tipini seçin ve yeni kart türü bilgilerini girin.";
+            ? "Seçilen ana hesap sınıfı içindeki rolün kodunu veya adını düzenleyin."
+            : "Bir ana hesap tipi seçin ve bu sınıf içindeki hesabın rolünü tanımlayın.";
     }
 
     private string GetSubmitText()
     {
         return _editingId.HasValue
             ? "Kaydet"
-            : "Kart Türü Ekle";
+            : "Hesap Kart Türü Ekle";
     }
 }

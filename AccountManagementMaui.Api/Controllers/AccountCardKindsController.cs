@@ -133,7 +133,7 @@ namespace AccountManagementMaui.Api.Controllers
             {
                 return BadRequest(new
                 {
-                    message = "Seçilen kart tipi bulunamadı."
+                    message = "Seçilen ana hesap tipi bulunamadı."
                 });
             }
 
@@ -152,8 +152,7 @@ namespace AccountManagementMaui.Api.Controllers
             {
                 return Conflict(new
                 {
-                    message =
-                        "Bu kart tür kodu veya seçilen kart tipinde bu tür adı kullanılıyor."
+                    message = "Bu hesap kart tür kodu veya seçilen ana hesap tipinde bu tür adı kullanılıyor."
                 });
             }
 
@@ -176,8 +175,7 @@ namespace AccountManagementMaui.Api.Controllers
             {
                 return Conflict(new
                 {
-                    message =
-                        "Bu kart tür kodu veya kart tür adı başka bir kayıtta kullanılıyor."
+                    message = "Bu hesap kart tür kodu veya seçilen ana hesap tipinde bu tür adı kullanılıyor."
                 });
             }
 
@@ -279,8 +277,7 @@ namespace AccountManagementMaui.Api.Controllers
             {
                 return Conflict(new
                 {
-                    message =
-                        "Bu kart tür kodu veya seçilen kart tipinde bu tür adı kullanılıyor."
+                    message = "Bu hesap kart tür kodu veya seçilen ana hesap tipinde bu tür adı kullanılıyor."
                 });
             }
 
