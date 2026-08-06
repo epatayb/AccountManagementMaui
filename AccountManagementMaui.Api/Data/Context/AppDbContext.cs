@@ -28,6 +28,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
     public DbSet<AccountCardType> AccountCardTypes => Set<AccountCardType>();
 
+    public DbSet<AccountCardKind> AccountCardKinds => Set<AccountCardKind>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -38,6 +40,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         ConfigureDistrict(modelBuilder);
         ConfigureTaxOffice(modelBuilder);
         ConfigureAccountCardType(modelBuilder);
+        ConfigureAccountCardKind(modelBuilder);
     }
 
     private static void ConfigureIdentityTables(
@@ -256,6 +259,43 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         entity.HasIndex(x => x.TypeName)
             .IsUnique()
             .HasFilter("[IsDeleted] = 0");
+    }
+
+    private static void ConfigureAccountCardKind(
+    ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AccountCardKind>();
+
+        entity.ToTable("AccountCardKinds");
+
+        entity.HasKey(x => x.Id);
+
+        entity.Property(x => x.KindCode)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        entity.Property(x => x.KindName)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        ConfigureBaseEntity(entity);
+
+        entity.HasIndex(x => x.KindCode)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        entity.HasIndex(x => new
+        {
+            x.AccountCardTypeId,
+            x.KindName
+        })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        entity.HasOne(x => x.AccountCardType)
+            .WithMany(x => x.AccountCardKinds)
+            .HasForeignKey(x => x.AccountCardTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     public override int SaveChanges()

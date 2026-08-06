@@ -1,0 +1,729 @@
+﻿@page "/card-kinds"
+
+@using System.Globalization
+@using AccountManagementMaui.Shared.Components.AccountCardKindComponents
+@using AccountManagementMaui.Shared.Components.Common
+@using AccountManagementMaui.Shared.Models.AccountCardKindModels
+@using AccountManagementMaui.Shared.Models.AccountCardTypeModels
+@using AccountManagementMaui.Shared.Services.AccountCardKindServices
+@using AccountManagementMaui.Shared.Services.AccountCardTypeServices
+@using AccountManagementMaui.Shared.Services.Common
+
+@inject IAccountCardKindService AccountCardKindService
+@inject IAccountCardTypeService AccountCardTypeService
+
+<PageTitle>Kart Türleri</PageTitle>
+
+<div class="definition-page">
+    <header class="definition-toolbar">
+        <h1 class="toolbar-heading">Kart Türleri</h1>
+
+        <div class="toolbar-controls">
+            <form class="search-form"
+                  @onsubmit="SearchAsync"
+                  @onsubmit:preventDefault>
+
+                <select class="type-filter"
+                        disabled="@_isLoading"
+                        @bind="_selectedTypeId">
+
+                    <option value="">Tüm Kart Tipleri</option>
+
+                    @foreach (var type in _types)
+                    {
+                        <option value="@type.Id">
+                            @type.TypeCode - @type.TypeName
+                        </option>
+                    }
+                </select>
+
+                <input type="search"
+                       class="search-input"
+                       placeholder="Kod, tür adı veya kart tipi ara..."
+                       maxlength="100"
+                       autocomplete="off"
+                       @bind="_search"
+                       @bind:event="oninput" />
+
+                <button type="submit"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading">
+                    Ara
+                </button>
+
+                @if (HasActiveFilter())
+                {
+                    <button type="button"
+                            class="compact-button secondary-button"
+                            disabled="@_isLoading"
+                            @onclick="ClearFiltersAsync">
+                        Temizle
+                    </button>
+                }
+
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="RefreshAsync">
+                    Yenile
+                </button>
+            </form>
+
+            <button type="button"
+                    class="compact-button primary-button"
+                    disabled="@IsAnyOperationRunning()"
+                    @onclick="OpenCreateModal">
+                Yeni Kart Türü
+            </button>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="compact-message success-message">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_loadErrorMessage))
+    {
+        <div class="compact-message error-message">
+            <span>@_loadErrorMessage</span>
+
+            <button type="button"
+                    class="message-button"
+                    @onclick="RefreshAsync">
+                Tekrar Dene
+            </button>
+        </div>
+    }
+
+    <section class="table-shell">
+        <div class="table-scroll">
+            <table class="definition-table">
+                <thead>
+                    <tr>
+                        <th class="card-kind-column">
+                            Kart Türü
+                        </th>
+
+                        <th class="card-type-column">
+                            Bağlı Kart Tipi
+                        </th>
+
+                        <th class="audit-column">
+                            Oluşturulma
+                        </th>
+
+                        <th class="audit-column">
+                            Güncellenme
+                        </th>
+
+                        <th class="actions-column">
+                            İşlemler
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (_isLoading && _items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="table-state">
+                                Kart türleri yükleniyor...
+                            </td>
+                        </tr>
+                    }
+                    else if (_items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="table-state">
+                                Kart türü bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="card-kind-cell">
+                                        <strong>@item.KindName</strong>
+
+                                        <span>
+                                            #@item.Id · Kod: @item.KindCode
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="card-type-cell">
+                                        <strong>
+                                            @item.AccountCardTypeCode
+                                        </strong>
+
+                                        <span>
+                                            @item.AccountCardTypeName
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="audit-cell">
+                                        <strong>
+                                            @GetAuditUserName(
+                                            item.CreatedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(item.CreatedDate)
+                                </span>
+                            </div>
+                        </td>
+
+                        <td>
+                            @if (item.ModifiedDate.HasValue)
+                                    {
+                                        <div class="audit-cell">
+                                            <strong>
+                                                @GetAuditUserName(
+                                                item.ModifiedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        item.ModifiedDate.Value)
+                                </span>
+                            </div>
+                                                        }
+                                    else
+                                    {
+                                        <span class="empty-value">-</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="row-actions">
+                                        <button type="button"
+                                                class="row-button edit-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenEditModal(item)">
+                                            Güncelle
+                                        </button>
+
+                                        <button type="button"
+                                                class="row-button delete-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenDeleteModal(item)">
+                                            Sil
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<AppModal IsOpen="_showFormModal"
+          Title="@GetFormTitle()"
+          Description="@GetFormDescription()"
+          Size="medium"
+          DisableClose="_isSaving"
+          OnClose="CloseFormModal">
+
+    @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+    {
+        <div class="modal-message">
+            @_modalErrorMessage
+        </div>
+    }
+
+    <AccountCardKindForm Model="_formModel"
+                         AccountCardTypes="_types"
+                         SubmitText="@GetSubmitText()"
+                         IsSubmitting="_isSaving"
+                         OnValidSubmit="SaveAsync"
+                         OnCancel="CloseFormModal" />
+</AppModal>
+
+<AppModal IsOpen="@(_itemPendingDelete is not null)"
+          Title="Kaydı Sil"
+          Description="Silme işlemini tamamlamak için açıklama girin."
+          Size="small"
+          DisableClose="_isDeleting"
+          OnClose="CloseDeleteModal">
+
+    <div class="delete-modal-content">
+        @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+        {
+            <div class="modal-message inline-modal-error">
+                @_modalErrorMessage
+            </div>
+        }
+
+        @if (_itemPendingDelete is not null)
+        {
+            <div class="delete-record-summary">
+                <strong>@_itemPendingDelete.KindName</strong>
+
+                <span>
+                    @_itemPendingDelete.KindCode ·
+                    @_itemPendingDelete.AccountCardTypeName
+                </span>
+            </div>
+
+            <p class="delete-confirmation">
+                Bu kaydı silmek istediğinize emin misiniz?
+            </p>
+
+            <EditForm Model="_deleteModel"
+                      OnValidSubmit="DeleteAsync">
+
+                <DataAnnotationsValidator />
+
+                <div class="delete-field">
+                    <label for="delete-reason">
+                        Silme Açıklaması
+                    </label>
+
+                    <InputTextArea id="delete-reason"
+                                   class="form-control"
+                                   rows="4"
+                                   maxlength="500"
+                                   disabled="@_isDeleting"
+                                   @bind-Value="_deleteModel.DeleteReason" />
+
+                    <ValidationMessage For="@(() => _deleteModel.DeleteReason)" />
+                </div>
+
+                <div class="delete-modal-actions">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled="@_isDeleting"
+                            @onclick="CloseDeleteModal">
+                        Vazgeç
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-danger"
+                            disabled="@_isDeleting">
+
+                        @if (_isDeleting)
+                        {
+                            <span>Siliniyor...</span>
+                        }
+                        else
+                        {
+                            <span>Kaydı Sil</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</AppModal>
+
+@code {
+    private static readonly CultureInfo TurkishCulture =
+        CultureInfo.GetCultureInfo("tr-TR");
+
+    private List<AccountCardTypeListDto> _types = [];
+    private List<AccountCardKindListDto> _items = [];
+
+    private AccountCardKindFormModel _formModel = new();
+    private DeleteAccountCardKindRequest _deleteModel = new();
+
+    private AccountCardKindListDto? _itemPendingDelete;
+
+    private int? _editingId;
+    private int? _selectedTypeId;
+
+    private string _search = string.Empty;
+
+    private string? _loadErrorMessage;
+    private string? _modalErrorMessage;
+    private string? _successMessage;
+
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _isDeleting;
+    private bool _showFormModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPageAsync();
+    }
+
+    private async Task LoadPageAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var typesTask =
+                AccountCardTypeService.GetAllAsync();
+
+            var itemsTask =
+                AccountCardKindService.GetAllAsync(
+                    _search,
+                    _selectedTypeId);
+
+            await Task.WhenAll(typesTask, itemsTask);
+
+            _types = (await typesTask)
+                .OrderBy(x => x.TypeCode)
+                .ToList();
+
+            _items = (await itemsTask).ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Kart türleri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadItemsAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var items =
+                await AccountCardKindService.GetAllAsync(
+                    _search,
+                    _selectedTypeId);
+
+            _items = items.ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Kart türleri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        ResetDeleteModal();
+
+        _editingId = null;
+
+        _formModel = new AccountCardKindFormModel
+        {
+            AccountCardTypeId =
+                _selectedTypeId ?? 0
+        };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+        _showFormModal = true;
+    }
+
+    private void OpenEditModal(AccountCardKindListDto item)
+    {
+        ResetDeleteModal();
+
+        _editingId = item.Id;
+
+        _formModel = new AccountCardKindFormModel
+        {
+            KindCode = item.KindCode,
+            KindName = item.KindName,
+            AccountCardTypeId = item.AccountCardTypeId
+        };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+        _showFormModal = true;
+    }
+
+    private void CloseFormModal()
+    {
+        if (_isSaving)
+        {
+            return;
+        }
+
+        ResetFormModal();
+    }
+
+    private void ResetFormModal()
+    {
+        _showFormModal = false;
+        _editingId = null;
+        _formModel = new AccountCardKindFormModel();
+        _modalErrorMessage = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        _isSaving = true;
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            if (_editingId.HasValue)
+            {
+                var request = new UpdateAccountCardKindRequest
+                {
+                    KindCode = _formModel.KindCode.Trim(),
+                    KindName = _formModel.KindName.Trim(),
+                    AccountCardTypeId =
+                        _formModel.AccountCardTypeId
+                };
+
+                var updatedItem =
+                    await AccountCardKindService.UpdateAsync(
+                        _editingId.Value,
+                        request);
+
+                _successMessage =
+                    $"{updatedItem.KindName} güncellendi.";
+            }
+            else
+            {
+                var request = new CreateAccountCardKindRequest
+                {
+                    KindCode = _formModel.KindCode.Trim(),
+                    KindName = _formModel.KindName.Trim(),
+                    AccountCardTypeId =
+                        _formModel.AccountCardTypeId
+                };
+
+                var createdItem =
+                    await AccountCardKindService.CreateAsync(
+                        request);
+
+                _successMessage =
+                    $"{createdItem.KindName} eklendi.";
+            }
+
+            ResetFormModal();
+            await LoadItemsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Kayıt isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Kart türü kaydedilirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void OpenDeleteModal(AccountCardKindListDto item)
+    {
+        ResetFormModal();
+
+        _itemPendingDelete = item;
+        _deleteModel = new DeleteAccountCardKindRequest();
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+    }
+
+    private void CloseDeleteModal()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+        ResetDeleteModal();
+    }
+
+    private void ResetDeleteModal()
+    {
+        _itemPendingDelete = null;
+        _deleteModel = new DeleteAccountCardKindRequest();
+        _modalErrorMessage = null;
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_itemPendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        var deletedName = _itemPendingDelete.KindName;
+
+        try
+        {
+            _deleteModel.DeleteReason =
+                _deleteModel.DeleteReason.Trim();
+
+            await AccountCardKindService.DeleteAsync(
+                _itemPendingDelete.Id,
+                _deleteModel);
+
+            ResetDeleteModal();
+
+            _successMessage =
+                $"{deletedName} silindi.";
+
+            await LoadItemsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Silme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Kart türü silinirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        _successMessage = null;
+        await LoadItemsAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _search = string.Empty;
+        _selectedTypeId = null;
+        _successMessage = null;
+
+        await LoadItemsAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _successMessage = null;
+        await LoadPageAsync();
+    }
+
+    private bool HasActiveFilter()
+    {
+        return
+            !string.IsNullOrWhiteSpace(_search) ||
+            _selectedTypeId.HasValue;
+    }
+
+    private bool IsAnyOperationRunning()
+    {
+        return
+            _isLoading ||
+            _isSaving ||
+            _isDeleting ||
+            _types.Count == 0;
+    }
+
+    private static string GetAuditUserName(string? fullName)
+    {
+        return string.IsNullOrWhiteSpace(fullName)
+            ? "Sistem"
+            : fullName;
+    }
+
+    private static string FormatDate(DateTime date)
+    {
+        return date
+            .ToLocalTime()
+            .ToString(
+                "dd.MM.yyyy HH:mm",
+                TurkishCulture);
+    }
+
+    private string GetFormTitle()
+    {
+        return _editingId.HasValue
+            ? "Kart Türünü Güncelle"
+            : "Yeni Kart Türü";
+    }
+
+    private string GetFormDescription()
+    {
+        return _editingId.HasValue
+            ? "Kart türünün bağlı olduğu tipi, kodunu veya adını düzenleyin."
+            : "Kart tipini seçin ve yeni kart türü bilgilerini girin.";
+    }
+
+    private string GetSubmitText()
+    {
+        return _editingId.HasValue
+            ? "Kaydet"
+            : "Kart Türü Ekle";
+    }
+}

@@ -294,6 +294,18 @@ public class AccountCardTypesController : ControllerBase
             });
         }
 
+        var hasAccountCardKinds = await _context.AccountCardKinds.AnyAsync(
+            x => x.AccountCardTypeId == id, cancellationToken);
+
+        if (hasAccountCardKinds)
+        {
+            return Conflict(new
+            {
+                message =
+                    "Bu kart tipine bağlı kart türleri bulunduğu için kayıt silinemez."
+            });
+        }
+
         var deleteReason = request.DeleteReason.Trim();
 
         if (string.IsNullOrWhiteSpace(deleteReason))

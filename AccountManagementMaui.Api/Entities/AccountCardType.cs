@@ -9,5 +9,7 @@ namespace AccountManagementMaui.Api.Entities
         public string TypeCode { get; set; } = string.Empty;
 
         public string TypeName { get; set; } = string.Empty;
+
+        public ICollection<AccountCardKind> AccountCardKinds { get; set; } = new List<AccountCardKind>();
     }
 }

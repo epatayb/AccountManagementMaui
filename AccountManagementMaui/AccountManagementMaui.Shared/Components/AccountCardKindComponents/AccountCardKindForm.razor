@@ -1,44 +1,69 @@
-﻿@using AccountManagementMaui.Shared.Models.AccountCardTypeModels
+﻿@using AccountManagementMaui.Shared.Models.AccountCardKindModels
+@using AccountManagementMaui.Shared.Models.AccountCardTypeModels
 
 <EditForm Model="Model"
           OnValidSubmit="HandleValidSubmitAsync">
 
     <DataAnnotationsValidator />
 
-    <div class="card-type-form">
+    <div class="card-kind-form">
         <div class="form-grid">
-            <div class="form-field code-field">
-                <label for="type-code">
-                    Ana Hesap Tip Kodu
+            <div class="form-field type-field">
+                <label for="account-card-type">
+                    Kart Tipi
                     <span class="required-mark">*</span>
                 </label>
 
-                <InputText id="type-code"
-                           class="form-control"
-                           maxlength="7"
-                           placeholder="Örnek: CAR"
-                           autocomplete="off"
-                           disabled="@IsSubmitting"
-                           @bind-Value="Model.TypeCode" />
+                <InputSelect id="account-card-type"
+                             class="form-control"
+                             disabled="@IsSubmitting"
+                             @bind-Value="Model.AccountCardTypeId">
 
-                <ValidationMessage For="@(() => Model.TypeCode)" />
+                    <option value="0">Kart tipi seçiniz</option>
+
+                    @foreach (var type in AccountCardTypes)
+                    {
+                        <option value="@type.Id">
+                            @type.TypeCode - @type.TypeName
+                        </option>
+                    }
+                </InputSelect>
+
+                <ValidationMessage For="@(() => Model.AccountCardTypeId)" />
             </div>
 
-            <div class="form-field">
-                <label for="type-name">
-                    Ana Hesap Tip Adı
+            <div class="form-field code-field">
+                <label for="kind-code">
+                    Kart Tür Kodu
                     <span class="required-mark">*</span>
                 </label>
 
-                <InputText id="type-name"
+                <InputText id="kind-code"
                            class="form-control"
-                           maxlength="50"
-                           placeholder="Örnek: Cari Hesap"
+                           maxlength="7"
+                           placeholder="Örnek: MUS"
                            autocomplete="off"
                            disabled="@IsSubmitting"
-                           @bind-Value="Model.TypeName" />
+                           @bind-Value="Model.KindCode" />
 
-                <ValidationMessage For="@(() => Model.TypeName)" />
+                <ValidationMessage For="@(() => Model.KindCode)" />
+            </div>
+
+            <div class="form-field name-field">
+                <label for="kind-name">
+                    Kart Tür Adı
+                    <span class="required-mark">*</span>
+                </label>
+
+                <InputText id="kind-name"
+                           class="form-control"
+                           maxlength="50"
+                           placeholder="Örnek: Müşteri"
+                           autocomplete="off"
+                           disabled="@IsSubmitting"
+                           @bind-Value="Model.KindName" />
+
+                <ValidationMessage For="@(() => Model.KindName)" />
             </div>
         </div>
 
@@ -69,7 +94,14 @@
 
 @code {
     [Parameter, EditorRequired]
-    public AccountCardTypeFormModel Model { get; set; } = new();
+    public AccountCardKindFormModel Model { get; set; } = new();
+
+    [Parameter]
+    public IReadOnlyList<AccountCardTypeListDto> AccountCardTypes
+    {
+        get;
+        set;
+    } = Array.Empty<AccountCardTypeListDto>();
 
     [Parameter]
     public string SubmitText { get; set; } = "Kaydet";
