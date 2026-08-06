@@ -1,0 +1,95 @@
+﻿@using AccountManagementMaui.Shared.Models.AccountCardTypeModels
+
+<EditForm Model="Model"
+          OnValidSubmit="HandleValidSubmitAsync">
+
+    <DataAnnotationsValidator />
+
+    <div class="card-type-form">
+        <div class="form-grid">
+            <div class="form-field code-field">
+                <label for="type-code">
+                    Kart Tip Kodu
+                    <span class="required-mark">*</span>
+                </label>
+
+                <InputText id="type-code"
+                           class="form-control"
+                           maxlength="20"
+                           placeholder="Örnek: MUS"
+                           autocomplete="off"
+                           disabled="@IsSubmitting"
+                           @bind-Value="Model.TypeCode" />
+
+                <ValidationMessage For="@(() => Model.TypeCode)" />
+            </div>
+
+            <div class="form-field">
+                <label for="type-name">
+                    Kart Tip Adı
+                    <span class="required-mark">*</span>
+                </label>
+
+                <InputText id="type-name"
+                           class="form-control"
+                           maxlength="50"
+                           placeholder="Örnek: Müşteri"
+                           autocomplete="off"
+                           disabled="@IsSubmitting"
+                           @bind-Value="Model.TypeName" />
+
+                <ValidationMessage For="@(() => Model.TypeName)" />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    disabled="@IsSubmitting"
+                    @onclick="HandleCancelAsync">
+                Vazgeç
+            </button>
+
+            <button type="submit"
+                    class="btn btn-primary"
+                    disabled="@IsSubmitting">
+
+                @if (IsSubmitting)
+                {
+                    <span>Kaydediliyor...</span>
+                }
+                else
+                {
+                    <span>@SubmitText</span>
+                }
+            </button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public AccountCardTypeFormModel Model { get; set; } = new();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Kaydet";
+
+    [Parameter]
+    public bool IsSubmitting { get; set; }
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private Task HandleValidSubmitAsync()
+    {
+        return OnValidSubmit.InvokeAsync();
+    }
+
+    private Task HandleCancelAsync()
+    {
+        return OnCancel.InvokeAsync();
+    }
+}

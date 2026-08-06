@@ -26,6 +26,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
     public DbSet<TaxOffice> TaxOffices => Set<TaxOffice>();
 
+    public DbSet<AccountCardType> AccountCardTypes => Set<AccountCardType>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -35,6 +37,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         ConfigureCity(modelBuilder);
         ConfigureDistrict(modelBuilder);
         ConfigureTaxOffice(modelBuilder);
+        ConfigureAccountCardType(modelBuilder);
     }
 
     private static void ConfigureIdentityTables(
@@ -225,6 +228,34 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .WithMany()
             .HasForeignKey(x => x.CityId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureAccountCardType(
+    ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AccountCardType>();
+
+        entity.ToTable("AccountCardTypes");
+
+        entity.HasKey(x => x.Id);
+
+        entity.Property(x => x.TypeCode)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        entity.Property(x => x.TypeName)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        ConfigureBaseEntity(entity);
+
+        entity.HasIndex(x => x.TypeCode)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        entity.HasIndex(x => x.TypeName)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
     }
 
     public override int SaveChanges()

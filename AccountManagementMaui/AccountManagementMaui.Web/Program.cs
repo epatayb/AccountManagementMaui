@@ -5,6 +5,7 @@ using AccountManagementMaui.Web.Services;
 using AccountManagementMaui.Shared.Services.DistrictServices;
 using AccountManagementMaui.Shared.Services.UserServices;
 using AccountManagementMaui.Shared.Services.TaxOfficeServices;
+using AccountManagementMaui.Shared.Services.AccountCardTypeServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,13 @@ builder.Services.AddHttpClient<IUserService, UserService>(
     });
 
 builder.Services.AddHttpClient<ITaxOfficeService, TaxOfficeService>(
+    client =>
+    {
+        client.BaseAddress = new Uri(apiBaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+
+builder.Services.AddHttpClient<IAccountCardTypeService, AccountCardTypeService>(
     client =>
     {
         client.BaseAddress = new Uri(apiBaseUrl);
