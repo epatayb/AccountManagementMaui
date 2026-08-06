@@ -146,7 +146,7 @@ public class CityService : ICityService
             cancellationToken);
 
         throw new ApiException(
-            error?.Message ??
+            error?.GetErrorMessage() ??
             $"API isteği başarısız oldu. Durum kodu: {(int)response.StatusCode}",
             (int)response.StatusCode);
     }

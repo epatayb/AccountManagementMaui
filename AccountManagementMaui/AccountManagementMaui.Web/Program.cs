@@ -1,23 +1,43 @@
 using AccountManagementMaui.Shared.Services;
+using AccountManagementMaui.Shared.Services.CityServices;
 using AccountManagementMaui.Web.Components;
 using AccountManagementMaui.Web.Services;
+using AccountManagementMaui.Shared.Services.DistrictServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Add device-specific services used by the AccountManagementMaui.Shared project
+var apiBaseUrl =
+    builder.Configuration["ApiSettings:BaseUrl"]
+    ?? throw new InvalidOperationException(
+        "ApiSettings:BaseUrl yapýlandýrmasý bulunamadý.");
+
+builder.Services.AddHttpClient<ICityService, CityService>(
+    client =>
+    {
+        client.BaseAddress = new Uri(apiBaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+
+builder.Services.AddHttpClient<IDistrictService, DistrictService>(
+    client =>
+    {
+        client.BaseAddress = new Uri(apiBaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler(
+        "/Error",
+        createScopeForErrors: true);
+
     app.UseHsts();
 }
 
@@ -28,6 +48,7 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddAdditionalAssemblies(typeof(AccountManagementMaui.Shared._Imports).Assembly);
+    .AddAdditionalAssemblies(
+        typeof(AccountManagementMaui.Shared._Imports).Assembly);
 
 app.Run();

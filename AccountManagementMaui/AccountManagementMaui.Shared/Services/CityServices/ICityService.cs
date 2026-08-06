@@ -28,7 +28,7 @@ namespace AccountManagementMaui.Shared.Services.CityServices
 
         Task DeleteAsync(
             int id,
-            DeleteCityRequest? request = null,
+            DeleteCityRequest request,
             CancellationToken cancellationToken = default);
     }
 }

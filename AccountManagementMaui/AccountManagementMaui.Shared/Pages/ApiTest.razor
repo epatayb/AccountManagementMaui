@@ -1,0 +1,81 @@
+﻿@page "/api-test"
+
+@using AccountManagementMaui.Shared.Models.CityModels
+@using AccountManagementMaui.Shared.Services.CityServices
+
+@inject ICityService CityService
+
+<PageTitle>API Test</PageTitle>
+
+<h1>API Bağlantı Testi</h1>
+
+@if (_isLoading)
+{
+    <p>API bağlantısı kontrol ediliyor...</p>
+}
+else if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger">
+        <strong>Bağlantı başarısız:</strong>
+        @_errorMessage
+    </div>
+}
+else
+{
+    <div class="alert alert-success">
+        API bağlantısı başarılı.
+    </div>
+
+    @if (_cities.Count == 0)
+    {
+        <p>API çalışıyor fakat veritabanında aktif il bulunmuyor.</p>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Şehir Kodu</th>
+                    <th>Şehir Adı</th>
+                    <th>İlçe Sayısı</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var city in _cities)
+                {
+                    <tr>
+                        <td>@city.Id</td>
+                        <td>@city.CityCode</td>
+                        <td>@city.Name</td>
+                        <td>@city.DistrictCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private List<CityListDto> _cities = [];
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var cities = await CityService.GetAllAsync();
+            _cities = cities.ToList();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

@@ -203,7 +203,7 @@ namespace AccountManagementMaui.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id, [FromBody] DeleteCityRequest? request, CancellationToken cancellationToken)
+        public async Task<ActionResult> Delete(int id, [FromBody] DeleteCityRequest request, CancellationToken cancellationToken)
         {
             var city = await _context.Cities
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -214,6 +214,17 @@ namespace AccountManagementMaui.Api.Controllers
                 {
                     message = "Silinecek şehir bulunamadı."
                 });
+            }
+
+            var deleteReason = request.DeleteReason.Trim();
+
+            if (string.IsNullOrWhiteSpace(deleteReason))
+            {
+                ModelState.AddModelError(
+                    nameof(request.DeleteReason),
+                    "Silme açıklaması zorunludur.");
+
+                return ValidationProblem(ModelState);
             }
 
             var hasActiveDistricts = await _context.Districts

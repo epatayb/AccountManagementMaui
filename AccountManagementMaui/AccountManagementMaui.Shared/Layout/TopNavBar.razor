@@ -1,0 +1,117 @@
+﻿@using Microsoft.AspNetCore.Components.Routing
+
+<header class="top-navbar">
+    <div class="top-navbar-inner">
+        <NavLink class="brand"
+                 href="/"
+                 Match="NavLinkMatch.All"
+                 @onclick="CloseMenu">
+
+            <span class="brand-logo">LTS</span>
+        </NavLink>
+
+        <button type="button"
+                class="mobile-menu-button"
+                aria-label="Menüyü aç veya kapat"
+                aria-expanded="@_isMenuOpen"
+                @onclick="ToggleMenu">
+
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <nav class="top-nav-links @GetMenuClass()">
+            <NavLink class="top-nav-link"
+                     href="/"
+                     Match="NavLinkMatch.All"
+                     @onclick="CloseMenu">
+                Ana Sayfa
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/cities"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                İller
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/districts"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                İlçeler
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/tax-offices"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Vergi Daireleri
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/card-types"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Kart Tipleri
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/card-kinds"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Kart Türleri
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/card-groups"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Kart Grupları
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/card-subgroups"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Alt Gruplar
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/users"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Kullanıcılar
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/account-cards"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Hesap Kartları
+            </NavLink>
+        </nav>
+    </div>
+</header>
+
+@code {
+    private bool _isMenuOpen;
+
+    private void ToggleMenu()
+    {
+        _isMenuOpen = !_isMenuOpen;
+    }
+
+    private void CloseMenu()
+    {
+        _isMenuOpen = false;
+    }
+
+    private string GetMenuClass()
+    {
+        return _isMenuOpen
+            ? "menu-open"
+            : string.Empty;
+    }
+}

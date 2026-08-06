@@ -1,0 +1,116 @@
+﻿@using AccountManagementMaui.Shared.Models.CityModels
+
+<EditForm Model="Model"
+          OnValidSubmit="HandleValidSubmitAsync">
+
+    <DataAnnotationsValidator />
+
+    <div class="city-form">
+        @if (ShowHeading)
+        {
+            <div class="form-heading">
+                <div>
+                    <h2>@Title</h2>
+                    <p>İl kodu ve il adı bilgilerini eksiksiz girin.</p>
+                </div>
+            </div>
+        }
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="city-code">
+                    Şehir Kodu
+                    <span class="required-mark">*</span>
+                </label>
+
+                <InputText id="city-code"
+                           class="form-control"
+                           maxlength="2"
+                           placeholder="Örnek: 34"
+                           autocomplete="off"
+                           disabled="@IsSubmitting"
+                           @bind-Value="Model.CityCode" />
+
+                <ValidationMessage For="@(() => Model.CityCode)" />
+
+                <small>
+                    Şehir kodunu iki rakam olarak girin. Ankara için 06 gibi.
+                </small>
+            </div>
+
+            <div class="form-field">
+                <label for="city-name">
+                    Şehir Adı
+                    <span class="required-mark">*</span>
+                </label>
+
+                <InputText id="city-name"
+                           class="form-control"
+                           maxlength="20"
+                           placeholder="Örnek: İstanbul"
+                           autocomplete="off"
+                           disabled="@IsSubmitting"
+                           @bind-Value="Model.Name" />
+
+                <ValidationMessage For="@(() => Model.Name)" />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    disabled="@IsSubmitting"
+                    @onclick="HandleCancelAsync">
+                Vazgeç
+            </button>
+
+            <button type="submit"
+                    class="btn btn-primary"
+                    disabled="@IsSubmitting">
+
+                @if (IsSubmitting)
+                {
+                    <span class="button-spinner"></span>
+                    <span>Kaydediliyor...</span>
+                }
+                else
+                {
+                    <span>@SubmitText</span>
+                }
+            </button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public bool ShowHeading { get; set; } = true;
+
+    [Parameter, EditorRequired]
+    public CityFormModel Model { get; set; } = new();
+
+    [Parameter]
+    public string Title { get; set; } = "Şehir Bilgileri";
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Kaydet";
+
+    [Parameter]
+    public bool IsSubmitting { get; set; }
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private async Task HandleValidSubmitAsync()
+    {
+        await OnValidSubmit.InvokeAsync();
+    }
+
+    private async Task HandleCancelAsync()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}

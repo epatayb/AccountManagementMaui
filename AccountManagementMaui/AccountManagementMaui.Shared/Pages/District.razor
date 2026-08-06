@@ -1,0 +1,637 @@
+﻿@page "/districts"
+
+@using AccountManagementMaui.Shared.Components.Common
+@using AccountManagementMaui.Shared.Components.DistrictComponents
+@using AccountManagementMaui.Shared.Models.CityModels
+@using AccountManagementMaui.Shared.Models.DistrictModels
+@using AccountManagementMaui.Shared.Services.CityServices
+@using AccountManagementMaui.Shared.Services.Common
+@using AccountManagementMaui.Shared.Services.DistrictServices
+
+@inject ICityService CityService
+@inject IDistrictService DistrictService
+
+<PageTitle>İlçeler</PageTitle>
+
+<div class="definition-page">
+    <header class="definition-toolbar">
+        <h1 class="toolbar-heading">İlçeler</h1>
+
+        <form class="toolbar-controls"
+              @onsubmit="SearchDistrictsAsync"
+              @onsubmit:preventDefault>
+
+            <select class="city-filter"
+                    disabled="@_isLoading"
+                    @bind="_selectedCityId">
+
+                <option value="">Tüm İller</option>
+
+                @foreach (var city in _cities)
+                {
+                    <option value="@city.Id">
+                        @city.CityCode - @city.Name
+                    </option>
+                }
+            </select>
+
+            <input type="search"
+                   class="search-input"
+                   placeholder="İlçe kodu veya adı ara..."
+                   maxlength="50"
+                   autocomplete="off"
+                   @bind="_search"
+                   @bind:event="oninput" />
+
+            <button type="submit"
+                    class="compact-button secondary-button"
+                    disabled="@_isLoading">
+                Ara
+            </button>
+
+            @if (HasActiveFilter())
+            {
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="ClearFiltersAsync">
+                    Temizle
+                </button>
+            }
+
+            <button type="button"
+                    class="compact-button secondary-button"
+                    disabled="@_isLoading"
+                    @onclick="RefreshPageAsync">
+                Yenile
+            </button>
+
+            <button type="button"
+                    class="compact-button primary-button"
+                    disabled="@(_isLoading || _isSaving || _isDeleting || _cities.Count == 0)"
+                    @onclick="OpenCreateModal">
+                Yeni İlçe
+            </button>
+        </form>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="compact-message success-message">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_loadErrorMessage))
+    {
+        <div class="compact-message error-message">
+            <span>@_loadErrorMessage</span>
+
+            <button type="button"
+                    class="message-button"
+                    @onclick="RefreshPageAsync">
+                Tekrar Dene
+            </button>
+        </div>
+    }
+
+    <section class="table-shell">
+        <div class="table-scroll">
+            <table class="definition-table">
+                <thead>
+                    <tr>
+                        <th class="id-column">ID</th>
+                        <th class="district-code-column">İlçe Kodu</th>
+                        <th>İlçe Adı</th>
+                        <th class="city-code-column">İl Kodu</th>
+                        <th>İl Adı</th>
+                        <th class="actions-column">İşlemler</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (_isLoading && _districts.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="table-state">
+                                Kayıtlar yükleniyor...
+                            </td>
+                        </tr>
+                    }
+                    else if (_districts.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="table-state">
+                                Kayıt bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var district in _districts)
+                        {
+                            <tr>
+                                <td class="id-cell">
+                                    @district.Id
+                                </td>
+
+                                <td>
+                                    <span class="code-badge">
+                                        @district.DistrictCode
+                                    </span>
+                                </td>
+
+                                <td class="name-cell">
+                                    @district.Name
+                                </td>
+
+                                <td>
+                                    @district.CityCode
+                                </td>
+
+                                <td class="city-name-cell">
+                                    @district.CityName
+                                </td>
+
+                                <td>
+                                    <div class="row-actions">
+                                        <button type="button"
+                                                class="row-button edit-button"
+                                                disabled="@(_isLoading || _isSaving || _isDeleting)"
+                                                @onclick="() => OpenEditModal(district)">
+                                            Güncelle
+                                        </button>
+
+                                        <button type="button"
+                                                class="row-button delete-button"
+                                                disabled="@(_isLoading || _isSaving || _isDeleting)"
+                                                @onclick="() => OpenDeleteModal(district)">
+                                            Sil
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<AppModal IsOpen="_showFormModal"
+          Title="@GetFormTitle()"
+          Description="@GetFormDescription()"
+          Size="medium"
+          DisableClose="_isSaving"
+          OnClose="CloseFormModal">
+
+    @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+    {
+        <div class="modal-message">
+            @_modalErrorMessage
+        </div>
+    }
+
+    <DistrictForm Model="_formModel"
+                  Cities="_cities"
+                  SubmitText="@GetSubmitText()"
+                  IsSubmitting="_isSaving"
+                  OnValidSubmit="SaveDistrictAsync"
+                  OnCancel="CloseFormModal" />
+</AppModal>
+
+<AppModal IsOpen="@(_districtPendingDelete is not null)"
+          Title="Kaydı Sil"
+          Description="Silme işlemini tamamlamak için açıklama girin."
+          Size="small"
+          DisableClose="_isDeleting"
+          OnClose="CloseDeleteModal">
+
+    <div class="delete-modal-content">
+        @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+        {
+            <div class="modal-message inline-modal-error">
+                @_modalErrorMessage
+            </div>
+        }
+
+        @if (_districtPendingDelete is not null)
+        {
+            <p class="delete-confirmation">
+                <strong>
+                    @_districtPendingDelete.DistrictCode -
+                    @_districtPendingDelete.Name
+                </strong>
+
+                kaydını silmek istediğinize emin misiniz?
+            </p>
+
+            <EditForm Model="_deleteModel"
+                      OnValidSubmit="DeleteDistrictAsync">
+
+                <DataAnnotationsValidator />
+
+                <div class="delete-field">
+                    <label for="delete-reason">
+                        Silme Açıklaması
+                    </label>
+
+                    <InputTextArea id="delete-reason"
+                                   class="form-control"
+                                   rows="4"
+                                   maxlength="500"
+                                   disabled="@_isDeleting"
+                                   @bind-Value="_deleteModel.DeleteReason" />
+
+                    <ValidationMessage For="@(() => _deleteModel.DeleteReason)" />
+                </div>
+
+                <div class="delete-modal-actions">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled="@_isDeleting"
+                            @onclick="CloseDeleteModal">
+                        Vazgeç
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-danger"
+                            disabled="@_isDeleting">
+
+                        @if (_isDeleting)
+                        {
+                            <span>Siliniyor...</span>
+                        }
+                        else
+                        {
+                            <span>Kaydı Sil</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</AppModal>
+
+@code {
+    private List<CityListDto> _cities = [];
+    private List<DistrictListDto> _districts = [];
+
+    private DistrictFormModel _formModel = new();
+    private DeleteDistrictRequest _deleteModel = new();
+    private DistrictListDto? _districtPendingDelete;
+
+    private int? _editingDistrictId;
+    private int? _selectedCityId;
+
+    private string _search = string.Empty;
+
+    private string? _loadErrorMessage;
+    private string? _modalErrorMessage;
+    private string? _successMessage;
+
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _isDeleting;
+    private bool _showFormModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPageAsync();
+    }
+
+    private async Task LoadPageAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var citiesTask = CityService.GetAllAsync();
+            var districtsTask = DistrictService.GetAllAsync(
+                _search,
+                _selectedCityId);
+
+            await Task.WhenAll(citiesTask, districtsTask);
+
+            _cities = (await citiesTask)
+                .OrderBy(x => x.CityCode)
+                .ToList();
+
+            _districts = (await districtsTask).ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı. API projesinin çalıştığından emin olun.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "İlçe bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadDistrictsAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var districts = await DistrictService.GetAllAsync(
+                _search,
+                _selectedCityId);
+
+            _districts = districts.ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "İlçeler yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        ResetDeleteModal();
+
+        _editingDistrictId = null;
+        _formModel = new DistrictFormModel
+        {
+            CityId = _selectedCityId ?? 0
+        };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+        _showFormModal = true;
+    }
+
+    private void OpenEditModal(DistrictListDto district)
+    {
+        ResetDeleteModal();
+
+        _editingDistrictId = district.Id;
+
+        _formModel = new DistrictFormModel
+        {
+            DistrictCode = district.DistrictCode,
+            Name = district.Name,
+            CityId = district.CityId
+        };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+        _showFormModal = true;
+    }
+
+    private void CloseFormModal()
+    {
+        if (_isSaving)
+        {
+            return;
+        }
+
+        ResetFormModal();
+    }
+
+    private void ResetFormModal()
+    {
+        _showFormModal = false;
+        _editingDistrictId = null;
+        _formModel = new DistrictFormModel();
+        _modalErrorMessage = null;
+    }
+
+    private async Task SaveDistrictAsync()
+    {
+        _isSaving = true;
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            if (_editingDistrictId.HasValue)
+            {
+                var request = new UpdateDistrictRequest
+                {
+                    DistrictCode = _formModel.DistrictCode.Trim(),
+                    Name = _formModel.Name.Trim(),
+                    CityId = _formModel.CityId
+                };
+
+                var updatedDistrict =
+                    await DistrictService.UpdateAsync(
+                        _editingDistrictId.Value,
+                        request);
+
+                _successMessage =
+                    $"{updatedDistrict.DistrictCode} - {updatedDistrict.Name} güncellendi.";
+            }
+            else
+            {
+                var request = new CreateDistrictRequest
+                {
+                    DistrictCode = _formModel.DistrictCode.Trim(),
+                    Name = _formModel.Name.Trim(),
+                    CityId = _formModel.CityId
+                };
+
+                var createdDistrict =
+                    await DistrictService.CreateAsync(request);
+
+                _successMessage =
+                    $"{createdDistrict.DistrictCode} - {createdDistrict.Name} eklendi.";
+            }
+
+            ResetFormModal();
+            await LoadDistrictsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "İstek zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Kayıt işlemi sırasında beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void OpenDeleteModal(DistrictListDto district)
+    {
+        ResetFormModal();
+
+        _districtPendingDelete = district;
+        _deleteModel = new DeleteDistrictRequest();
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+    }
+
+    private void CloseDeleteModal()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+        ResetDeleteModal();
+    }
+
+    private void ResetDeleteModal()
+    {
+        _districtPendingDelete = null;
+        _deleteModel = new DeleteDistrictRequest();
+        _modalErrorMessage = null;
+    }
+
+    private async Task DeleteDistrictAsync()
+    {
+        if (_districtPendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        var deletedDistrictText =
+            $"{_districtPendingDelete.DistrictCode} - {_districtPendingDelete.Name}";
+
+        try
+        {
+            _deleteModel.DeleteReason =
+                _deleteModel.DeleteReason.Trim();
+
+            await DistrictService.DeleteAsync(
+                _districtPendingDelete.Id,
+                _deleteModel);
+
+            ResetDeleteModal();
+
+            _successMessage =
+                $"{deletedDistrictText} silindi.";
+
+            await LoadDistrictsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Silme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Silme işlemi sırasında beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private async Task SearchDistrictsAsync()
+    {
+        _successMessage = null;
+        await LoadDistrictsAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _search = string.Empty;
+        _selectedCityId = null;
+        _successMessage = null;
+
+        await LoadDistrictsAsync();
+    }
+
+    private async Task RefreshPageAsync()
+    {
+        _successMessage = null;
+        await LoadPageAsync();
+    }
+
+    private bool HasActiveFilter()
+    {
+        return !string.IsNullOrWhiteSpace(_search) ||
+               _selectedCityId.HasValue;
+    }
+
+    private string GetFormTitle()
+    {
+        return _editingDistrictId.HasValue
+            ? "İlçe Bilgilerini Güncelle"
+            : "Yeni İlçe Ekle";
+    }
+
+    private string GetFormDescription()
+    {
+        return _editingDistrictId.HasValue
+            ? "Seçilen ilçenin bilgilerini düzenleyin."
+            : "İlçe bilgilerini ve bağlı olduğu ili seçin.";
+    }
+
+    private string GetSubmitText()
+    {
+        return _editingDistrictId.HasValue
+            ? "Kaydet"
+            : "Ekle";
+    }
+}

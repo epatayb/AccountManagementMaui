@@ -1,0 +1,124 @@
+﻿@using AccountManagementMaui.Shared.Models.CityModels
+@using AccountManagementMaui.Shared.Models.DistrictModels
+
+<EditForm Model="Model"
+          OnValidSubmit="HandleValidSubmitAsync">
+
+    <DataAnnotationsValidator />
+
+    <div class="district-form">
+        <div class="form-grid">
+            <div class="form-field city-field">
+                <label for="district-city">
+                    İl
+                    <span class="required-mark">*</span>
+                </label>
+
+                <InputSelect id="district-city"
+                             class="form-control"
+                             disabled="@IsSubmitting"
+                             @bind-Value="Model.CityId">
+
+                    <option value="0">İl seçiniz</option>
+
+                    @foreach (var city in Cities)
+                    {
+                        <option value="@city.Id">
+                            @city.CityCode - @city.Name
+                        </option>
+                    }
+                </InputSelect>
+
+                <ValidationMessage For="@(() => Model.CityId)" />
+            </div>
+
+            <div class="form-field code-field">
+                <label for="district-code">
+                    İlçe Kodu
+                    <span class="required-mark">*</span>
+                </label>
+
+                <InputText id="district-code"
+                           class="form-control"
+                           maxlength="20"
+                           placeholder="İlçe kodunu girin"
+                           autocomplete="off"
+                           disabled="@IsSubmitting"
+                           @bind-Value="Model.DistrictCode" />
+
+                <ValidationMessage For="@(() => Model.DistrictCode)" />
+            </div>
+
+            <div class="form-field name-field">
+                <label for="district-name">
+                    İlçe Adı
+                    <span class="required-mark">*</span>
+                </label>
+
+                <InputText id="district-name"
+                           class="form-control"
+                           maxlength="50"
+                           placeholder="İlçe adını girin"
+                           autocomplete="off"
+                           disabled="@IsSubmitting"
+                           @bind-Value="Model.Name" />
+
+                <ValidationMessage For="@(() => Model.Name)" />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    disabled="@IsSubmitting"
+                    @onclick="HandleCancelAsync">
+                Vazgeç
+            </button>
+
+            <button type="submit"
+                    class="btn btn-primary"
+                    disabled="@IsSubmitting">
+
+                @if (IsSubmitting)
+                {
+                    <span>Kaydediliyor...</span>
+                }
+                else
+                {
+                    <span>@SubmitText</span>
+                }
+            </button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public DistrictFormModel Model { get; set; } = new();
+
+    [Parameter]
+    public IReadOnlyList<CityListDto> Cities { get; set; } =
+        Array.Empty<CityListDto>();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Kaydet";
+
+    [Parameter]
+    public bool IsSubmitting { get; set; }
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private Task HandleValidSubmitAsync()
+    {
+        return OnValidSubmit.InvokeAsync();
+    }
+
+    private Task HandleCancelAsync()
+    {
+        return OnCancel.InvokeAsync();
+    }
+}

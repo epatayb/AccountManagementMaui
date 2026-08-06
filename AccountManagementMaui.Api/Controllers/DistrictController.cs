@@ -29,7 +29,7 @@ public class DistrictsController : ControllerBase
             .AsNoTracking()
             .AsQueryable();
 
-        if (cityId.HasValue)
+        if (cityId.HasValue && cityId.Value > 0)
         {
             query = query.Where(x => x.CityId == cityId.Value);
         }
@@ -98,10 +98,27 @@ public class DistrictsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var districtCode = request.DistrictCode
-            .Trim()
-            .ToUpperInvariant();
+            .Trim();
 
         var districtName = request.Name.Trim();
+
+        if (string.IsNullOrWhiteSpace(districtCode))
+        {
+            ModelState.AddModelError(
+                nameof(request.DistrictCode),
+                "İlçe kodu zorunludur.");
+
+            return ValidationProblem(ModelState);
+        }
+
+        if (string.IsNullOrWhiteSpace(districtName))
+        {
+            ModelState.AddModelError(
+                nameof(request.Name),
+                "İlçe adı zorunludur.");
+
+            return ValidationProblem(ModelState);
+        }
 
         var city = await _context.Cities
             .AsNoTracking()
@@ -130,7 +147,7 @@ public class DistrictsController : ControllerBase
         {
             return Conflict(new
             {
-                message = "Bu ilçe kodu kullanılıyor veya seçilen ilde aynı isimde aktif bir ilçe bulunuyor."
+                message = "Bu ilçe kodu kullanılıyor veya seçilen ilde aynı isimde bir ilçe bulunuyor."
             });
         }
 
@@ -192,6 +209,27 @@ public class DistrictsController : ControllerBase
             });
         }
 
+        var districtCode = request.DistrictCode.Trim();
+        var districtName = request.Name.Trim();
+
+        if (string.IsNullOrWhiteSpace(districtCode))
+        {
+            ModelState.AddModelError(
+                nameof(request.DistrictCode),
+                "İlçe kodu zorunludur.");
+
+            return ValidationProblem(ModelState);
+        }
+
+        if (string.IsNullOrWhiteSpace(districtName))
+        {
+            ModelState.AddModelError(
+                nameof(request.Name),
+                "İlçe adı zorunludur.");
+
+            return ValidationProblem(ModelState);
+        }
+
         var city = await _context.Cities
             .AsNoTracking()
             .FirstOrDefaultAsync(
@@ -205,12 +243,6 @@ public class DistrictsController : ControllerBase
                 message = "Seçilen il bulunamadı."
             });
         }
-
-        var districtCode = request.DistrictCode
-            .Trim()
-            .ToUpperInvariant();
-
-        var districtName = request.Name.Trim();
 
         var duplicateExists = await _context.Districts
             .AnyAsync(
@@ -228,7 +260,7 @@ public class DistrictsController : ControllerBase
         {
             return Conflict(new
             {
-                message = "Bu ilçe kodu kullanılıyor veya seçilen ilde aynı isimde aktif bir ilçe bulunuyor."
+                message = "Bu ilçe kodu kullanılıyor veya seçilen ilde aynı isimde bir ilçe bulunuyor."
             });
         }
 
@@ -266,7 +298,7 @@ public class DistrictsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(
         int id,
-        [FromBody] DeleteDistrictRequest? request,
+        [FromBody] DeleteDistrictRequest request,
         CancellationToken cancellationToken)
     {
         var district = await _context.Districts
@@ -282,8 +314,19 @@ public class DistrictsController : ControllerBase
             });
         }
 
+        var deleteReason = request.DeleteReason.Trim();
+
+        if (string.IsNullOrWhiteSpace(deleteReason))
+        {
+            ModelState.AddModelError(
+                nameof(request.DeleteReason),
+                "Silme açıklaması zorunludur.");
+
+            return ValidationProblem(ModelState);
+        }
+
         district.IsDeleted = true;
-        district.DeleteReason = request?.DeleteReason?.Trim();
+        district.DeleteReason = deleteReason;
 
         await _context.SaveChangesAsync(cancellationToken);
 

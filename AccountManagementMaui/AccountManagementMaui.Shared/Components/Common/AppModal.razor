@@ -1,0 +1,105 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+
+@if (IsOpen)
+{
+    <div class="app-modal-backdrop"
+         @onclick="HandleBackdropClickAsync">
+
+        <section class="app-modal @SizeClass"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="@_titleId"
+                 tabindex="-1"
+                 @onclick:stopPropagation
+                 @onkeydown="HandleKeyDownAsync">
+
+            <header class="app-modal-header">
+                <div>
+                    <h2 id="@_titleId">@Title</h2>
+
+                    @if (!string.IsNullOrWhiteSpace(Description))
+                    {
+                        <p>@Description</p>
+                    }
+                </div>
+
+                @if (ShowCloseButton)
+                {
+                    <button type="button"
+                            class="app-modal-close"
+                            aria-label="Modalı kapat"
+                            disabled="@DisableClose"
+                            @onclick="CloseAsync">
+                        ×
+                    </button>
+                }
+            </header>
+
+            <div class="app-modal-body">
+                @ChildContent
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    private readonly string _titleId = $"modal-title-{Guid.NewGuid():N}";
+
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Description { get; set; }
+
+    [Parameter]
+    public string Size { get; set; } = "medium";
+
+    [Parameter]
+    public bool ShowCloseButton { get; set; } = true;
+
+    [Parameter]
+    public bool CloseOnBackdrop { get; set; } = true;
+
+    [Parameter]
+    public bool DisableClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string SizeClass => Size.ToLowerInvariant() switch
+    {
+        "small" => "app-modal-small",
+        "large" => "app-modal-large",
+        _ => "app-modal-medium"
+    };
+
+    private async Task HandleBackdropClickAsync()
+    {
+        if (CloseOnBackdrop && !DisableClose)
+        {
+            await CloseAsync();
+        }
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape" && !DisableClose)
+        {
+            await CloseAsync();
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        if (!DisableClose)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}
