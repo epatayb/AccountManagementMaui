@@ -17,9 +17,6 @@ public class TaxOfficesController : ControllerBase
         _context = context;
     }
 
-    // GET: api/taxoffices
-    // GET: api/taxoffices?search=kadikoy
-    // GET: api/taxoffices?cityId=34
     [HttpGet]
     public async Task<ActionResult<List<TaxOfficeListDto>>> GetAll(
         [FromQuery] string? search,
@@ -85,7 +82,6 @@ public class TaxOfficesController : ControllerBase
         return Ok(taxOffices);
     }
 
-    // GET: api/taxoffices/1
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TaxOfficeDetailDto>> GetById(
         int id,
@@ -106,7 +102,6 @@ public class TaxOfficesController : ControllerBase
         return Ok(taxOffice);
     }
 
-    // POST: api/taxoffices
     [HttpPost]
     public async Task<ActionResult<TaxOfficeDetailDto>> Create(
         [FromBody] CreateTaxOfficeRequest request,
@@ -216,7 +211,6 @@ public class TaxOfficesController : ControllerBase
             response);
     }
 
-    // PUT: api/taxoffices/1
     [HttpPut("{id:int}")]
     public async Task<ActionResult<TaxOfficeDetailDto>> Update(
         int id,
@@ -333,7 +327,6 @@ public class TaxOfficesController : ControllerBase
         return Ok(response);
     }
 
-    // DELETE: api/taxoffices/1
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(
         int id,
