@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AccountManagementMaui.Api.Entities
 {
@@ -8,9 +9,12 @@ namespace AccountManagementMaui.Api.Entities
 
         public string LastName { get; set; } = null!;
 
+        [NotMapped]
+        public string FullName => $"{FirstName} {LastName}".Trim();
+
         public bool IsDeleted { get; set; }
 
-        public string DeleteReason { get; set; } = null!;
+        public string? DeleteReason { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 

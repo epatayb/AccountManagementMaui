@@ -77,7 +77,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .HasDefaultValue(false);
 
         entity.Property(x => x.DeleteReason)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .IsRequired(false);
 
         entity.Property(x => x.CreatedDate)
             .IsRequired();
@@ -170,7 +171,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .IsRequired();
 
         entity.Property(x => x.DeleteReason)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .IsRequired(false);
 
         entity.HasOne(x => x.CreatedByUser)
             .WithMany()

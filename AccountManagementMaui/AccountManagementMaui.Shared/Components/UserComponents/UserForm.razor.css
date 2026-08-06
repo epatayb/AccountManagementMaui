@@ -1,0 +1,113 @@
+.user-form {
+    padding: 18px 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 5px;
+    color: #334155;
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.form-field .form-control {
+    width: 100%;
+    min-height: 36px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+}
+
+.required-mark {
+    color: #dc2626;
+}
+
+.validation-message {
+    display: block;
+    margin-top: 4px;
+    color: #dc2626;
+    font-size: 0.72rem;
+}
+
+.phone-field {
+    grid-column: 1 / -1;
+}
+
+.password-section {
+    grid-column: 1 / -1;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.password-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+    .password-heading strong {
+        color: #334155;
+        font-size: 0.8rem;
+    }
+
+    .password-heading span {
+        color: #64748b;
+        font-size: 0.72rem;
+    }
+
+.password-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+}
+
+    .form-actions .btn {
+        min-width: 90px;
+    }
+
+@media (max-width: 650px) {
+    .user-form {
+        padding: 15px;
+    }
+
+    .form-grid,
+    .password-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .phone-field,
+    .password-section {
+        grid-column: auto;
+    }
+
+    .password-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .form-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+        .form-actions .btn {
+            width: 100%;
+        }
+}

@@ -3,6 +3,7 @@ using AccountManagementMaui.Shared.Services.CityServices;
 using AccountManagementMaui.Web.Components;
 using AccountManagementMaui.Web.Services;
 using AccountManagementMaui.Shared.Services.DistrictServices;
+using AccountManagementMaui.Shared.Services.UserServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,13 @@ builder.Services.AddHttpClient<IDistrictService, DistrictService>(
         client.BaseAddress = new Uri(apiBaseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);
     });
+
+builder.Services.AddHttpClient<IUserService, UserService>(
+    client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 

@@ -1,0 +1,751 @@
+﻿@page "/users"
+
+@using System.Globalization
+@using AccountManagementMaui.Shared.Components.Common
+@using AccountManagementMaui.Shared.Components.UserComponents
+@using AccountManagementMaui.Shared.Models.UserModels
+@using AccountManagementMaui.Shared.Services.Common
+@using AccountManagementMaui.Shared.Services.UserServices
+
+@inject IUserService UserService
+
+<PageTitle>Kullanıcılar</PageTitle>
+
+<div class="definition-page">
+    <header class="definition-toolbar">
+        <div class="toolbar-title">
+            <h1>Kullanıcılar</h1>
+        </div>
+
+        <div class="toolbar-controls">
+            <form class="search-form"
+                  @onsubmit="SearchUsersAsync"
+                  @onsubmit:preventDefault>
+
+                <input type="search"
+                       class="search-input"
+                       placeholder="Ad, kullanıcı adı, e-posta veya telefon ara..."
+                       maxlength="100"
+                       autocomplete="off"
+                       @bind="_search"
+                       @bind:event="oninput" />
+
+                <button type="submit"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading">
+                    Ara
+                </button>
+
+                @if (!string.IsNullOrWhiteSpace(_search))
+                {
+                    <button type="button"
+                            class="compact-button secondary-button"
+                            disabled="@_isLoading"
+                            @onclick="ClearSearchAsync">
+                        Temizle
+                    </button>
+                }
+
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="RefreshUsersAsync">
+                    Yenile
+                </button>
+            </form>
+
+            <button type="button"
+                    class="compact-button primary-button"
+                    disabled="@IsAnyOperationRunning()"
+                    @onclick="OpenCreateModal">
+                Yeni Kullanıcı
+            </button>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="compact-message success-message">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_loadErrorMessage))
+    {
+        <div class="compact-message error-message">
+            <span>@_loadErrorMessage</span>
+
+            <button type="button"
+                    class="message-button"
+                    @onclick="RefreshUsersAsync">
+                Tekrar Dene
+            </button>
+        </div>
+    }
+
+    <section class="table-shell">
+        <div class="table-scroll">
+            <table class="definition-table">
+                <thead>
+                    <tr>
+                        <th class="user-column">Kullanıcı</th>
+                        <th class="username-column">Kullanıcı Adı</th>
+                        <th class="contact-column">İletişim</th>
+                        <th class="audit-column">Oluşturulma</th>
+                        <th class="audit-column">Güncellenme</th>
+                        <th class="actions-column">İşlemler</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (_isLoading && _users.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6"
+                                class="table-state">
+                                Kullanıcılar yükleniyor...
+                            </td>
+                        </tr>
+                    }
+                    else if (_users.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6"
+                                class="table-state">
+                                Kullanıcı bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in _users)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <span class="user-avatar">
+                                            @GetInitials(user.FullName)
+                                        </span>
+
+                                        <div class="user-summary">
+                                            <strong>@user.FullName</strong>
+                                            <span>#@user.Id</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="username-badge">
+                                        @user.UserName
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="contact-cell">
+                                        <span title="@user.Email">
+                                            @user.Email
+                                        </span>
+
+                                        <small>
+                                            @(string.IsNullOrWhiteSpace(user.PhoneNumber)
+                                                                                ? "-"
+                                                                                : user.PhoneNumber)
+                                </small>
+                            </div>
+                        </td>
+
+                                <td>
+                                    <div class="audit-cell">
+                                        <strong>
+                                            @GetAuditUserName(
+                                                                        user.CreatedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(user.CreatedDate)
+                                </span>
+                            </div>
+                        </td>
+
+                        <td>
+                            @if (user.ModifiedDate.HasValue)
+                                    {
+                                        <div class="audit-cell">
+                                            <strong>
+                                                @GetAuditUserName(
+                                                user.ModifiedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        user.ModifiedDate.Value)
+                                </span>
+                            </div>
+                                                        }
+                                    else
+                                    {
+                                        <span class="empty-value">-</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="row-actions">
+                                        <button type="button"
+                                                class="row-button edit-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenEditModalAsync(user)">
+                                            Güncelle
+                                        </button>
+
+                                        <button type="button"
+                                                class="row-button delete-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenDeleteModal(user)">
+                                            Sil
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<AppModal IsOpen="_showFormModal"
+          Title="@GetFormTitle()"
+          Description="@GetFormDescription()"
+          Size="large"
+          DisableClose="@(_isSaving || _isOpeningModal)"
+          OnClose="CloseFormModal">
+
+    @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+    {
+        <div class="modal-message">
+            @_modalErrorMessage
+        </div>
+    }
+
+    @if (_isOpeningModal)
+    {
+        <div class="modal-loading">
+            Kullanıcı bilgileri yükleniyor...
+        </div>
+    }
+    else
+    {
+        <UserForm Model="_formModel"
+                  IsCreateMode="@(!_editingUserId.HasValue)"
+                  SubmitText="@GetSubmitText()"
+                  IsSubmitting="_isSaving"
+                  OnValidSubmit="SaveUserAsync"
+                  OnCancel="CloseFormModal" />
+    }
+</AppModal>
+
+<AppModal IsOpen="@(_userPendingDelete is not null)"
+          Title="Kaydı Sil"
+          Description="Silme işlemini tamamlamak için açıklama girin."
+          Size="small"
+          DisableClose="_isDeleting"
+          OnClose="CloseDeleteModal">
+
+    <div class="delete-modal-content">
+        @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+        {
+            <div class="modal-message inline-modal-error">
+                @_modalErrorMessage
+            </div>
+        }
+
+        @if (_userPendingDelete is not null)
+        {
+            <div class="delete-user-summary">
+                <span class="user-avatar">
+                    @GetInitials(_userPendingDelete.FullName)
+                </span>
+
+                <div>
+                    <strong>
+                        @_userPendingDelete.FullName
+                    </strong>
+
+                    <span>
+                        @_userPendingDelete.UserName
+                    </span>
+                </div>
+            </div>
+
+            <p class="delete-confirmation">
+                Bu kullanıcı kaydını silmek istediğinize emin misiniz?
+            </p>
+
+            <EditForm Model="_deleteModel"
+                      OnValidSubmit="DeleteUserAsync">
+
+                <DataAnnotationsValidator />
+
+                <div class="delete-field">
+                    <label for="delete-reason">
+                        Silme Açıklaması
+                    </label>
+
+                    <InputTextArea id="delete-reason"
+                                   class="form-control"
+                                   rows="4"
+                                   maxlength="500"
+                                   disabled="@_isDeleting"
+                                   @bind-Value="_deleteModel.DeleteReason" />
+
+                    <ValidationMessage For="@(() => _deleteModel.DeleteReason)" />
+                </div>
+
+                <div class="delete-modal-actions">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled="@_isDeleting"
+                            @onclick="CloseDeleteModal">
+                        Vazgeç
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-danger"
+                            disabled="@_isDeleting">
+
+                        @if (_isDeleting)
+                        {
+                            <span>Siliniyor...</span>
+                        }
+                        else
+                        {
+                            <span>Kaydı Sil</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</AppModal>
+
+@code {
+    private static readonly CultureInfo TurkishCulture =
+        CultureInfo.GetCultureInfo("tr-TR");
+
+    private List<UserListDto> _users = [];
+
+    private UserFormModel _formModel = new();
+    private DeleteUserRequest _deleteModel = new();
+    private UserListDto? _userPendingDelete;
+
+    private int? _editingUserId;
+
+    private string _search = string.Empty;
+
+    private string? _loadErrorMessage;
+    private string? _modalErrorMessage;
+    private string? _successMessage;
+
+    private bool _isLoading;
+    private bool _isOpeningModal;
+    private bool _isSaving;
+    private bool _isDeleting;
+    private bool _showFormModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        ResetDeleteModal();
+
+        _editingUserId = null;
+
+        _formModel = new UserFormModel
+        {
+            IsCreateMode = true
+        };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+        _showFormModal = true;
+    }
+
+    private async Task OpenEditModalAsync(
+        UserListDto user)
+    {
+        ResetDeleteModal();
+
+        _editingUserId = user.Id;
+        _modalErrorMessage = null;
+        _successMessage = null;
+        _showFormModal = true;
+        _isOpeningModal = true;
+
+        try
+        {
+            var detail = await UserService.GetByIdAsync(user.Id);
+
+            if (detail is null)
+            {
+                _modalErrorMessage =
+                    "Güncellenecek kullanıcı bulunamadı.";
+
+                return;
+            }
+
+            _formModel = new UserFormModel
+            {
+                FirstName = detail.FirstName,
+                LastName = detail.LastName,
+                UserName = detail.UserName,
+                Email = detail.Email,
+                PhoneNumber = detail.PhoneNumber ?? string.Empty,
+                Password = null,
+                ConfirmPassword = null,
+                IsCreateMode = false
+            };
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Kullanıcı bilgileri yüklenirken istek zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Kullanıcı bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isOpeningModal = false;
+        }
+    }
+
+    private void CloseFormModal()
+    {
+        if (_isSaving || _isOpeningModal)
+        {
+            return;
+        }
+
+        ResetFormModal();
+    }
+
+    private void ResetFormModal()
+    {
+        _showFormModal = false;
+        _editingUserId = null;
+        _formModel = new UserFormModel();
+        _modalErrorMessage = null;
+        _isOpeningModal = false;
+    }
+
+    private async Task SaveUserAsync()
+    {
+        _isSaving = true;
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            if (_editingUserId.HasValue)
+            {
+                var request = new UpdateUserRequest
+                {
+                    FirstName = _formModel.FirstName.Trim(),
+                    LastName = _formModel.LastName.Trim(),
+                    UserName = _formModel.UserName.Trim(),
+                    Email = _formModel.Email.Trim(),
+                    PhoneNumber = _formModel.PhoneNumber.Trim(),
+
+                    Password =
+                        string.IsNullOrWhiteSpace(_formModel.Password)
+                            ? null
+                            : _formModel.Password,
+
+                    ConfirmPassword =
+                        string.IsNullOrWhiteSpace(_formModel.ConfirmPassword)
+                            ? null
+                            : _formModel.ConfirmPassword
+                };
+
+                var updatedUser =
+                    await UserService.UpdateAsync(
+                        _editingUserId.Value,
+                        request);
+
+                _successMessage =
+                    $"{updatedUser.FullName} kullanıcısı güncellendi.";
+            }
+            else
+            {
+                var request = new CreateUserRequest
+                {
+                    FirstName = _formModel.FirstName.Trim(),
+                    LastName = _formModel.LastName.Trim(),
+                    UserName = _formModel.UserName.Trim(),
+                    Email = _formModel.Email.Trim(),
+                    PhoneNumber = _formModel.PhoneNumber.Trim(),
+                    Password = _formModel.Password!,
+                    ConfirmPassword = _formModel.ConfirmPassword!
+                };
+
+                var createdUser =
+                    await UserService.CreateAsync(request);
+
+                _successMessage =
+                    $"{createdUser.FullName} kullanıcısı eklendi.";
+            }
+
+            ResetFormModal();
+            await LoadUsersAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Kayıt isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Kullanıcı kaydedilirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void OpenDeleteModal(
+        UserListDto user)
+    {
+        ResetFormModal();
+
+        _userPendingDelete = user;
+        _deleteModel = new DeleteUserRequest();
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+    }
+
+    private void CloseDeleteModal()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+        ResetDeleteModal();
+    }
+
+    private void ResetDeleteModal()
+    {
+        _userPendingDelete = null;
+        _deleteModel = new DeleteUserRequest();
+        _modalErrorMessage = null;
+    }
+
+    private async Task DeleteUserAsync()
+    {
+        if (_userPendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        var deletedUserName =
+            _userPendingDelete.FullName;
+
+        try
+        {
+            _deleteModel.DeleteReason =
+                _deleteModel.DeleteReason.Trim();
+
+            await UserService.DeleteAsync(
+                _userPendingDelete.Id,
+                _deleteModel);
+
+            ResetDeleteModal();
+
+            _successMessage =
+                $"{deletedUserName} kullanıcısı silindi.";
+
+            await LoadUsersAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Silme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Kullanıcı silinirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private async Task SearchUsersAsync()
+    {
+        _successMessage = null;
+        await LoadUsersAsync();
+    }
+
+    private async Task ClearSearchAsync()
+    {
+        _search = string.Empty;
+        _successMessage = null;
+
+        await LoadUsersAsync();
+    }
+
+    private async Task RefreshUsersAsync()
+    {
+        _successMessage = null;
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var users =
+                await UserService.GetAllAsync(_search);
+
+            _users = users.ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage = exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı. API projesinin çalıştığından emin olun.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Kullanıcılar yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private bool IsAnyOperationRunning()
+    {
+        return _isLoading ||
+               _isOpeningModal ||
+               _isSaving ||
+               _isDeleting;
+    }
+
+    private static string GetInitials(
+        string fullName)
+    {
+        var parts = fullName
+            .Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries);
+
+        if (parts.Length == 0)
+        {
+            return "?";
+        }
+
+        var initials = parts.Length == 1
+            ? parts[0][0].ToString()
+            : $"{parts[0][0]}{parts[^1][0]}";
+
+        return TurkishCulture
+            .TextInfo
+            .ToUpper(initials);
+    }
+
+    private static string GetAuditUserName(
+        string? fullName)
+    {
+        return string.IsNullOrWhiteSpace(fullName)
+            ? "Sistem"
+            : fullName;
+    }
+
+    private static string FormatDate(
+        DateTime date)
+    {
+        return date
+            .ToLocalTime()
+            .ToString(
+                "dd.MM.yyyy HH:mm",
+                TurkishCulture);
+    }
+
+    private string GetFormTitle()
+    {
+        return _editingUserId.HasValue
+            ? "Kullanıcı Bilgilerini Güncelle"
+            : "Yeni Kullanıcı Ekle";
+    }
+
+    private string GetFormDescription()
+    {
+        return _editingUserId.HasValue
+            ? "Kullanıcı bilgilerini düzenleyin. Parolayı değiştirmek istemiyorsanız boş bırakın."
+            : "Yeni kullanıcı için kimlik, iletişim ve parola bilgilerini girin.";
+    }
+
+    private string GetSubmitText()
+    {
+        return _editingUserId.HasValue
+            ? "Kaydet"
+            : "Kullanıcı Ekle";
+    }
+}
