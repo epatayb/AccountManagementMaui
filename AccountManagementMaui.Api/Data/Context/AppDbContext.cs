@@ -1,16 +1,23 @@
 ﻿using AccountManagementMaui.Api.Entities;
 using AccountManagementMaui.Api.Entities.Common;
+using AccountManagementMaui.Api.Services.CurrentUser;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace AccountManagementMaui.Api.Data.Context;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 {
+    private readonly ICurrentUserService _currentUserService;
+
     public AppDbContext(
-        DbContextOptions<AppDbContext> options)
+        DbContextOptions<AppDbContext> options,
+        ICurrentUserService currentUserService)
         : base(options)
     {
+        _currentUserService = currentUserService;
     }
 
     public DbSet<City> Cities => Set<City>();
@@ -21,8 +28,71 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        ConfigureIdentityTables(modelBuilder);
+        ConfigureAppUser(modelBuilder);
         ConfigureCity(modelBuilder);
         ConfigureDistrict(modelBuilder);
+    }
+
+    private static void ConfigureIdentityTables(
+       ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AppUser>()
+            .ToTable("Users");
+
+        modelBuilder.Entity<AppRole>()
+            .ToTable("Roles");
+
+        modelBuilder.Entity<IdentityUserRole<int>>()
+            .ToTable("UserRoles");
+
+        modelBuilder.Entity<IdentityUserClaim<int>>()
+            .ToTable("UserClaims");
+
+        modelBuilder.Entity<IdentityUserLogin<int>>()
+            .ToTable("UserLogins");
+
+        modelBuilder.Entity<IdentityRoleClaim<int>>()
+            .ToTable("RoleClaims");
+
+        modelBuilder.Entity<IdentityUserToken<int>>()
+            .ToTable("UserTokens");
+    }
+
+    private static void ConfigureAppUser(
+        ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AppUser>();
+
+        entity.Property(x => x.FirstName)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        entity.Property(x => x.LastName)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        entity.Property(x => x.IsDeleted)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        entity.Property(x => x.DeleteReason)
+            .HasMaxLength(500);
+
+        entity.Property(x => x.CreatedDate)
+            .IsRequired();
+
+        entity.HasOne(x => x.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasOne(x => x.ModifiedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ModifiedByUserId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasIndex(x => x.IsDeleted);
     }
 
     private static void ConfigureCity(ModelBuilder modelBuilder)
@@ -102,6 +172,16 @@ public class AppDbContext : DbContext
         entity.Property(x => x.DeleteReason)
             .HasMaxLength(500);
 
+        entity.HasOne(x => x.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasOne(x => x.ModifiedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ModifiedByUserId)
+            .OnDelete(DeleteBehavior.NoAction);
+
         entity.HasQueryFilter(x => !x.IsDeleted);
     }
 
@@ -123,7 +203,21 @@ public class AppDbContext : DbContext
     private void ApplyAuditInformation()
     {
         var now = DateTime.UtcNow;
+        var currentUserId = _currentUserService.UserId;
 
+        ApplyBaseEntityAudit(
+            now,
+            currentUserId);
+
+        ApplyAppUserAudit(
+            now,
+            currentUserId);
+    }
+
+    private void ApplyBaseEntityAudit(
+        DateTime now,
+        int? currentUserId)
+    {
         var entries = ChangeTracker
             .Entries<BaseEntity>();
 
@@ -133,10 +227,47 @@ public class AppDbContext : DbContext
             {
                 entry.Entity.CreatedDate = now;
                 entry.Entity.IsDeleted = false;
+
+                if (!entry.Entity.CreatedByUserId.HasValue)
+                {
+                    entry.Entity.CreatedByUserId =
+                        currentUserId;
+                }
             }
             else if (entry.State == EntityState.Modified)
             {
                 entry.Entity.ModifiedDate = now;
+                entry.Entity.ModifiedByUserId =
+                    currentUserId;
+            }
+        }
+    }
+
+    private void ApplyAppUserAudit(
+       DateTime now,
+       int? currentUserId)
+    {
+        var entries = ChangeTracker
+            .Entries<AppUser>();
+
+        foreach (var entry in entries)
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedDate = now;
+                entry.Entity.IsDeleted = false;
+
+                if (!entry.Entity.CreatedByUserId.HasValue)
+                {
+                    entry.Entity.CreatedByUserId =
+                        currentUserId;
+                }
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.ModifiedDate = now;
+                entry.Entity.ModifiedByUserId =
+                    currentUserId;
             }
         }
     }

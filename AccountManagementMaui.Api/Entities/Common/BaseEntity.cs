@@ -11,9 +11,13 @@ namespace AccountManagementMaui.Api.Entities.Common
 
         public int? CreatedByUserId { get; set; }
 
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public AppUser? CreatedByUser { get; set; }
+
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
         public int? ModifiedByUserId { get; set; }
+
+        public AppUser? ModifiedByUser { get; set; }
 
         public DateTime? ModifiedDate { get; set; }
     }
