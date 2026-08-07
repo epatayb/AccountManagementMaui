@@ -1,0 +1,1752 @@
+﻿@page "/account-cards"
+
+@using System.Globalization
+
+@using AccountManagementMaui.Shared.Components.AccountCardComponents
+@using AccountManagementMaui.Shared.Components.Common
+
+@using AccountManagementMaui.Shared.Models.AccountCardModels
+@using AccountManagementMaui.Shared.Models.AccountCardTypeModels
+@using AccountManagementMaui.Shared.Models.AccountCardKindModels
+@using AccountManagementMaui.Shared.Models.AccountCardGroupModels
+@using AccountManagementMaui.Shared.Models.AccountCardSubGroupModels
+@using AccountManagementMaui.Shared.Models.CityModels
+
+@using AccountManagementMaui.Shared.Services.AccountCardServices
+@using AccountManagementMaui.Shared.Services.AccountCardTypeServices
+@using AccountManagementMaui.Shared.Services.AccountCardKindServices
+@using AccountManagementMaui.Shared.Services.AccountCardGroupServices
+@using AccountManagementMaui.Shared.Services.AccountCardSubGroupServices
+@using AccountManagementMaui.Shared.Services.CityServices
+@using AccountManagementMaui.Shared.Services.Common
+
+@inject IAccountCardService AccountCardService
+@inject IAccountCardTypeService AccountCardTypeService
+@inject IAccountCardKindService AccountCardKindService
+@inject IAccountCardGroupService AccountCardGroupService
+@inject IAccountCardSubGroupService AccountCardSubGroupService
+@inject ICityService CityService
+
+<PageTitle>Hesap Kartları</PageTitle>
+
+<div class="account-cards-page">
+
+    @* =========================================================
+       TOOLBAR
+       ========================================================= *@
+
+    <header class="account-toolbar">
+
+        <div class="toolbar-title">
+            <h1>Hesap Kartları</h1>
+        </div>
+
+        <div class="toolbar-controls">
+
+            <form class="search-form"
+                  @onsubmit="SearchAsync"
+                  @onsubmit:preventDefault>
+
+                @* ARAMA *@
+                <input type="search"
+                       class="search-input"
+                       placeholder="Kod, ünvan, telefon, e-posta..."
+                       maxlength="150"
+                       autocomplete="off"
+                       @bind="_search"
+                       @bind:event="oninput" />
+
+
+                @* TİP *@
+                <select class="filter-select type-filter"
+                        value="@GetNullableValue(_selectedTypeId)"
+                        @onchange="HandleTypeFilterChanged">
+
+                    <option value="">
+                        Tüm Tipler
+                    </option>
+
+                    @foreach (var type in _types)
+                    {
+                        <option value="@type.Id">
+                            @type.TypeCode - @type.TypeName
+                        </option>
+                    }
+
+                </select>
+
+
+                @* TÜR *@
+                <select class="filter-select kind-filter"
+                        value="@GetNullableValue(_selectedKindId)"
+                        @onchange="HandleKindFilterChanged">
+
+                    <option value="">
+                        Tüm Türler
+                    </option>
+
+                    @foreach (var kind in GetVisibleKinds())
+                    {
+                        <option value="@kind.Id">
+                            @kind.KindCode - @kind.KindName
+                        </option>
+                    }
+
+                </select>
+
+
+                @* GRUP *@
+                <select class="filter-select group-filter"
+                        value="@GetNullableValue(_selectedGroupId)"
+                        @onchange="HandleGroupFilterChanged">
+
+                    <option value="">
+                        Tüm Gruplar
+                    </option>
+
+                    @foreach (var group in _groups)
+                    {
+                        <option value="@group.Id">
+                            @group.GroupName
+                        </option>
+                    }
+
+                </select>
+
+
+                @* ALT GRUP *@
+                <select class="filter-select subgroup-filter"
+                        value="@GetNullableValue(_selectedSubGroupId)"
+                        @onchange="HandleSubGroupFilterChanged">
+
+                    <option value="">
+                        Tüm Alt Gruplar
+                    </option>
+
+                    @foreach (var subGroup in GetVisibleSubGroups())
+                    {
+                        <option value="@subGroup.Id">
+                            @subGroup.SubGroupName
+                        </option>
+                    }
+
+                </select>
+
+
+                @* İL *@
+                <select class="filter-select city-filter"
+                        value="@GetNullableValue(_selectedCityId)"
+                        @onchange="HandleCityFilterChanged">
+
+                    <option value="">
+                        Tüm İller
+                    </option>
+
+                    @foreach (var city in _cities)
+                    {
+                        <option value="@city.Id">
+                            @city.CityCode - @city.Name
+                        </option>
+                    }
+
+                </select>
+
+
+                <button type="submit"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading">
+                    Ara
+                </button>
+
+
+                @if (HasActiveFilter())
+                {
+                    <button type="button"
+                            class="compact-button secondary-button"
+                            disabled="@_isLoading"
+                            @onclick="ClearFiltersAsync">
+                        Temizle
+                    </button>
+                }
+
+
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="RefreshAsync">
+                    Yenile
+                </button>
+
+            </form>
+
+
+            <button type="button"
+                    class="compact-button primary-button"
+                    disabled="@IsAnyOperationRunning()"
+                    @onclick="OpenCreateModal">
+                Yeni Hesap Kartı
+            </button>
+
+        </div>
+
+    </header>
+
+
+    @* =========================================================
+       MESSAGES
+       ========================================================= *@
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="compact-message success-message">
+            @_successMessage
+        </div>
+    }
+
+
+    @if (!string.IsNullOrWhiteSpace(_loadErrorMessage))
+    {
+        <div class="compact-message error-message">
+
+            <span>
+                @_loadErrorMessage
+            </span>
+
+            <button type="button"
+                    class="message-button"
+                    @onclick="RefreshAsync">
+                Tekrar Dene
+            </button>
+
+        </div>
+    }
+
+
+    @* =========================================================
+       TABLE
+       ========================================================= *@
+
+    <section class="table-shell">
+
+        <div class="table-scroll">
+
+            <table class="account-table">
+
+                <thead>
+                    <tr>
+
+                        <th class="account-column">
+                            Hesap
+                        </th>
+
+                        <th class="classification-column">
+                            Sınıflandırma
+                        </th>
+
+                        <th class="contact-column">
+                            İletişim
+                        </th>
+
+                        <th class="location-column">
+                            Konum
+                        </th>
+
+                        <th class="audit-column">
+                            Oluşturulma
+                        </th>
+
+                        <th class="audit-column">
+                            Güncellenme
+                        </th>
+
+                        <th class="actions-column">
+                            İşlemler
+                        </th>
+
+                    </tr>
+                </thead>
+
+
+                <tbody>
+
+                    @if (_isLoading && _items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7"
+                                class="table-state">
+                                Hesap kartları yükleniyor...
+                            </td>
+                        </tr>
+                    }
+                    else if (_items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7"
+                                class="table-state">
+                                Hesap kartı bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _items)
+                        {
+                            <tr>
+
+                                @* =============================
+                                   HESAP
+                                   ============================= *@
+
+                                <td>
+
+                                    <div class="account-cell">
+
+                                        <strong title="@item.Title">
+                                            @item.Title
+                                        </strong>
+
+                                        <span>
+                                            @item.AccountCode · #@item.Id
+                                        </span>
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                        item.ContactPerson))
+                                        {
+                                            <small title="@item.ContactPerson">
+                                                Yetkili: @item.ContactPerson
+                                            </small>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                @* =============================
+                                   SINIFLANDIRMA
+                                   ============================= *@
+
+                                <td>
+
+                                    <div class="classification-cell">
+
+                                        <div class="classification-primary">
+
+                                            <span class="type-badge">
+                                                @item.AccountCardTypeName
+                                            </span>
+
+                                            <span class="separator">
+                                                /
+                                            </span>
+
+                                            <span title="@item.AccountCardKindName">
+                                                @item.AccountCardKindName
+                                            </span>
+
+                                        </div>
+
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                        item.AccountCardGroupName))
+                                        {
+                                            <div class="classification-secondary">
+
+                                                <span title="@item.AccountCardGroupName">
+                                                    @item.AccountCardGroupName
+                                                </span>
+
+
+                                                @if (!string.IsNullOrWhiteSpace(
+                                                                                    item.AccountCardSubGroupName))
+                                                {
+                                                    <span class="separator">
+                                                        /
+                                                    </span>
+
+                                                    <span title="@item.AccountCardSubGroupName">
+                                                        @item.AccountCardSubGroupName
+                                                    </span>
+                                                }
+
+                                            </div>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                @* =============================
+                                   İLETİŞİM
+                                   ============================= *@
+
+                                <td>
+
+                                    <div class="contact-cell">
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                        item.PhoneNumber))
+                                        {
+                                            <span title="@item.PhoneNumber">
+                                                @item.PhoneNumber
+                                            </span>
+                                        }
+
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                        item.Email))
+                                        {
+                                            <span class="secondary-text"
+                                                  title="@item.Email">
+                                                @item.Email
+                                            </span>
+                                        }
+
+
+                                        @if (string.IsNullOrWhiteSpace(
+                                                                        item.PhoneNumber) &&
+                                                                        string.IsNullOrWhiteSpace(
+                                                                        item.Email))
+                                        {
+                                            <span class="empty-value">
+                                                -
+                                            </span>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                @* =============================
+                                   KONUM
+                                   ============================= *@
+
+                                <td>
+
+                                    <div class="location-cell">
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                        item.CityName))
+                                        {
+                                            <strong>
+
+                                                @item.CityName
+
+                                                @if (!string.IsNullOrWhiteSpace(
+                                                                                    item.DistrictName))
+                                                {
+                                                    <text>
+                                                        / @item.DistrictName
+                                                    </text>
+                                                }
+
+                                            </strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="empty-value">
+                                                -
+                                            </span>
+                                        }
+
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                        item.TaxOfficeName))
+                                        {
+                                            <span title="@item.TaxOfficeName">
+                                                @item.TaxOfficeName
+                                            </span>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                @* =============================
+                                   OLUŞTURULMA
+                                   ============================= *@
+
+                                <td>
+
+                                    <div class="audit-cell">
+
+                                        <strong>
+                                            @GetAuditUserName(
+                                            item.CreatedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        item.CreatedDate)
+                                </span>
+
+                            </div>
+
+                        </td>
+
+
+                        @* =============================
+                                   GÜNCELLENME
+                                   ============================= *@
+
+                        <td>
+
+                            @if (item.ModifiedDate.HasValue)
+                                    {
+                                        <div class="audit-cell">
+
+                                            <strong>
+                                                @GetAuditUserName(
+                                                item.ModifiedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        item.ModifiedDate.Value)
+                                </span>
+
+                            </div>
+                                                        }
+                                    else
+                                    {
+                                        <span class="empty-value">
+                                            -
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                @* =============================
+                                   İŞLEMLER
+                                   ============================= *@
+
+                                <td>
+
+                                    <div class="row-actions">
+
+                                        <button type="button"
+                                                class="row-button edit-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenEditModalAsync(item.Id)">
+                                            Güncelle
+                                        </button>
+
+
+                                        <button type="button"
+                                                class="row-button delete-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenDeleteModal(item)">
+                                            Sil
+                                        </button>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+@* =============================================================
+   CREATE / UPDATE MODAL
+   ============================================================= *@
+
+<AppModal IsOpen="_showFormModal"
+          Title="@GetFormTitle()"
+          Description="@GetFormDescription()"
+          Size="large"
+          DisableClose="@(_isSaving || _isOpeningForm)"
+          OnClose="CloseFormModal">
+
+    @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+    {
+        <div class="modal-message">
+            @_modalErrorMessage
+        </div>
+    }
+
+
+    @if (_isOpeningForm)
+    {
+        <div class="form-loading-state">
+            Hesap kartı bilgileri yükleniyor...
+        </div>
+    }
+    else if (_canRenderForm)
+    {
+        <AccountCardForm Model="_formModel"
+                         SubmitText="@GetSubmitText()"
+                         IsSubmitting="_isSaving"
+                         OnValidSubmit="SaveAsync"
+                         OnCancel="CloseFormModal" />
+    }
+
+</AppModal>
+
+
+@* =============================================================
+   DELETE MODAL
+   ============================================================= *@
+
+<AppModal IsOpen="@(_itemPendingDelete is not null)"
+          Title="Kaydı Sil"
+          Description="Silme işlemini tamamlamak için açıklama girin."
+          Size="small"
+          DisableClose="_isDeleting"
+          OnClose="CloseDeleteModal">
+
+    <div class="delete-modal-content">
+
+        @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+        {
+            <div class="modal-message inline-modal-error">
+                @_modalErrorMessage
+            </div>
+        }
+
+
+        @if (_itemPendingDelete is not null)
+        {
+            <div class="delete-record-summary">
+
+                <strong>
+                    @_itemPendingDelete.Title
+                </strong>
+
+                <span>
+                    @_itemPendingDelete.AccountCode
+                </span>
+
+            </div>
+
+
+            <p class="delete-confirmation">
+                Bu hesap kartını silmek istediğinize emin misiniz?
+            </p>
+
+
+            <EditForm Model="_deleteModel"
+                      OnValidSubmit="DeleteAsync">
+
+                <DataAnnotationsValidator />
+
+
+                <div class="delete-field">
+
+                    <label for="delete-reason">
+                        Silme Açıklaması
+                        <span class="required-mark">*</span>
+                    </label>
+
+
+                    <InputTextArea id="delete-reason"
+                                   class="form-control"
+                                   rows="4"
+                                   maxlength="500"
+                                   placeholder="Silme nedenini açıklayın"
+                                   disabled="@_isDeleting"
+                                   @bind-Value="_deleteModel.DeleteReason" />
+
+
+                    <ValidationMessage For="@(() => _deleteModel.DeleteReason)" />
+
+                </div>
+
+
+                <div class="delete-modal-actions">
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled="@_isDeleting"
+                            @onclick="CloseDeleteModal">
+                        Vazgeç
+                    </button>
+
+
+                    <button type="submit"
+                            class="btn btn-danger"
+                            disabled="@_isDeleting">
+
+                        @if (_isDeleting)
+                        {
+                            <span>
+                                Siliniyor...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Kaydı Sil
+                            </span>
+                        }
+
+                    </button>
+
+                </div>
+
+            </EditForm>
+        }
+
+    </div>
+
+</AppModal>
+
+
+@code {
+    private static readonly CultureInfo TurkishCulture =
+        CultureInfo.GetCultureInfo("tr-TR");
+
+
+    // =========================================================
+    // LISTS
+    // =========================================================
+
+    private List<AccountCardListDto> _items = [];
+
+    private List<AccountCardTypeListDto> _types = [];
+
+    private List<AccountCardKindListDto> _allKinds = [];
+
+    private List<AccountCardGroupListDto> _groups = [];
+
+    private List<AccountCardSubGroupListDto> _allSubGroups = [];
+
+    private List<CityListDto> _cities = [];
+
+
+    // =========================================================
+    // FORM
+    // =========================================================
+
+    private AccountCardFormModel _formModel = new();
+
+    private DeleteAccountCardRequest _deleteModel = new();
+
+    private AccountCardListDto? _itemPendingDelete;
+
+    private int? _editingId;
+
+
+    // =========================================================
+    // FILTERS
+    // =========================================================
+
+    private string _search = string.Empty;
+
+    private int? _selectedTypeId;
+
+    private int? _selectedKindId;
+
+    private int? _selectedGroupId;
+
+    private int? _selectedSubGroupId;
+
+    private int? _selectedCityId;
+
+
+    // =========================================================
+    // MESSAGES
+    // =========================================================
+
+    private string? _loadErrorMessage;
+
+    private string? _modalErrorMessage;
+
+    private string? _successMessage;
+
+
+    // =========================================================
+    // STATES
+    // =========================================================
+
+    private bool _isLoading;
+
+    private bool _isSaving;
+
+    private bool _isDeleting;
+
+    private bool _isOpeningForm;
+
+    private bool _showFormModal;
+
+    private bool _canRenderForm;
+
+
+    // =========================================================
+    // INIT
+    // =========================================================
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPageAsync();
+    }
+
+
+    // =========================================================
+    // PAGE LOAD
+    // =========================================================
+
+    private async Task LoadPageAsync()
+    {
+        _isLoading = true;
+
+        _loadErrorMessage = null;
+
+
+        try
+        {
+            var typesTask =
+                AccountCardTypeService.GetAllAsync();
+
+            var kindsTask =
+                AccountCardKindService.GetAllAsync();
+
+            var groupsTask =
+                AccountCardGroupService.GetAllAsync();
+
+            var subGroupsTask =
+                AccountCardSubGroupService.GetAllAsync();
+
+            var citiesTask =
+                CityService.GetAllAsync();
+
+            var cardsTask =
+                AccountCardService.GetAllAsync(
+                    _search,
+                    _selectedTypeId,
+                    _selectedKindId,
+                    _selectedGroupId,
+                    _selectedSubGroupId,
+                    _selectedCityId);
+
+
+            await Task.WhenAll(
+                typesTask,
+                kindsTask,
+                groupsTask,
+                subGroupsTask,
+                citiesTask,
+                cardsTask);
+
+
+            _types =
+                (await typesTask)
+                .OrderBy(x => x.TypeName)
+                .ToList();
+
+
+            _allKinds =
+                (await kindsTask)
+                .OrderBy(x => x.KindName)
+                .ToList();
+
+
+            _groups =
+                (await groupsTask)
+                .OrderBy(x => x.GroupName)
+                .ToList();
+
+
+            _allSubGroups =
+                (await subGroupsTask)
+                .OrderBy(x => x.SubGroupName)
+                .ToList();
+
+
+            _cities =
+                (await citiesTask)
+                .OrderBy(x =>
+                    GetCityOrder(x.CityCode))
+                .ThenBy(x => x.Name)
+                .ToList();
+
+
+            _items =
+                (await cardsTask)
+                .ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Hesap kartları yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+
+    private async Task LoadItemsAsync()
+    {
+        _isLoading = true;
+
+        _loadErrorMessage = null;
+
+
+        try
+        {
+            var items =
+                await AccountCardService.GetAllAsync(
+                    _search,
+                    _selectedTypeId,
+                    _selectedKindId,
+                    _selectedGroupId,
+                    _selectedSubGroupId,
+                    _selectedCityId);
+
+
+            _items =
+                items.ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Hesap kartları yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+
+    // =========================================================
+    // CREATE
+    // =========================================================
+
+    private void OpenCreateModal()
+    {
+        ResetDeleteModal();
+
+        _editingId = null;
+
+        _formModel =
+            new AccountCardFormModel();
+
+        _modalErrorMessage = null;
+
+        _successMessage = null;
+
+        _canRenderForm = true;
+
+        _showFormModal = true;
+    }
+
+
+    // =========================================================
+    // EDIT
+    // =========================================================
+
+    private async Task OpenEditModalAsync(
+        int id)
+    {
+        ResetDeleteModal();
+
+        _editingId = id;
+
+        _modalErrorMessage = null;
+
+        _successMessage = null;
+
+        _canRenderForm = false;
+
+        _showFormModal = true;
+
+        _isOpeningForm = true;
+
+
+        try
+        {
+            var detail =
+                await AccountCardService.GetByIdAsync(id);
+
+
+            if (detail is null)
+            {
+                _modalErrorMessage =
+                    "Güncellenecek hesap kartı bulunamadı.";
+
+                return;
+            }
+
+
+            _formModel =
+                new AccountCardFormModel
+                {
+                    Title =
+                        detail.Title,
+
+                    AccountCardTypeId =
+                        detail.AccountCardTypeId,
+
+                    AccountCardKindId =
+                        detail.AccountCardKindId,
+
+                    AccountCardGroupId =
+                        detail.AccountCardGroupId,
+
+                    AccountCardSubGroupId =
+                        detail.AccountCardSubGroupId,
+
+                    CityId =
+                        detail.CityId,
+
+                    DistrictId =
+                        detail.DistrictId,
+
+                    TaxOfficeId =
+                        detail.TaxOfficeId,
+
+                    TaxNumber =
+                        detail.TaxNumber,
+
+                    IdentityNumber =
+                        detail.IdentityNumber,
+
+                    PhoneNumber =
+                        detail.PhoneNumber,
+
+                    Email =
+                        detail.Email,
+
+                    ContactPerson =
+                        detail.ContactPerson,
+
+                    Address =
+                        detail.Address
+                };
+
+
+            _canRenderForm = true;
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Hesap kartı bilgileri yüklenirken istek zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Hesap kartı bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isOpeningForm = false;
+        }
+    }
+
+
+    // =========================================================
+    // SAVE
+    // =========================================================
+
+    private async Task SaveAsync()
+    {
+        _isSaving = true;
+
+        _modalErrorMessage = null;
+
+        _successMessage = null;
+
+
+        try
+        {
+            if (_editingId.HasValue)
+            {
+                var request =
+                    new UpdateAccountCardRequest
+                    {
+                        Title =
+                            _formModel.Title.Trim(),
+
+                        AccountCardTypeId =
+                            _formModel.AccountCardTypeId,
+
+                        AccountCardKindId =
+                            _formModel.AccountCardKindId,
+
+                        AccountCardGroupId =
+                            _formModel.AccountCardGroupId,
+
+                        AccountCardSubGroupId =
+                            _formModel.AccountCardSubGroupId,
+
+                        CityId =
+                            _formModel.CityId,
+
+                        DistrictId =
+                            _formModel.DistrictId,
+
+                        TaxOfficeId =
+                            _formModel.TaxOfficeId,
+
+                        TaxNumber =
+                            NormalizeOptional(
+                                _formModel.TaxNumber),
+
+                        IdentityNumber =
+                            NormalizeOptional(
+                                _formModel.IdentityNumber),
+
+                        PhoneNumber =
+                            NormalizeOptional(
+                                _formModel.PhoneNumber),
+
+                        Email =
+                            NormalizeOptional(
+                                _formModel.Email),
+
+                        ContactPerson =
+                            NormalizeOptional(
+                                _formModel.ContactPerson),
+
+                        Address =
+                            NormalizeOptional(
+                                _formModel.Address)
+                    };
+
+
+                var updated =
+                    await AccountCardService.UpdateAsync(
+                        _editingId.Value,
+                        request);
+
+
+                _successMessage =
+                    $"{updated.Title} güncellendi.";
+            }
+            else
+            {
+                var request =
+                    new CreateAccountCardRequest
+                    {
+                        Title =
+                            _formModel.Title.Trim(),
+
+                        AccountCardTypeId =
+                            _formModel.AccountCardTypeId,
+
+                        AccountCardKindId =
+                            _formModel.AccountCardKindId,
+
+                        AccountCardGroupId =
+                            _formModel.AccountCardGroupId,
+
+                        AccountCardSubGroupId =
+                            _formModel.AccountCardSubGroupId,
+
+                        CityId =
+                            _formModel.CityId,
+
+                        DistrictId =
+                            _formModel.DistrictId,
+
+                        TaxOfficeId =
+                            _formModel.TaxOfficeId,
+
+                        TaxNumber =
+                            NormalizeOptional(
+                                _formModel.TaxNumber),
+
+                        IdentityNumber =
+                            NormalizeOptional(
+                                _formModel.IdentityNumber),
+
+                        PhoneNumber =
+                            NormalizeOptional(
+                                _formModel.PhoneNumber),
+
+                        Email =
+                            NormalizeOptional(
+                                _formModel.Email),
+
+                        ContactPerson =
+                            NormalizeOptional(
+                                _formModel.ContactPerson),
+
+                        Address =
+                            NormalizeOptional(
+                                _formModel.Address)
+                    };
+
+
+                var created =
+                    await AccountCardService.CreateAsync(
+                        request);
+
+
+                _successMessage =
+                    $"{created.Title} ({created.AccountCode}) eklendi.";
+            }
+
+
+            ResetFormModal();
+
+            await LoadItemsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Kayıt isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Hesap kartı kaydedilirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+
+    // =========================================================
+    // FORM CLOSE
+    // =========================================================
+
+    private void CloseFormModal()
+    {
+        if (_isSaving ||
+            _isOpeningForm)
+        {
+            return;
+        }
+
+
+        ResetFormModal();
+    }
+
+
+    private void ResetFormModal()
+    {
+        _showFormModal = false;
+
+        _canRenderForm = false;
+
+        _editingId = null;
+
+        _formModel =
+            new AccountCardFormModel();
+
+        _modalErrorMessage = null;
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    private void OpenDeleteModal(
+        AccountCardListDto item)
+    {
+        ResetFormModal();
+
+        _itemPendingDelete =
+            item;
+
+        _deleteModel =
+            new DeleteAccountCardRequest();
+
+        _modalErrorMessage = null;
+
+        _successMessage = null;
+    }
+
+
+    private void CloseDeleteModal()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+
+        ResetDeleteModal();
+    }
+
+
+    private void ResetDeleteModal()
+    {
+        _itemPendingDelete = null;
+
+        _deleteModel =
+            new DeleteAccountCardRequest();
+
+        _modalErrorMessage = null;
+    }
+
+
+    private async Task DeleteAsync()
+    {
+        if (_itemPendingDelete is null)
+        {
+            return;
+        }
+
+
+        _isDeleting = true;
+
+        _modalErrorMessage = null;
+
+        _successMessage = null;
+
+
+        var deletedTitle =
+            _itemPendingDelete.Title;
+
+
+        try
+        {
+            _deleteModel.DeleteReason =
+                _deleteModel.DeleteReason.Trim();
+
+
+            await AccountCardService.DeleteAsync(
+                _itemPendingDelete.Id,
+                _deleteModel);
+
+
+            ResetDeleteModal();
+
+
+            _successMessage =
+                $"{deletedTitle} silindi.";
+
+
+            await LoadItemsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Silme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Hesap kartı silinirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+
+    // =========================================================
+    // FILTER EVENTS
+    // =========================================================
+
+    private void HandleTypeFilterChanged(
+        ChangeEventArgs args)
+    {
+        _selectedTypeId =
+            ParseNullableInt(
+                args.Value);
+
+
+        if (!_selectedTypeId.HasValue)
+        {
+            // Tip kaldırıldığında Tür seçimini silmiyoruz.
+            // Böylece bütün Türler tekrar görünür.
+            return;
+        }
+
+
+        if (_selectedKindId.HasValue)
+        {
+            var valid =
+                _allKinds.Any(x =>
+                    x.Id ==
+                    _selectedKindId.Value &&
+
+                    x.AccountCardTypeId ==
+                    _selectedTypeId.Value);
+
+
+            if (!valid)
+            {
+                _selectedKindId =
+                    null;
+            }
+        }
+    }
+
+
+    private void HandleKindFilterChanged(
+        ChangeEventArgs args)
+    {
+        _selectedKindId =
+            ParseNullableInt(
+                args.Value);
+
+
+        if (!_selectedKindId.HasValue)
+        {
+            return;
+        }
+
+
+        var kind =
+            _allKinds.FirstOrDefault(x =>
+                x.Id ==
+                _selectedKindId.Value);
+
+
+        if (kind is not null)
+        {
+            _selectedTypeId =
+                kind.AccountCardTypeId;
+        }
+    }
+
+
+    private void HandleGroupFilterChanged(
+        ChangeEventArgs args)
+    {
+        _selectedGroupId =
+            ParseNullableInt(
+                args.Value);
+
+
+        if (!_selectedGroupId.HasValue)
+        {
+            // Grup kaldırılınca Alt Grup seçimi kalabilir.
+            // Bütün alt gruplar tekrar görüntülenir.
+            return;
+        }
+
+
+        if (_selectedSubGroupId.HasValue)
+        {
+            var valid =
+                _allSubGroups.Any(x =>
+                    x.Id ==
+                    _selectedSubGroupId.Value &&
+
+                    x.AccountCardGroupId ==
+                    _selectedGroupId.Value);
+
+
+            if (!valid)
+            {
+                _selectedSubGroupId =
+                    null;
+            }
+        }
+    }
+
+
+    private void HandleSubGroupFilterChanged(
+        ChangeEventArgs args)
+    {
+        _selectedSubGroupId =
+            ParseNullableInt(
+                args.Value);
+
+
+        if (!_selectedSubGroupId.HasValue)
+        {
+            return;
+        }
+
+
+        var subGroup =
+            _allSubGroups.FirstOrDefault(x =>
+                x.Id ==
+                _selectedSubGroupId.Value);
+
+
+        if (subGroup is not null)
+        {
+            _selectedGroupId =
+                subGroup.AccountCardGroupId;
+        }
+    }
+
+
+    private void HandleCityFilterChanged(
+        ChangeEventArgs args)
+    {
+        _selectedCityId =
+            ParseNullableInt(
+                args.Value);
+    }
+
+
+    // =========================================================
+    // VISIBLE FILTER VALUES
+    // =========================================================
+
+    private IEnumerable<AccountCardKindListDto>
+        GetVisibleKinds()
+    {
+        if (!_selectedTypeId.HasValue)
+        {
+            return _allKinds;
+        }
+
+
+        return _allKinds.Where(x =>
+            x.AccountCardTypeId ==
+            _selectedTypeId.Value);
+    }
+
+
+    private IEnumerable<AccountCardSubGroupListDto>
+        GetVisibleSubGroups()
+    {
+        if (!_selectedGroupId.HasValue)
+        {
+            return _allSubGroups;
+        }
+
+
+        return _allSubGroups.Where(x =>
+            x.AccountCardGroupId ==
+            _selectedGroupId.Value);
+    }
+
+
+    // =========================================================
+    // SEARCH / FILTER
+    // =========================================================
+
+    private async Task SearchAsync()
+    {
+        _successMessage = null;
+
+        await LoadItemsAsync();
+    }
+
+
+    private async Task ClearFiltersAsync()
+    {
+        _search =
+            string.Empty;
+
+        _selectedTypeId =
+            null;
+
+        _selectedKindId =
+            null;
+
+        _selectedGroupId =
+            null;
+
+        _selectedSubGroupId =
+            null;
+
+        _selectedCityId =
+            null;
+
+        _successMessage =
+            null;
+
+
+        await LoadItemsAsync();
+    }
+
+
+    private async Task RefreshAsync()
+    {
+        _successMessage = null;
+
+        await LoadPageAsync();
+    }
+
+
+    private bool HasActiveFilter()
+    {
+        return
+            !string.IsNullOrWhiteSpace(_search) ||
+            _selectedTypeId.HasValue ||
+            _selectedKindId.HasValue ||
+            _selectedGroupId.HasValue ||
+            _selectedSubGroupId.HasValue ||
+            _selectedCityId.HasValue;
+    }
+
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    private bool IsAnyOperationRunning()
+    {
+        return
+            _isLoading ||
+            _isSaving ||
+            _isDeleting ||
+            _isOpeningForm;
+    }
+
+
+    private static int? ParseNullableInt(
+        object? value)
+    {
+        var text =
+            value?.ToString();
+
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+
+        return int.TryParse(
+            text,
+            out var result)
+                ? result
+                : null;
+    }
+
+
+    private static string GetNullableValue(
+        int? value)
+    {
+        return value?.ToString()
+            ?? string.Empty;
+    }
+
+
+    private static string? NormalizeOptional(
+        string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
+    }
+
+
+    private static string GetAuditUserName(
+        string? fullName)
+    {
+        return string.IsNullOrWhiteSpace(fullName)
+            ? "Sistem"
+            : fullName;
+    }
+
+
+    private static string FormatDate(
+        DateTime date)
+    {
+        return date
+            .ToLocalTime()
+            .ToString(
+                "dd.MM.yyyy HH:mm",
+                TurkishCulture);
+    }
+
+
+    private static int GetCityOrder(
+        string? cityCode)
+    {
+        return int.TryParse(
+            cityCode,
+            out var result)
+                ? result
+                : int.MaxValue;
+    }
+
+
+    private string GetFormTitle()
+    {
+        return _editingId.HasValue
+            ? "Hesap Kartını Güncelle"
+            : "Yeni Hesap Kartı";
+    }
+
+
+    private string GetFormDescription()
+    {
+        return _editingId.HasValue
+            ? "Hesap kartı bilgilerini düzenleyin."
+            : "Yeni hesap kartı bilgilerini girin.";
+    }
+
+
+    private string GetSubmitText()
+    {
+        return _editingId.HasValue
+            ? "Değişiklikleri Kaydet"
+            : "Hesap Kartı Ekle";
+    }
+}

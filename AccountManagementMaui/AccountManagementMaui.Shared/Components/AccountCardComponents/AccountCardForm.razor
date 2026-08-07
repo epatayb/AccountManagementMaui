@@ -1,0 +1,1014 @@
+﻿@using AccountManagementMaui.Shared.Models.AccountCardModels
+
+@using AccountManagementMaui.Shared.Models.AccountCardTypeModels
+@using AccountManagementMaui.Shared.Models.AccountCardKindModels
+@using AccountManagementMaui.Shared.Models.AccountCardGroupModels
+@using AccountManagementMaui.Shared.Models.AccountCardSubGroupModels
+@using AccountManagementMaui.Shared.Models.CityModels
+@using AccountManagementMaui.Shared.Models.DistrictModels
+@using AccountManagementMaui.Shared.Models.TaxOfficeModels
+
+@using AccountManagementMaui.Shared.Services.AccountCardTypeServices
+@using AccountManagementMaui.Shared.Services.AccountCardKindServices
+@using AccountManagementMaui.Shared.Services.AccountCardGroupServices
+@using AccountManagementMaui.Shared.Services.AccountCardSubGroupServices
+@using AccountManagementMaui.Shared.Services.CityServices
+@using AccountManagementMaui.Shared.Services.DistrictServices
+@using AccountManagementMaui.Shared.Services.TaxOfficeServices
+
+@inject IAccountCardTypeService AccountCardTypeService
+@inject IAccountCardKindService AccountCardKindService
+@inject IAccountCardGroupService AccountCardGroupService
+@inject IAccountCardSubGroupService AccountCardSubGroupService
+@inject ICityService CityService
+@inject IDistrictService DistrictService
+@inject ITaxOfficeService TaxOfficeService
+
+
+<EditForm Model="Model"
+          OnValidSubmit="HandleValidSubmitAsync">
+
+    <DataAnnotationsValidator />
+
+    <div class="account-card-form">
+
+        @if (!string.IsNullOrWhiteSpace(_lookupErrorMessage))
+        {
+            <div class="form-error-message">
+                @_lookupErrorMessage
+            </div>
+        }
+
+
+        @* ===========================
+           HESAP BİLGİLERİ
+           =========================== *@
+
+        <div class="compact-section">
+
+            <div class="section-title">
+                Hesap Bilgileri
+            </div>
+
+            <div class="form-grid account-grid">
+
+                <div class="form-field title-field">
+                    <label>
+                        Hesap Ünvanı
+                        <span>*</span>
+                    </label>
+
+                    <InputText class="form-control"
+                               maxlength="200"
+                               placeholder="Firma ünvanı veya ad soyad"
+                               disabled="@IsSubmitting"
+                               @bind-Value="Model.Title" />
+
+                    <ValidationMessage For="@(() => Model.Title)" />
+                </div>
+
+
+                <div class="form-field">
+                    <label>
+                        Hesap Tipi
+                        <span>*</span>
+                    </label>
+
+                    <InputSelect TValue="int"
+                                 class="form-control"
+                                 disabled="@IsFormDisabled"
+                                 Value="Model.AccountCardTypeId"
+                                 ValueChanged="HandleTypeChanged"
+                                 ValueExpression="@(() => Model.AccountCardTypeId)">
+
+                        <option value="0">
+                            Tip seçiniz
+                        </option>
+
+                        @foreach (var type in _types)
+                        {
+                            <option value="@type.Id">
+                                @type.TypeCode - @type.TypeName
+                            </option>
+                        }
+
+                    </InputSelect>
+
+                    <ValidationMessage For="@(() => Model.AccountCardTypeId)" />
+                </div>
+
+
+                <div class="form-field">
+                    <label>
+                        Hesap Türü
+                        <span>*</span>
+                    </label>
+
+                    <InputSelect TValue="int"
+                                 class="form-control"
+                                 disabled="@IsFormDisabled"
+                                 Value="Model.AccountCardKindId"
+                                 ValueChanged="HandleKindChanged"
+                                 ValueExpression="@(() => Model.AccountCardKindId)">
+
+                        <option value="0">
+                            Tür seçiniz
+                        </option>
+
+                        @foreach (var kind in GetVisibleKinds())
+                        {
+                            <option value="@kind.Id">
+                                @kind.KindCode - @kind.KindName
+                            </option>
+                        }
+
+                    </InputSelect>
+
+                    <ValidationMessage For="@(() => Model.AccountCardKindId)" />
+                </div>
+
+            </div>
+
+        </div>
+
+
+        @* ===========================
+           SINIFLANDIRMA
+           =========================== *@
+
+        <div class="compact-section">
+
+            <div class="section-title">
+                Sınıflandırma
+            </div>
+
+            <div class="form-grid two-grid">
+
+                <div class="form-field">
+                    <label>Grup</label>
+
+                    <InputSelect TValue="int?"
+                                 class="form-control"
+                                 disabled="@IsFormDisabled"
+                                 Value="Model.AccountCardGroupId"
+                                 ValueChanged="HandleGroupChanged"
+                                 ValueExpression="@(() => Model.AccountCardGroupId)">
+
+                        <option value="">
+                            Grup seçiniz
+                        </option>
+
+                        @foreach (var group in _groups)
+                        {
+                            <option value="@group.Id">
+                                @group.GroupName
+                            </option>
+                        }
+
+                    </InputSelect>
+                </div>
+
+
+                <div class="form-field">
+                    <label>Alt Grup</label>
+
+                    <InputSelect TValue="int?"
+                                 class="form-control"
+                                 disabled="@IsFormDisabled"
+                                 Value="Model.AccountCardSubGroupId"
+                                 ValueChanged="HandleSubGroupChanged"
+                                 ValueExpression="@(() => Model.AccountCardSubGroupId)">
+
+                        <option value="">
+                            Alt grup seçiniz
+                        </option>
+
+                        @foreach (var subGroup in GetVisibleSubGroups())
+                        {
+                            <option value="@subGroup.Id">
+                                @subGroup.SubGroupName
+                            </option>
+                        }
+
+                    </InputSelect>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        @* ===========================
+           ADRES
+           =========================== *@
+
+        <div class="compact-section">
+
+            <div class="section-title">
+                Adres
+            </div>
+
+            <div class="form-grid address-grid">
+
+                <div class="form-field">
+                    <label>İl</label>
+
+                    <InputSelect TValue="int?"
+                                 class="form-control"
+                                 disabled="@IsFormDisabled"
+                                 Value="Model.CityId"
+                                 ValueChanged="HandleCityChanged"
+                                 ValueExpression="@(() => Model.CityId)">
+
+                        <option value="">
+                            İl seçiniz
+                        </option>
+
+                        @foreach (var city in _cities)
+                        {
+                            <option value="@city.Id">
+                                @city.CityCode - @city.Name
+                            </option>
+                        }
+
+                    </InputSelect>
+                </div>
+
+
+                <div class="form-field">
+                    <label>İlçe</label>
+
+                    <InputSelect TValue="int?"
+                                 class="form-control"
+                                 disabled="@IsFormDisabled"
+                                 Value="Model.DistrictId"
+                                 ValueChanged="HandleDistrictChanged"
+                                 ValueExpression="@(() => Model.DistrictId)">
+
+                        <option value="">
+                            İlçe seçiniz
+                        </option>
+
+                        @foreach (var district in GetVisibleDistricts())
+                        {
+                            <option value="@district.Id">
+                                @district.Name
+                            </option>
+                        }
+
+                    </InputSelect>
+                </div>
+
+
+                <div class="form-field">
+                    <label>Vergi Dairesi</label>
+
+                    <InputSelect TValue="int?"
+                                 class="form-control"
+                                 disabled="@IsFormDisabled"
+                                 Value="Model.TaxOfficeId"
+                                 ValueChanged="HandleTaxOfficeChanged"
+                                 ValueExpression="@(() => Model.TaxOfficeId)">
+
+                        <option value="">
+                            Vergi dairesi seçiniz
+                        </option>
+
+                        @foreach (var office in GetVisibleTaxOffices())
+                        {
+                            <option value="@office.Id">
+                                @office.Name
+                            </option>
+                        }
+
+                    </InputSelect>
+                </div>
+
+            </div>
+
+
+            <div class="form-field address-field">
+                <label>Açık Adres</label>
+
+                <InputText class="form-control"
+                           maxlength="500"
+                           placeholder="Mahalle, cadde, sokak, bina..."
+                           disabled="@IsSubmitting"
+                           @bind-Value="Model.Address" />
+
+                <ValidationMessage For="@(() => Model.Address)" />
+            </div>
+
+        </div>
+
+
+        @* ===========================
+           VERGİ / KİMLİK
+           =========================== *@
+
+        <div class="compact-section">
+
+            <div class="section-title">
+                Vergi / Kimlik
+                <small>
+                    En az biri zorunlu
+                </small>
+            </div>
+
+            <div class="form-grid two-grid">
+
+                <div class="form-field">
+                    <label>Vergi Numarası</label>
+
+                    <InputText class="form-control"
+                               maxlength="10"
+                               inputmode="numeric"
+                               placeholder="10 haneli"
+                               disabled="@IsSubmitting"
+                               @bind-Value="Model.TaxNumber" />
+
+                    <ValidationMessage For="@(() => Model.TaxNumber)" />
+                </div>
+
+
+                <div class="form-field">
+                    <label>T.C. Kimlik Numarası</label>
+
+                    <InputText class="form-control"
+                               maxlength="11"
+                               inputmode="numeric"
+                               placeholder="11 haneli"
+                               disabled="@IsSubmitting"
+                               @bind-Value="Model.IdentityNumber" />
+
+                    <ValidationMessage For="@(() => Model.IdentityNumber)" />
+                </div>
+
+            </div>
+
+        </div>
+
+
+        @* ===========================
+           İLETİŞİM
+           =========================== *@
+
+        <div class="compact-section">
+
+            <div class="section-title">
+                İletişim
+            </div>
+
+            <div class="form-grid contact-grid">
+
+                <div class="form-field">
+                    <label>
+                        Telefon
+                        <span>*</span>
+                    </label>
+
+                    <input type="tel"
+                           class="form-control"
+                           maxlength="13"
+                           inputmode="numeric"
+                           placeholder="(___)___-____"
+                           disabled="@IsSubmitting"
+                           value="@Model.PhoneNumber"
+                           @oninput="HandlePhoneInput" />
+
+                    <ValidationMessage For="@(() => Model.PhoneNumber)" />
+                </div>
+
+
+                <div class="form-field">
+                    <label>
+                        E-Posta
+                        <span>*</span>
+                    </label>
+
+                    <InputText type="email"
+                               class="form-control"
+                               maxlength="150"
+                               placeholder="ornek@firma.com"
+                               disabled="@IsSubmitting"
+                               @bind-Value="Model.Email" />
+
+                    <ValidationMessage For="@(() => Model.Email)" />
+                </div>
+
+
+                <div class="form-field">
+                    <label>
+                        Yetkili Kişi
+                    </label>
+
+                    <InputText class="form-control"
+                               maxlength="100"
+                               placeholder="Ad Soyad"
+                               disabled="@IsSubmitting"
+                               @bind-Value="Model.ContactPerson" />
+
+                    <ValidationMessage For="@(() => Model.ContactPerson)" />
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    disabled="@IsSubmitting"
+                    @onclick="HandleCancelAsync">
+                Vazgeç
+            </button>
+
+            <button type="submit"
+                    class="btn btn-primary"
+                    disabled="@IsFormDisabled">
+
+                @if (IsSubmitting)
+                {
+                    <span>Kaydediliyor...</span>
+                }
+                else
+                {
+                    <span>@SubmitText</span>
+                }
+
+            </button>
+
+        </div>
+
+    </div>
+
+</EditForm>
+
+
+@code {
+    [Parameter, EditorRequired]
+    public AccountCardFormModel Model { get; set; } = new();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Kaydet";
+
+    [Parameter]
+    public bool IsSubmitting { get; set; }
+
+    [Parameter]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+
+    private List<AccountCardTypeListDto> _types = [];
+    private List<AccountCardKindListDto> _kinds = [];
+
+    private List<AccountCardGroupListDto> _groups = [];
+    private List<AccountCardSubGroupListDto> _subGroups = [];
+
+    private List<CityListDto> _cities = [];
+    private List<DistrictListDto> _districts = [];
+    private List<TaxOfficeListDto> _taxOffices = [];
+
+
+    private AccountCardFormModel? _loadedModel;
+
+    private bool _isLoadingLookups;
+
+    private string? _lookupErrorMessage;
+
+
+    private bool IsFormDisabled =>
+        IsSubmitting ||
+        _isLoadingLookups;
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ReferenceEquals(
+            _loadedModel,
+            Model))
+        {
+            return;
+        }
+
+        _loadedModel = Model;
+
+        await LoadLookupsAsync();
+    }
+
+
+    private async Task LoadLookupsAsync()
+    {
+        _isLoadingLookups = true;
+
+        _lookupErrorMessage = null;
+
+        try
+        {
+            var typesTask =
+                AccountCardTypeService.GetAllAsync();
+
+            var kindsTask =
+                AccountCardKindService.GetAllAsync();
+
+            var groupsTask =
+                AccountCardGroupService.GetAllAsync();
+
+            var subGroupsTask =
+                AccountCardSubGroupService.GetAllAsync();
+
+            var citiesTask =
+                CityService.GetAllAsync();
+
+            var districtsTask =
+                DistrictService.GetAllAsync();
+
+            var taxOfficesTask =
+                TaxOfficeService.GetAllAsync();
+
+
+            await Task.WhenAll(
+                typesTask,
+                kindsTask,
+                groupsTask,
+                subGroupsTask,
+                citiesTask,
+                districtsTask,
+                taxOfficesTask);
+
+
+            _types =
+                (await typesTask)
+                .OrderBy(x => x.TypeName)
+                .ToList();
+
+
+            _kinds =
+                (await kindsTask)
+                .OrderBy(x => x.KindName)
+                .ToList();
+
+
+            _groups =
+                (await groupsTask)
+                .OrderBy(x => x.GroupName)
+                .ToList();
+
+
+            _subGroups =
+                (await subGroupsTask)
+                .OrderBy(x => x.SubGroupName)
+                .ToList();
+
+
+            _cities =
+                (await citiesTask)
+                .OrderBy(x => GetCityOrder(x.CityCode))
+                .ThenBy(x => x.Name)
+                .ToList();
+
+
+            _districts =
+                (await districtsTask)
+                .OrderBy(x => x.Name)
+                .ToList();
+
+
+            _taxOffices =
+                (await taxOfficesTask)
+                .OrderBy(x => x.Name)
+                .ToList();
+        }
+        catch
+        {
+            _lookupErrorMessage =
+                "Form için gerekli tanım bilgileri yüklenemedi.";
+        }
+        finally
+        {
+            _isLoadingLookups = false;
+        }
+    }
+
+
+    // =========================================================
+    // TIP / TÜR
+    // =========================================================
+
+    private void HandleTypeChanged(
+        int typeId)
+    {
+        Model.AccountCardTypeId =
+            typeId;
+
+        if (typeId <= 0)
+        {
+            Model.AccountCardKindId = 0;
+            return;
+        }
+
+
+        if (Model.AccountCardKindId > 0)
+        {
+            var valid =
+                _kinds.Any(x =>
+                    x.Id == Model.AccountCardKindId &&
+                    x.AccountCardTypeId == typeId);
+
+            if (!valid)
+            {
+                Model.AccountCardKindId = 0;
+            }
+        }
+    }
+
+
+    private void HandleKindChanged(
+        int kindId)
+    {
+        Model.AccountCardKindId =
+            kindId;
+
+        if (kindId <= 0)
+        {
+            return;
+        }
+
+
+        var kind =
+            _kinds.FirstOrDefault(x =>
+                x.Id == kindId);
+
+        if (kind is not null)
+        {
+            Model.AccountCardTypeId =
+                kind.AccountCardTypeId;
+        }
+    }
+
+
+    private IEnumerable<AccountCardKindListDto>
+        GetVisibleKinds()
+    {
+        if (Model.AccountCardTypeId <= 0)
+        {
+            return _kinds;
+        }
+
+
+        return _kinds.Where(x =>
+            x.AccountCardTypeId ==
+            Model.AccountCardTypeId);
+    }
+
+
+    // =========================================================
+    // GRUP / ALT GRUP
+    // =========================================================
+
+    private void HandleGroupChanged(
+        int? groupId)
+    {
+        Model.AccountCardGroupId =
+            groupId;
+
+        if (!groupId.HasValue)
+        {
+            Model.AccountCardSubGroupId = null;
+            return;
+        }
+
+
+        if (Model.AccountCardSubGroupId.HasValue)
+        {
+            var valid =
+                _subGroups.Any(x =>
+                    x.Id ==
+                    Model.AccountCardSubGroupId.Value &&
+
+                    x.AccountCardGroupId ==
+                    groupId.Value);
+
+
+            if (!valid)
+            {
+                Model.AccountCardSubGroupId =
+                    null;
+            }
+        }
+    }
+
+
+    private void HandleSubGroupChanged(
+        int? subGroupId)
+    {
+        Model.AccountCardSubGroupId =
+            subGroupId;
+
+        if (!subGroupId.HasValue)
+        {
+            return;
+        }
+
+
+        var subGroup =
+            _subGroups.FirstOrDefault(x =>
+                x.Id == subGroupId.Value);
+
+
+        if (subGroup is not null)
+        {
+            Model.AccountCardGroupId =
+                subGroup.AccountCardGroupId;
+        }
+    }
+
+
+    private IEnumerable<AccountCardSubGroupListDto>
+        GetVisibleSubGroups()
+    {
+        if (!Model.AccountCardGroupId.HasValue)
+        {
+            return _subGroups;
+        }
+
+
+        return _subGroups.Where(x =>
+            x.AccountCardGroupId ==
+            Model.AccountCardGroupId.Value);
+    }
+
+
+    // =========================================================
+    // İL / İLÇE / VERGİ DAİRESİ
+    // =========================================================
+
+    private void HandleCityChanged(
+        int? cityId)
+    {
+        Model.CityId =
+            cityId;
+
+
+        if (!cityId.HasValue)
+        {
+            Model.DistrictId =
+                null;
+
+            Model.TaxOfficeId =
+                null;
+
+            return;
+        }
+
+
+        if (Model.DistrictId.HasValue)
+        {
+            var districtValid =
+                _districts.Any(x =>
+                    x.Id ==
+                    Model.DistrictId.Value &&
+
+                    x.CityId ==
+                    cityId.Value);
+
+
+            if (!districtValid)
+            {
+                Model.DistrictId =
+                    null;
+            }
+        }
+
+
+        if (Model.TaxOfficeId.HasValue)
+        {
+            var taxOfficeValid =
+                _taxOffices.Any(x =>
+                    x.Id ==
+                    Model.TaxOfficeId.Value &&
+
+                    x.CityId ==
+                    cityId.Value);
+
+
+            if (!taxOfficeValid)
+            {
+                Model.TaxOfficeId =
+                    null;
+            }
+        }
+    }
+
+
+    private void HandleDistrictChanged(
+        int? districtId)
+    {
+        Model.DistrictId =
+            districtId;
+
+
+        if (!districtId.HasValue)
+        {
+            return;
+        }
+
+
+        var district =
+            _districts.FirstOrDefault(x =>
+                x.Id == districtId.Value);
+
+
+        if (district is null)
+        {
+            return;
+        }
+
+
+        Model.CityId =
+            district.CityId;
+
+
+        if (Model.TaxOfficeId.HasValue)
+        {
+            var taxOfficeValid =
+                _taxOffices.Any(x =>
+                    x.Id ==
+                    Model.TaxOfficeId.Value &&
+
+                    x.CityId ==
+                    district.CityId);
+
+
+            if (!taxOfficeValid)
+            {
+                Model.TaxOfficeId =
+                    null;
+            }
+        }
+    }
+
+
+    private void HandleTaxOfficeChanged(
+        int? taxOfficeId)
+    {
+        Model.TaxOfficeId =
+            taxOfficeId;
+
+
+        if (!taxOfficeId.HasValue)
+        {
+            return;
+        }
+
+
+        var taxOffice =
+            _taxOffices.FirstOrDefault(x =>
+                x.Id == taxOfficeId.Value);
+
+
+        if (taxOffice is null)
+        {
+            return;
+        }
+
+
+        Model.CityId =
+            taxOffice.CityId;
+
+
+        if (Model.DistrictId.HasValue)
+        {
+            var districtValid =
+                _districts.Any(x =>
+                    x.Id ==
+                    Model.DistrictId.Value &&
+
+                    x.CityId ==
+                    taxOffice.CityId);
+
+
+            if (!districtValid)
+            {
+                Model.DistrictId =
+                    null;
+            }
+        }
+    }
+
+
+    private IEnumerable<DistrictListDto>
+        GetVisibleDistricts()
+    {
+        if (!Model.CityId.HasValue)
+        {
+            return _districts;
+        }
+
+
+        return _districts.Where(x =>
+            x.CityId ==
+            Model.CityId.Value);
+    }
+
+
+    private IEnumerable<TaxOfficeListDto>
+        GetVisibleTaxOffices()
+    {
+        if (!Model.CityId.HasValue)
+        {
+            return _taxOffices;
+        }
+
+
+        return _taxOffices.Where(x =>
+            x.CityId ==
+            Model.CityId.Value);
+    }
+
+
+    // =========================================================
+    // TELEFON
+    // =========================================================
+
+    private void HandlePhoneInput(
+        ChangeEventArgs args)
+    {
+        var input =
+            args.Value?.ToString()
+            ?? string.Empty;
+
+
+        var digits =
+            new string(
+                input
+                    .Where(char.IsDigit)
+                    .Take(10)
+                    .ToArray());
+
+
+        Model.PhoneNumber =
+            FormatPhoneNumber(digits);
+    }
+
+
+    private static string FormatPhoneNumber(
+        string digits)
+    {
+        if (string.IsNullOrEmpty(digits))
+        {
+            return string.Empty;
+        }
+
+
+        if (digits.Length <= 3)
+        {
+            return $"({digits}";
+        }
+
+
+        if (digits.Length <= 6)
+        {
+            return
+                $"({digits[..3]}){digits[3..]}";
+        }
+
+
+        return
+            $"({digits[..3]})" +
+            $"{digits.Substring(3, 3)}-" +
+            $"{digits[6..]}";
+    }
+
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    private static int GetCityOrder(
+        string? cityCode)
+    {
+        return int.TryParse(
+            cityCode,
+            out var result)
+                ? result
+                : int.MaxValue;
+    }
+
+
+    private Task HandleValidSubmitAsync()
+    {
+        return OnValidSubmit.InvokeAsync();
+    }
+
+
+    private Task HandleCancelAsync()
+    {
+        return OnCancel.InvokeAsync();
+    }
+}

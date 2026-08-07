@@ -1,14 +1,19 @@
 ﻿@using Microsoft.AspNetCore.Components.Routing
 
 <header class="top-navbar">
-    <div class="top-navbar-inner">
-        <NavLink class="brand"
-                 href="/account-cards"
-                 Match="NavLinkMatch.All"
-                 @onclick="CloseMenu">
 
-            <span class="brand-logo">LTS</span>
+    <div class="top-navbar-inner">
+
+        <NavLink class="brand"
+                 href="/"
+                 Match="NavLinkMatch.All">
+
+            <span class="brand-logo">
+                LTS
+            </span>
+
         </NavLink>
+
 
         <button type="button"
                 class="mobile-menu-button"
@@ -19,9 +24,12 @@
             <span></span>
             <span></span>
             <span></span>
+
         </button>
 
+
         <nav class="top-nav-links @GetMenuClass()">
+
             <NavLink class="top-nav-link"
                      href="/account-cards"
                      Match="NavLinkMatch.Prefix"
@@ -83,23 +91,30 @@
                      Match="NavLinkMatch.Prefix"
                      @onclick="CloseMenu">
                 Alt Gruplar
-            </NavLink>                  
+            </NavLink>
+
         </nav>
+
     </div>
+
 </header>
+
 
 @code {
     private bool _isMenuOpen;
+
 
     private void ToggleMenu()
     {
         _isMenuOpen = !_isMenuOpen;
     }
 
+
     private void CloseMenu()
     {
         _isMenuOpen = false;
     }
+
 
     private string GetMenuClass()
     {

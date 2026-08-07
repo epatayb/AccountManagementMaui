@@ -10,16 +10,21 @@
                  aria-modal="true"
                  aria-labelledby="@_titleId"
                  tabindex="-1"
-                 @onclick:stopPropagation
+                 @onclick:stopPropagation="true"
                  @onkeydown="HandleKeyDownAsync">
 
             <header class="app-modal-header">
+
                 <div>
-                    <h2 id="@_titleId">@Title</h2>
+                    <h2 id="@_titleId">
+                        @Title
+                    </h2>
 
                     @if (!string.IsNullOrWhiteSpace(Description))
                     {
-                        <p>@Description</p>
+                        <p>
+                            @Description
+                        </p>
                     }
                 </div>
 
@@ -33,17 +38,21 @@
                         ×
                     </button>
                 }
+
             </header>
 
             <div class="app-modal-body">
                 @ChildContent
             </div>
+
         </section>
+
     </div>
 }
 
 @code {
-    private readonly string _titleId = $"modal-title-{Guid.NewGuid():N}";
+    private readonly string _titleId =
+        $"modal-title-{Guid.NewGuid():N}";
 
     [Parameter]
     public bool IsOpen { get; set; }
@@ -72,24 +81,28 @@
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
 
-    private string SizeClass => Size.ToLowerInvariant() switch
-    {
-        "small" => "app-modal-small",
-        "large" => "app-modal-large",
-        _ => "app-modal-medium"
-    };
+    private string SizeClass =>
+        Size.ToLowerInvariant() switch
+        {
+            "small" => "app-modal-small",
+            "large" => "app-modal-large",
+            _ => "app-modal-medium"
+        };
 
     private async Task HandleBackdropClickAsync()
     {
-        if (CloseOnBackdrop && !DisableClose)
+        if (CloseOnBackdrop &&
+            !DisableClose)
         {
             await CloseAsync();
         }
     }
 
-    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    private async Task HandleKeyDownAsync(
+        KeyboardEventArgs args)
     {
-        if (args.Key == "Escape" && !DisableClose)
+        if (args.Key == "Escape" &&
+            !DisableClose)
         {
             await CloseAsync();
         }

@@ -34,6 +34,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
     public DbSet<AccountCardSubGroup> AccountCardSubGroups => Set<AccountCardSubGroup>();
 
+    public DbSet<AccountCard> AccountCards => Set<AccountCard>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -47,6 +49,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         ConfigureAccountCardKind(modelBuilder); 
         ConfigureAccountCardGroup(modelBuilder);
         ConfigureAccountCardSubGroup(modelBuilder);
+        ConfigureAccountCard(modelBuilder);
     }
 
     private static void ConfigureIdentityTables(
@@ -350,6 +353,107 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         entity.HasOne(x => x.AccountCardGroup)
             .WithMany()
             .HasForeignKey(x => x.AccountCardGroupId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureAccountCard(
+    ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AccountCard>();
+
+        entity.ToTable("AccountCards");
+
+        entity.HasKey(x => x.Id);
+
+
+        // HSP00000001, HSP00000002...
+        entity.Property(x => x.AccountCode)
+            .HasMaxLength(20)
+            .HasComputedColumnSql(
+                "('HSP' + RIGHT('00000000' + CONVERT(varchar(20), [Id]), 8))",
+                stored: true);
+
+
+        entity.Property(x => x.Title)
+            .IsRequired()
+            .HasMaxLength(200);
+
+
+        entity.Property(x => x.TaxNumber)
+            .HasMaxLength(10);
+
+        entity.Property(x => x.IdentityNumber)
+            .HasMaxLength(11);
+
+
+        entity.Property(x => x.PhoneNumber)
+            .HasMaxLength(20);
+
+        entity.Property(x => x.Email)
+            .HasMaxLength(150);
+
+        entity.Property(x => x.ContactPerson)
+            .HasMaxLength(100);
+
+
+        entity.Property(x => x.Address)
+            .HasMaxLength(500);
+
+
+        ConfigureBaseEntity(entity);
+
+
+        // Hesap kodu her kayıt için benzersiz.
+        entity.HasIndex(x => x.AccountCode)
+            .IsUnique();
+
+
+        // Hesap Tipi
+        entity.HasOne(x => x.AccountCardType)
+            .WithMany()
+            .HasForeignKey(x => x.AccountCardTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // Hesap Türü
+        entity.HasOne(x => x.AccountCardKind)
+            .WithMany()
+            .HasForeignKey(x => x.AccountCardKindId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // Grup
+        entity.HasOne(x => x.AccountCardGroup)
+            .WithMany()
+            .HasForeignKey(x => x.AccountCardGroupId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // Alt Grup
+        entity.HasOne(x => x.AccountCardSubGroup)
+            .WithMany()
+            .HasForeignKey(x => x.AccountCardSubGroupId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // İl
+        entity.HasOne(x => x.City)
+            .WithMany()
+            .HasForeignKey(x => x.CityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // İlçe
+        entity.HasOne(x => x.District)
+            .WithMany()
+            .HasForeignKey(x => x.DistrictId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // Vergi Dairesi
+        entity.HasOne(x => x.TaxOffice)
+            .WithMany()
+            .HasForeignKey(x => x.TaxOfficeId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 

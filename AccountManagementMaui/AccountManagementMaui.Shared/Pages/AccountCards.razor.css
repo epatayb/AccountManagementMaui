@@ -1,0 +1,703 @@
+.account-cards-page {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 58px);
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 6px;
+    padding: 7px 10px 9px;
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.account-toolbar {
+    display: flex;
+    min-height: 40px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 4px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 1px solid #dfe5ec;
+    border-radius: 7px;
+    background: #ffffff;
+    scrollbar-width: thin;
+}
+
+.toolbar-title {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    white-space: nowrap;
+}
+
+    .toolbar-title h1 {
+        margin: 0;
+        color: #172033;
+        font-size: 0.92rem;
+        font-weight: 750;
+    }
+
+.toolbar-controls {
+    display: flex;
+    min-width: max-content;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+}
+
+.search-form {
+    display: flex;
+    min-width: max-content;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+}
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+.search-input {
+    width: 210px;
+    height: 29px;
+    box-sizing: border-box;
+    padding: 0 7px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #334155;
+    outline: none;
+    font-size: 0.68rem;
+}
+
+    .search-input::placeholder {
+        color: #94a3b8;
+    }
+
+    .search-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+    }
+
+
+/* =========================================================
+   FILTER SELECTS
+   ========================================================= */
+
+.filter-select {
+    width: 112px;
+    height: 29px;
+    box-sizing: border-box;
+    padding: 0 5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #ffffff;
+    color: #334155;
+    outline: none;
+    font-size: 0.67rem;
+    cursor: pointer;
+}
+
+    .filter-select:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+    }
+
+.type-filter {
+    width: 112px;
+}
+
+.kind-filter {
+    width: 115px;
+}
+
+.group-filter {
+    width: 112px;
+}
+
+.subgroup-filter {
+    width: 120px;
+}
+
+.city-filter {
+    width: 115px;
+}
+
+
+/* =========================================================
+   TOOLBAR BUTTONS
+   ========================================================= */
+
+.compact-button {
+    height: 29px;
+    box-sizing: border-box;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    font-size: 0.67rem;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+    .compact-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+    }
+
+.primary-button {
+    border-color: #4f46e5;
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+    .primary-button:hover:not(:disabled) {
+        background: #4338ca;
+    }
+
+.secondary-button {
+    border-color: #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+}
+
+    .secondary-button:hover:not(:disabled) {
+        background: #f1f5f9;
+    }
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+.compact-message {
+    display: flex;
+    min-height: 31px;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 9px;
+    border: 1px solid;
+    border-radius: 5px;
+    font-size: 0.72rem;
+}
+
+.success-message {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.error-message {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.message-button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   TABLE CONTAINER
+   ========================================================= */
+
+.table-shell {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #dfe5ec;
+    border-radius: 7px;
+    background: #ffffff;
+}
+
+.table-scroll {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.account-table {
+    width: 100%;
+    min-width: 1220px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.7rem;
+}
+
+    .account-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        height: 30px;
+        box-sizing: border-box;
+        padding: 0 7px;
+        border-bottom: 1px solid #cbd5e1;
+        background: #eef2f6;
+        color: #475569;
+        font-size: 0.63rem;
+        font-weight: 750;
+        letter-spacing: 0.02em;
+        text-align: left;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .account-table tbody td {
+        height: 42px;
+        box-sizing: border-box;
+        padding: 3px 7px;
+        border-bottom: 1px solid #edf0f3;
+        color: #334155;
+        vertical-align: middle;
+    }
+
+    .account-table tbody tr:hover td {
+        background: #f8fafc;
+    }
+
+
+    /* =========================================================
+   STICKY ACTION COLUMN
+   ========================================================= */
+
+    .account-table th:last-child,
+    .account-table td:last-child {
+        position: sticky;
+        right: 0;
+        z-index: 2;
+        background: #ffffff;
+        box-shadow: -4px 0 7px rgba(15, 23, 42, 0.035);
+    }
+
+    .account-table thead th:last-child {
+        z-index: 5;
+        background: #eef2f6;
+    }
+
+    .account-table tbody tr:hover td:last-child {
+        background: #f8fafc;
+    }
+
+
+/* =========================================================
+   COLUMN WIDTHS
+   ========================================================= */
+
+.account-column {
+    width: 250px;
+}
+
+.classification-column {
+    width: 245px;
+}
+
+.contact-column {
+    width: 195px;
+}
+
+.location-column {
+    width: 190px;
+}
+
+.audit-column {
+    width: 165px;
+}
+
+.actions-column {
+    width: 145px;
+}
+
+
+/* =========================================================
+   GENERIC CELLS
+   ========================================================= */
+
+.account-cell,
+.classification-cell,
+.contact-cell,
+.location-cell,
+.audit-cell {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1px;
+}
+
+
+    /* =========================================================
+   ACCOUNT CELL
+   ========================================================= */
+
+    .account-cell strong {
+        max-width: 235px;
+        overflow: hidden;
+        color: #172033;
+        font-size: 0.71rem;
+        font-weight: 750;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .account-cell span {
+        color: #64748b;
+        font-size: 0.62rem;
+    }
+
+    .account-cell small {
+        max-width: 230px;
+        overflow: hidden;
+        color: #64748b;
+        font-size: 0.6rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+
+/* =========================================================
+   CLASSIFICATION
+   ========================================================= */
+
+.classification-primary,
+.classification-secondary {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+}
+
+.classification-primary {
+    color: #334155;
+    font-size: 0.67rem;
+    font-weight: 650;
+}
+
+.classification-secondary {
+    color: #64748b;
+    font-size: 0.62rem;
+}
+
+    .classification-primary > span,
+    .classification-secondary > span {
+        max-width: 135px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+.type-badge {
+    display: inline-flex;
+    max-width: 105px !important;
+    min-height: 19px;
+    align-items: center;
+    padding: 0 5px;
+    border-radius: 4px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 0.61rem;
+    font-weight: 700;
+}
+
+.separator {
+    flex: 0 0 auto;
+    color: #cbd5e1;
+}
+
+
+/* =========================================================
+   CONTACT CELL
+   ========================================================= */
+
+.contact-cell span {
+    max-width: 185px;
+    overflow: hidden;
+    color: #334155;
+    font-size: 0.66rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contact-cell .secondary-text {
+    color: #64748b;
+    font-size: 0.62rem;
+}
+
+
+/* =========================================================
+   LOCATION CELL
+   ========================================================= */
+
+.location-cell strong {
+    max-width: 180px;
+    overflow: hidden;
+    color: #334155;
+    font-size: 0.66rem;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.location-cell span {
+    max-width: 180px;
+    overflow: hidden;
+    color: #64748b;
+    font-size: 0.61rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   AUDIT CELL
+   ========================================================= */
+
+.audit-cell strong {
+    max-width: 155px;
+    overflow: hidden;
+    color: #334155;
+    font-size: 0.64rem;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.audit-cell span {
+    color: #64748b;
+    font-size: 0.6rem;
+}
+
+.empty-value {
+    color: #94a3b8;
+}
+
+
+/* =========================================================
+   ROW ACTIONS
+   ========================================================= */
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.row-button {
+    height: 24px;
+    box-sizing: border-box;
+    padding: 0 7px;
+    border: 1px solid;
+    border-radius: 4px;
+    background: #ffffff;
+    font-size: 0.62rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+    .row-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+.edit-button {
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+    .edit-button:hover:not(:disabled) {
+        background: #eff6ff;
+    }
+
+.delete-button {
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+    .delete-button:hover:not(:disabled) {
+        background: #fef2f2;
+    }
+
+.table-state {
+    height: 90px !important;
+    color: #64748b !important;
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+
+/* =========================================================
+   FORM MODAL MESSAGE / LOAD
+   ========================================================= */
+
+.modal-message {
+    margin: 8px 12px 0;
+    padding: 6px 8px;
+    border: 1px solid #fecaca;
+    border-radius: 5px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 0.7rem;
+}
+
+.form-loading-state {
+    padding: 28px 15px;
+    color: #64748b;
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+
+/* =========================================================
+   DELETE MODAL
+   ========================================================= */
+
+.delete-modal-content {
+    padding: 14px;
+}
+
+.inline-modal-error {
+    margin: 0 0 10px;
+}
+
+.delete-record-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 5px;
+    background: #f8fafc;
+}
+
+    .delete-record-summary strong {
+        color: #1e293b;
+        font-size: 0.75rem;
+    }
+
+    .delete-record-summary span {
+        color: #64748b;
+        font-size: 0.64rem;
+    }
+
+.delete-confirmation {
+    margin: 0 0 12px;
+    color: #334155;
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.delete-field label {
+    display: block;
+    margin-bottom: 4px;
+    color: #334155;
+    font-size: 0.7rem;
+    font-weight: 650;
+}
+
+.required-mark {
+    color: #dc2626;
+}
+
+.delete-field .form-control {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 75px;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    outline: none;
+    resize: vertical;
+    font-size: 0.7rem;
+}
+
+    .delete-field .form-control:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+    }
+
+.validation-message {
+    display: block;
+    margin-top: 3px;
+    color: #dc2626;
+    font-size: 0.62rem;
+}
+
+.delete-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+}
+
+    .delete-modal-actions .btn {
+        min-height: 30px;
+        padding: 4px 10px;
+        font-size: 0.68rem;
+    }
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .search-input {
+        width: 190px;
+        min-width: 190px;
+    }
+
+    .filter-select {
+        min-width: 105px;
+    }
+}
+
+@media (max-width: 650px) {
+    .account-cards-page {
+        padding: 6px;
+    }
+
+    .account-toolbar {
+        gap: 7px;
+    }
+
+    .search-input {
+        width: 190px;
+        min-width: 190px;
+    }
+
+    .type-filter,
+    .kind-filter,
+    .group-filter,
+    .subgroup-filter,
+    .city-filter {
+        width: 110px;
+        min-width: 110px;
+    }
+}

@@ -9,6 +9,7 @@ using AccountManagementMaui.Shared.Services.AccountCardTypeServices;
 using AccountManagementMaui.Shared.Services.AccountCardKindServices;
 using AccountManagementMaui.Shared.Services.AccountCardGroupServices;
 using AccountManagementMaui.Shared.Services.AccountCardSubGroupServices;
+using AccountManagementMaui.Shared.Services.AccountCardServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,9 +70,15 @@ builder.Services.AddHttpClient<IAccountCardGroupService, AccountCardGroupService
         client.Timeout = TimeSpan.FromSeconds(30);
     });
 
-builder.Services.AddHttpClient<
-    IAccountCardSubGroupService,
-    AccountCardSubGroupService>(client =>
+builder.Services.AddHttpClient<IAccountCardSubGroupService, AccountCardSubGroupService>(
+    client =>
+    {
+        client.BaseAddress = new Uri(apiBaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+
+builder.Services.AddHttpClient<IAccountCardService, AccountCardService>(
+    client =>
     {
         client.BaseAddress = new Uri(apiBaseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);

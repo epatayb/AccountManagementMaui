@@ -1,0 +1,173 @@
+.account-card-form {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 8px 12px 10px;
+}
+
+.form-error-message {
+    padding: 6px 8px;
+    border: 1px solid #fecaca;
+    border-radius: 5px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 0.72rem;
+}
+
+
+/* SECTIONS */
+
+.compact-section {
+    padding: 7px 9px 8px;
+    border: 1px solid #dde4ec;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 6px;
+    color: #172033;
+    font-size: 0.74rem;
+    font-weight: 750;
+}
+
+    .section-title small {
+        color: #64748b;
+        font-size: 0.62rem;
+        font-weight: 500;
+    }
+
+
+/* GRID */
+
+.form-grid {
+    display: grid;
+    gap: 6px 8px;
+}
+
+.account-grid {
+    grid-template-columns: minmax(260px, 1.7fr) minmax(150px, 0.65fr) minmax(150px, 0.65fr);
+}
+
+.two-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.address-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.contact-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+
+/* FIELD */
+
+.form-field {
+    min-width: 0;
+}
+
+    .form-field label {
+        display: block;
+        margin-bottom: 3px;
+        color: #334155;
+        font-size: 0.66rem;
+        font-weight: 650;
+    }
+
+        .form-field label span {
+            color: #dc2626;
+        }
+
+.form-control {
+    width: 100%;
+    height: 31px;
+    box-sizing: border-box;
+    padding: 3px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #fff;
+    color: #1e293b;
+    outline: none;
+    font-size: 0.72rem;
+}
+
+    .form-control:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+    }
+
+    .form-control:disabled {
+        background: #f1f5f9;
+        color: #94a3b8;
+    }
+
+    .form-control::placeholder {
+        color: #94a3b8;
+    }
+
+select.form-control {
+    padding-right: 24px;
+}
+
+.address-field {
+    margin-top: 6px;
+}
+
+.validation-message {
+    display: block;
+    margin-top: 2px;
+    color: #dc2626;
+    font-size: 0.6rem;
+}
+
+
+/* ACTIONS */
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-top: 2px;
+}
+
+    .form-actions .btn {
+        min-width: 90px;
+        min-height: 31px;
+        padding: 4px 10px;
+        font-size: 0.7rem;
+    }
+
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+    .account-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .title-field {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 650px) {
+    .account-card-form {
+        padding: 7px;
+    }
+
+    .account-grid,
+    .two-grid,
+    .address-grid,
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .title-field {
+        grid-column: auto;
+    }
+}
