@@ -27,5 +27,7 @@ namespace AccountManagementMaui.Api.Entities
         public int? ModifiedByUserId { get; set; }
 
         public AppUser? ModifiedByUser { get; set; }
+
+        public ICollection<AppRefreshToken> RefreshTokens { get; set; } = [];
     }
 }

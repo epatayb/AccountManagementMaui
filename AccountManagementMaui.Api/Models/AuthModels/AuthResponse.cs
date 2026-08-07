@@ -1,0 +1,16 @@
+﻿namespace AccountManagementMaui.Api.Models.AuthModels;
+
+public class AuthResponse
+{
+    public string AccessToken { get; set; } = string.Empty;
+
+    public DateTime AccessTokenExpiresAtUtc { get; set; }
+
+
+    public string RefreshToken { get; set; } = string.Empty;
+
+    public DateTime RefreshTokenExpiresAtUtc { get; set; }
+
+
+    public AuthUserDto User { get; set; } = new();
+}

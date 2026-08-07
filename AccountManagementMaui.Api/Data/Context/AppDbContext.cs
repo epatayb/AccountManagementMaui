@@ -36,6 +36,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
     public DbSet<AccountCard> AccountCards => Set<AccountCard>();
 
+    public DbSet<AppRefreshToken> AppRefreshToken => Set<AppRefreshToken>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -50,6 +52,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         ConfigureAccountCardGroup(modelBuilder);
         ConfigureAccountCardSubGroup(modelBuilder);
         ConfigureAccountCard(modelBuilder);
+        ConfigureRefreshToken(modelBuilder);
     }
 
     private static void ConfigureIdentityTables(
@@ -455,6 +458,49 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .WithMany()
             .HasForeignKey(x => x.TaxOfficeId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureRefreshToken(
+    ModelBuilder modelBuilder)
+    {
+        var entity =
+            modelBuilder.Entity<AppRefreshToken>();
+
+
+        entity.ToTable("RefreshTokens");
+
+
+        entity.HasKey(x => x.Id);
+
+
+        entity.Property(x => x.TokenHash)
+            .IsRequired()
+            .HasMaxLength(128);
+
+
+        entity.Property(x => x.ReplacedByTokenHash)
+            .HasMaxLength(128);
+
+
+        entity.Property(x => x.CreatedAtUtc)
+            .IsRequired();
+
+
+        entity.Property(x => x.ExpiresAtUtc)
+            .IsRequired();
+
+
+        entity.HasIndex(x => x.TokenHash)
+            .IsUnique();
+
+
+        entity.HasIndex(x => x.UserId);
+
+
+        entity.HasOne(x => x.User)
+            .WithMany(x => x.RefreshTokens)
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     public override int SaveChanges()
