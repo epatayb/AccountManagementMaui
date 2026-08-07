@@ -3,7 +3,7 @@
 <header class="top-navbar">
     <div class="top-navbar-inner">
         <NavLink class="brand"
-                 href="/"
+                 href="/account-cards"
                  Match="NavLinkMatch.All"
                  @onclick="CloseMenu">
 
@@ -23,10 +23,17 @@
 
         <nav class="top-nav-links @GetMenuClass()">
             <NavLink class="top-nav-link"
-                     href="/"
-                     Match="NavLinkMatch.All"
+                     href="/account-cards"
+                     Match="NavLinkMatch.Prefix"
                      @onclick="CloseMenu">
-                Ana Sayfa
+                Hesap Kartları
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/users"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Kullanıcılar
             </NavLink>
 
             <NavLink class="top-nav-link"
@@ -76,21 +83,7 @@
                      Match="NavLinkMatch.Prefix"
                      @onclick="CloseMenu">
                 Alt Gruplar
-            </NavLink>
-
-            <NavLink class="top-nav-link"
-                     href="/users"
-                     Match="NavLinkMatch.Prefix"
-                     @onclick="CloseMenu">
-                Kullanıcılar
-            </NavLink>
-
-            <NavLink class="top-nav-link"
-                     href="/account-cards"
-                     Match="NavLinkMatch.Prefix"
-                     @onclick="CloseMenu">
-                Hesap Kartları
-            </NavLink>
+            </NavLink>                  
         </nav>
     </div>
 </header>
