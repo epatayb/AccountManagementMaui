@@ -32,6 +32,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
     public DbSet<AccountCardGroup> AccountCardGroups => Set<AccountCardGroup>();
 
+    public DbSet<AccountCardSubGroup> AccountCardSubGroups => Set<AccountCardSubGroup>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -44,6 +46,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         ConfigureAccountCardType(modelBuilder);
         ConfigureAccountCardKind(modelBuilder); 
         ConfigureAccountCardGroup(modelBuilder);
+        ConfigureAccountCardSubGroup(modelBuilder);
     }
 
     private static void ConfigureIdentityTables(
@@ -319,6 +322,35 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         entity.HasIndex(x => x.GroupName)
             .IsUnique()
             .HasFilter("[IsDeleted] = 0");
+    }
+
+    private static void ConfigureAccountCardSubGroup(
+    ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AccountCardSubGroup>();
+
+        entity.ToTable("AccountCardSubGroups");
+
+        entity.HasKey(x => x.Id);
+
+        entity.Property(x => x.SubGroupName)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        ConfigureBaseEntity(entity);
+
+        entity.HasIndex(x => new
+        {
+            x.AccountCardGroupId,
+            x.SubGroupName
+        })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        entity.HasOne(x => x.AccountCardGroup)
+            .WithMany()
+            .HasForeignKey(x => x.AccountCardGroupId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     public override int SaveChanges()

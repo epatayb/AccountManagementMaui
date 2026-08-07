@@ -8,6 +8,7 @@ using AccountManagementMaui.Shared.Services.TaxOfficeServices;
 using AccountManagementMaui.Shared.Services.AccountCardTypeServices;
 using AccountManagementMaui.Shared.Services.AccountCardKindServices;
 using AccountManagementMaui.Shared.Services.AccountCardGroupServices;
+using AccountManagementMaui.Shared.Services.AccountCardSubGroupServices;
 
 namespace AccountManagementMaui;
 
@@ -86,6 +87,14 @@ public static class MauiProgram
             client.BaseAddress = new Uri(apiBaseUrl);
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+
+        builder.Services.AddHttpClient<
+    IAccountCardSubGroupService,
+    AccountCardSubGroupService>(client =>
+    {
+        client.BaseAddress = new Uri(apiBaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
 
         return builder.Build();
     }

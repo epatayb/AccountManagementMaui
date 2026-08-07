@@ -1,0 +1,46 @@
+.subgroup-form {
+    padding: 18px 20px;
+}
+
+.form-field {
+    margin-bottom: 12px;
+}
+
+    .form-field label {
+        display: block;
+        margin-bottom: 5px;
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 650;
+    }
+
+    .form-field .form-control {
+        width: 100%;
+        min-height: 36px;
+        border-radius: 6px;
+        font-size: 0.82rem;
+    }
+
+.required-mark {
+    color: #dc2626;
+}
+
+.validation-message {
+    display: block;
+    margin-top: 4px;
+    color: #dc2626;
+    font-size: 0.72rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+}
+
+    .form-actions .btn {
+        min-width: 90px;
+    }

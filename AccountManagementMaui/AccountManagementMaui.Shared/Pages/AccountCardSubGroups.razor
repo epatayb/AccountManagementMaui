@@ -1,0 +1,811 @@
+﻿@page "/card-subgroups"
+
+@using System.Globalization
+@using AccountManagementMaui.Shared.Components.AccountCardSubGroupComponents
+@using AccountManagementMaui.Shared.Components.Common
+@using AccountManagementMaui.Shared.Models.AccountCardGroupModels
+@using AccountManagementMaui.Shared.Models.AccountCardSubGroupModels
+@using AccountManagementMaui.Shared.Services.AccountCardGroupServices
+@using AccountManagementMaui.Shared.Services.AccountCardSubGroupServices
+@using AccountManagementMaui.Shared.Services.Common
+
+@inject IAccountCardGroupService AccountCardGroupService
+@inject IAccountCardSubGroupService AccountCardSubGroupService
+
+<PageTitle>Hesap Kart Alt Grupları</PageTitle>
+
+<div class="definition-page">
+
+    <header class="definition-toolbar">
+
+        <div class="toolbar-title">
+            <h1>Hesap Kart Alt Grupları</h1>
+        </div>
+
+        <div class="toolbar-controls">
+
+            <form class="search-form"
+                  @onsubmit="SearchAsync"
+                  @onsubmit:preventDefault>
+
+                <select class="group-filter"
+                        disabled="@_isLoading"
+                        @bind="_selectedGroupId">
+
+                    <option value="">
+                        Tüm Gruplar
+                    </option>
+
+                    @foreach (var group in _groups)
+                    {
+                        <option value="@group.Id">
+                            @group.GroupName
+                        </option>
+                    }
+
+                </select>
+
+                <input type="search"
+                       class="search-input"
+                       placeholder="Alt grup veya grup adı ara..."
+                       maxlength="100"
+                       autocomplete="off"
+                       @bind="_search"
+                       @bind:event="oninput" />
+
+                <button type="submit"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading">
+                    Ara
+                </button>
+
+                @if (HasActiveFilter())
+                {
+                    <button type="button"
+                            class="compact-button secondary-button"
+                            disabled="@_isLoading"
+                            @onclick="ClearFiltersAsync">
+                        Temizle
+                    </button>
+                }
+
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="RefreshAsync">
+                    Yenile
+                </button>
+
+            </form>
+
+            <button type="button"
+                    class="compact-button primary-button"
+                    disabled="@IsAnyOperationRunning()"
+                    @onclick="OpenCreateModal">
+                Yeni Alt Grup
+            </button>
+
+        </div>
+
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="compact-message success-message">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_loadErrorMessage))
+    {
+        <div class="compact-message error-message">
+
+            <span>@_loadErrorMessage</span>
+
+            <button type="button"
+                    class="message-button"
+                    @onclick="RefreshAsync">
+                Tekrar Dene
+            </button>
+
+        </div>
+    }
+
+    <section class="table-shell">
+
+        <div class="table-scroll">
+
+            <table class="definition-table">
+
+                <thead>
+                    <tr>
+                        <th class="subgroup-column">
+                            Alt Grup
+                        </th>
+
+                        <th class="group-column">
+                            Bağlı Grup
+                        </th>
+
+                        <th class="audit-column">
+                            Oluşturulma
+                        </th>
+
+                        <th class="audit-column">
+                            Güncellenme
+                        </th>
+
+                        <th class="actions-column">
+                            İşlemler
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (_isLoading && _items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5"
+                                class="table-state">
+                                Alt gruplar yükleniyor...
+                            </td>
+                        </tr>
+                    }
+                    else if (_items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5"
+                                class="table-state">
+                                Alt grup bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _items)
+                        {
+                            <tr>
+
+                                <td>
+                                    <div class="subgroup-cell">
+
+                                        <strong>
+                                            @item.SubGroupName
+                                        </strong>
+
+                                        <span>
+                                            #@item.Id
+                                        </span>
+
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="group-name">
+                                        @item.AccountCardGroupName
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="audit-cell">
+
+                                        <strong>
+                                            @GetAuditUserName(
+                                            item.CreatedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(item.CreatedDate)
+                                </span>
+
+                            </div>
+                        </td>
+
+                        <td>
+
+                            @if (item.ModifiedDate.HasValue)
+                                    {
+                                        <div class="audit-cell">
+
+                                            <strong>
+                                                @GetAuditUserName(
+                                                item.ModifiedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        item.ModifiedDate.Value)
+                                </span>
+
+                            </div>
+                                                        }
+                                    else
+                                    {
+                                        <span class="empty-value">
+                                            -
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <td>
+                                    <div class="row-actions">
+
+                                        <button type="button"
+                                                class="row-button edit-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenEditModal(item)">
+                                            Güncelle
+                                        </button>
+
+                                        <button type="button"
+                                                class="row-button delete-button"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenDeleteModal(item)">
+                                            Sil
+                                        </button>
+
+                                    </div>
+                                </td>
+
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+<AppModal IsOpen="_showFormModal"
+          Title="@GetFormTitle()"
+          Description="@GetFormDescription()"
+          Size="medium"
+          DisableClose="_isSaving"
+          OnClose="CloseFormModal">
+
+    @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+    {
+        <div class="modal-message">
+            @_modalErrorMessage
+        </div>
+    }
+
+    <AccountCardSubGroupForm Model="_formModel"
+                             Groups="_groups"
+                             SubmitText="@GetSubmitText()"
+                             IsSubmitting="_isSaving"
+                             OnValidSubmit="SaveAsync"
+                             OnCancel="CloseFormModal" />
+
+</AppModal>
+
+<AppModal IsOpen="@(_itemPendingDelete is not null)"
+          Title="Kaydı Sil"
+          Description="Silme işlemini tamamlamak için açıklama girin."
+          Size="small"
+          DisableClose="_isDeleting"
+          OnClose="CloseDeleteModal">
+
+    <div class="delete-modal-content">
+
+        @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+        {
+            <div class="modal-message inline-modal-error">
+                @_modalErrorMessage
+            </div>
+        }
+
+        @if (_itemPendingDelete is not null)
+        {
+            <div class="delete-record-summary">
+
+                <strong>
+                    @_itemPendingDelete.SubGroupName
+                </strong>
+
+                <span>
+                    @_itemPendingDelete.AccountCardGroupName
+                </span>
+
+            </div>
+
+            <p class="delete-confirmation">
+                Bu alt grup kaydını silmek istediğinize emin misiniz?
+            </p>
+
+            <EditForm Model="_deleteModel"
+                      OnValidSubmit="DeleteAsync">
+
+                <DataAnnotationsValidator />
+
+                <div class="delete-field">
+
+                    <label for="delete-reason">
+                        Silme Açıklaması
+                    </label>
+
+                    <InputTextArea id="delete-reason"
+                                   class="form-control"
+                                   rows="4"
+                                   maxlength="500"
+                                   disabled="@_isDeleting"
+                                   @bind-Value="_deleteModel.DeleteReason" />
+
+                    <ValidationMessage For="@(() => _deleteModel.DeleteReason)" />
+
+                </div>
+
+                <div class="delete-modal-actions">
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled="@_isDeleting"
+                            @onclick="CloseDeleteModal">
+                        Vazgeç
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-danger"
+                            disabled="@_isDeleting">
+
+                        @if (_isDeleting)
+                        {
+                            <span>Siliniyor...</span>
+                        }
+                        else
+                        {
+                            <span>Kaydı Sil</span>
+                        }
+
+                    </button>
+
+                </div>
+
+            </EditForm>
+        }
+
+    </div>
+
+</AppModal>
+
+@code {
+    private static readonly CultureInfo TurkishCulture =
+        CultureInfo.GetCultureInfo("tr-TR");
+
+    private List<AccountCardGroupListDto> _groups = [];
+    private List<AccountCardSubGroupListDto> _items = [];
+
+    private AccountCardSubGroupFormModel _formModel = new();
+    private DeleteAccountCardSubGroupRequest _deleteModel = new();
+
+    private AccountCardSubGroupListDto? _itemPendingDelete;
+
+    private int? _editingId;
+    private int? _selectedGroupId;
+
+    private string _search = string.Empty;
+
+    private string? _loadErrorMessage;
+    private string? _modalErrorMessage;
+    private string? _successMessage;
+
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _isDeleting;
+    private bool _showFormModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPageAsync();
+    }
+
+    private async Task LoadPageAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var groupsTask =
+                AccountCardGroupService.GetAllAsync();
+
+            var itemsTask =
+                AccountCardSubGroupService.GetAllAsync(
+                    _search,
+                    _selectedGroupId);
+
+            await Task.WhenAll(
+                groupsTask,
+                itemsTask);
+
+            _groups = (await groupsTask)
+                .OrderBy(x => x.GroupName)
+                .ToList();
+
+            _items =
+                (await itemsTask).ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Alt grup bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadItemsAsync()
+    {
+        _isLoading = true;
+        _loadErrorMessage = null;
+
+        try
+        {
+            var items =
+                await AccountCardSubGroupService.GetAllAsync(
+                    _search,
+                    _selectedGroupId);
+
+            _items = items.ToList();
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Alt gruplar yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        ResetDeleteModal();
+
+        _editingId = null;
+
+        _formModel =
+            new AccountCardSubGroupFormModel
+            {
+                AccountCardGroupId =
+                    _selectedGroupId ?? 0
+            };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        _showFormModal = true;
+    }
+
+    private void OpenEditModal(
+        AccountCardSubGroupListDto item)
+    {
+        ResetDeleteModal();
+
+        _editingId = item.Id;
+
+        _formModel =
+            new AccountCardSubGroupFormModel
+            {
+                AccountCardGroupId =
+                    item.AccountCardGroupId,
+
+                SubGroupName =
+                    item.SubGroupName
+            };
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        _showFormModal = true;
+    }
+
+    private void CloseFormModal()
+    {
+        if (_isSaving)
+        {
+            return;
+        }
+
+        ResetFormModal();
+    }
+
+    private void ResetFormModal()
+    {
+        _showFormModal = false;
+        _editingId = null;
+
+        _formModel =
+            new AccountCardSubGroupFormModel();
+
+        _modalErrorMessage = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        _isSaving = true;
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            if (_editingId.HasValue)
+            {
+                var request =
+                    new UpdateAccountCardSubGroupRequest
+                    {
+                        AccountCardGroupId =
+                            _formModel.AccountCardGroupId,
+
+                        SubGroupName =
+                            _formModel.SubGroupName.Trim()
+                    };
+
+                var updated =
+                    await AccountCardSubGroupService.UpdateAsync(
+                        _editingId.Value,
+                        request);
+
+                _successMessage =
+                    $"{updated.SubGroupName} güncellendi.";
+            }
+            else
+            {
+                var request =
+                    new CreateAccountCardSubGroupRequest
+                    {
+                        AccountCardGroupId =
+                            _formModel.AccountCardGroupId,
+
+                        SubGroupName =
+                            _formModel.SubGroupName.Trim()
+                    };
+
+                var created =
+                    await AccountCardSubGroupService.CreateAsync(
+                        request);
+
+                _successMessage =
+                    $"{created.SubGroupName} eklendi.";
+            }
+
+            ResetFormModal();
+
+            await LoadItemsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Kayıt isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Alt grup kaydedilirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void OpenDeleteModal(
+        AccountCardSubGroupListDto item)
+    {
+        ResetFormModal();
+
+        _itemPendingDelete = item;
+
+        _deleteModel =
+            new DeleteAccountCardSubGroupRequest();
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+    }
+
+    private void CloseDeleteModal()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+        ResetDeleteModal();
+    }
+
+    private void ResetDeleteModal()
+    {
+        _itemPendingDelete = null;
+
+        _deleteModel =
+            new DeleteAccountCardSubGroupRequest();
+
+        _modalErrorMessage = null;
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_itemPendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+
+        _modalErrorMessage = null;
+        _successMessage = null;
+
+        var deletedName =
+            _itemPendingDelete.SubGroupName;
+
+        try
+        {
+            _deleteModel.DeleteReason =
+                _deleteModel.DeleteReason.Trim();
+
+            await AccountCardSubGroupService.DeleteAsync(
+                _itemPendingDelete.Id,
+                _deleteModel);
+
+            ResetDeleteModal();
+
+            _successMessage =
+                $"{deletedName} silindi.";
+
+            await LoadItemsAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Silme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Alt grup silinirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        _successMessage = null;
+        await LoadItemsAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _search = string.Empty;
+        _selectedGroupId = null;
+
+        _successMessage = null;
+
+        await LoadItemsAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _successMessage = null;
+
+        await LoadPageAsync();
+    }
+
+    private bool HasActiveFilter()
+    {
+        return
+            !string.IsNullOrWhiteSpace(_search) ||
+            _selectedGroupId.HasValue;
+    }
+
+    private bool IsAnyOperationRunning()
+    {
+        return
+            _isLoading ||
+            _isSaving ||
+            _isDeleting ||
+            _groups.Count == 0;
+    }
+
+    private static string GetAuditUserName(
+        string? fullName)
+    {
+        return string.IsNullOrWhiteSpace(fullName)
+            ? "Sistem"
+            : fullName;
+    }
+
+    private static string FormatDate(
+        DateTime date)
+    {
+        return date
+            .ToLocalTime()
+            .ToString(
+                "dd.MM.yyyy HH:mm",
+                TurkishCulture);
+    }
+
+    private string GetFormTitle()
+    {
+        return _editingId.HasValue
+            ? "Hesap Kart Alt Grubunu Güncelle"
+            : "Yeni Hesap Kart Alt Grubu";
+    }
+
+    private string GetFormDescription()
+    {
+        return _editingId.HasValue
+            ? "Bağlı grubu veya alt grup adını düzenleyin."
+            : "Bir hesap kart grubu seçin ve bu gruba bağlı alt grup tanımlayın.";
+    }
+
+    private string GetSubmitText()
+    {
+        return _editingId.HasValue
+            ? "Kaydet"
+            : "Alt Grup Ekle";
+    }
+}
