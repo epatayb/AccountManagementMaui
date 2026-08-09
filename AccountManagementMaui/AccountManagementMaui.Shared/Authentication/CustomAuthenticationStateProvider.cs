@@ -10,19 +10,30 @@ public class CustomAuthenticationStateProvider
 {
     private readonly IAuthService _authService;
 
+    private static readonly AuthenticationState AnonymousState =
+        new(
+            new ClaimsPrincipal(
+                new ClaimsIdentity()));
 
-    private static readonly AuthenticationState
-        AnonymousState =
+    private AuthenticationState _currentState =
+        AnonymousState;
+
+    private readonly TaskCompletionSource<AuthenticationState>
+        _initialStateSource =
             new(
-                new ClaimsPrincipal(
-                    new ClaimsIdentity()));
+                TaskCreationOptions
+                    .RunContinuationsAsynchronously);
+
+    private readonly SemaphoreSlim _initializeLock =
+        new(1, 1);
+
+    private bool _isInitialized;
 
 
     public CustomAuthenticationStateProvider(
         IAuthService authService)
     {
-        _authService =
-            authService;
+        _authService = authService;
     }
 
 
@@ -30,52 +41,65 @@ public class CustomAuthenticationStateProvider
     // CURRENT AUTH STATE
     // =========================================================
 
-    public override async Task<AuthenticationState>
+    public override Task<AuthenticationState>
         GetAuthenticationStateAsync()
     {
+        if (_isInitialized)
+        {
+            return Task.FromResult(
+                _currentState);
+        }
+
+        return _initialStateSource.Task;
+    }
+
+
+    // =========================================================
+    // INITIALIZE
+    // =========================================================
+
+    public async Task InitializeAsync()
+    {
+        if (_isInitialized)
+        {
+            return;
+        }
+
+        await _initializeLock.WaitAsync();
+
         try
         {
-            var session =
-                await _authService.GetSessionAsync();
+            if (_isInitialized)
+            {
+                return;
+            }
 
+            AuthResponse? session;
+
+            try
+            {
+                session =
+                    await _authService
+                        .GetValidSessionAsync();
+            }
+            catch
+            {
+                session = null;
+            }
 
             if (session is null)
             {
-                return AnonymousState;
+                SetAnonymous();
+
+                return;
             }
 
-
-            // Refresh token da bittiyse oturum tamamen sona ermiştir.
-            if (session.RefreshTokenExpiresAtUtc <=
-                DateTime.UtcNow)
-            {
-                await _authService.LogoutAsync();
-
-                return AnonymousState;
-            }
-
-
-            // Access token süresi bittiyse yenile.
-            if (session.AccessTokenExpiresAtUtc <=
-                DateTime.UtcNow)
-            {
-                session =
-                    await TryRefreshAsync();
-
-
-                if (session is null)
-                {
-                    return AnonymousState;
-                }
-            }
-
-
-            return CreateAuthenticationState(
+            SetAuthenticated(
                 session.User);
         }
-        catch
+        finally
         {
-            return AnonymousState;
+            _initializeLock.Release();
         }
     }
 
@@ -87,14 +111,8 @@ public class CustomAuthenticationStateProvider
     public void NotifyUserAuthenticated(
         AuthResponse authResponse)
     {
-        var authenticationState =
-            CreateAuthenticationState(
-                authResponse.User);
-
-
-        NotifyAuthenticationStateChanged(
-            Task.FromResult(
-                authenticationState));
+        SetAuthenticated(
+            authResponse.User);
     }
 
 
@@ -104,9 +122,7 @@ public class CustomAuthenticationStateProvider
 
     public void NotifyUserLoggedOut()
     {
-        NotifyAuthenticationStateChanged(
-            Task.FromResult(
-                AnonymousState));
+        SetAnonymous();
     }
 
 
@@ -116,31 +132,68 @@ public class CustomAuthenticationStateProvider
 
     public async Task RefreshAuthenticationStateAsync()
     {
-        var state =
-            await GetAuthenticationStateAsync();
+        try
+        {
+            var session =
+                await _authService
+                    .GetValidSessionAsync();
 
+            if (session is null)
+            {
+                SetAnonymous();
 
-        NotifyAuthenticationStateChanged(
-            Task.FromResult(state));
+                return;
+            }
+
+            SetAuthenticated(
+                session.User);
+        }
+        catch
+        {
+            SetAnonymous();
+        }
     }
 
 
     // =========================================================
-    // REFRESH TOKEN
+    // INTERNAL STATE
     // =========================================================
 
-    private async Task<AuthResponse?>
-        TryRefreshAsync()
+    private void SetAuthenticated(
+        AuthUserDto user)
     {
-        try
+        var state =
+            CreateAuthenticationState(
+                user);
+
+        SetState(state);
+    }
+
+
+    private void SetAnonymous()
+    {
+        SetState(
+            AnonymousState);
+    }
+
+
+    private void SetState(
+        AuthenticationState state)
+    {
+        _currentState = state;
+
+        if (!_isInitialized)
         {
-            return await _authService
-                .RefreshAsync();
+            _isInitialized = true;
+
+            _initialStateSource
+                .TrySetResult(
+                    state);
         }
-        catch
-        {
-            return null;
-        }
+
+        NotifyAuthenticationStateChanged(
+            Task.FromResult(
+                state));
     }
 
 
@@ -180,7 +233,6 @@ public class CustomAuthenticationStateProvider
                     user.FullName)
             };
 
-
         if (!string.IsNullOrWhiteSpace(
             user.PhoneNumber))
         {
@@ -190,7 +242,6 @@ public class CustomAuthenticationStateProvider
                     user.PhoneNumber));
         }
 
-
         foreach (var role in user.Roles)
         {
             claims.Add(
@@ -199,18 +250,15 @@ public class CustomAuthenticationStateProvider
                     role));
         }
 
-
         var identity =
             new ClaimsIdentity(
                 claims,
                 authenticationType:
                     "Bearer");
 
-
         var principal =
             new ClaimsPrincipal(
                 identity);
-
 
         return new AuthenticationState(
             principal);

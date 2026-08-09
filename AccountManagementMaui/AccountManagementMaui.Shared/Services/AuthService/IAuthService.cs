@@ -24,6 +24,7 @@ public interface IAuthService
 
     Task<AuthResponse?> GetSessionAsync();
 
+    Task<AuthResponse?> GetValidSessionAsync(CancellationToken cancellationToken = default);
 
-    Task<bool> IsAuthenticatedAsync();
+    Task<bool> IsAuthenticatedAsync(CancellationToken cancellationToken = default);
 }

@@ -3,9 +3,11 @@ using AccountManagementMaui.Api.Entities;
 using AccountManagementMaui.Api.Models.AccountCardModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AccountManagementMaui.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class AccountCardsController : ControllerBase

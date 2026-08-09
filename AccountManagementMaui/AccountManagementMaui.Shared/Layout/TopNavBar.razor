@@ -1,11 +1,20 @@
-﻿@using Microsoft.AspNetCore.Components.Routing
+﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+
+@using AccountManagementMaui.Shared.Authentication
+@using AccountManagementMaui.Shared.Services.AuthServices
+
+@inject IAuthService AuthService
+@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
 
 <header class="top-navbar">
 
     <div class="top-navbar-inner">
 
         <NavLink class="brand"
-                 href="/"
+                 href="/account-cards"
                  Match="NavLinkMatch.All">
 
             <span class="brand-logo">
@@ -95,6 +104,57 @@
 
         </nav>
 
+        <AuthorizeView Context="authState">
+
+            <Authorized>
+
+                <div class="top-nav-user">
+
+                    <div class="top-nav-avatar">
+                        @GetInitials(authState.User)
+                    </div>
+
+
+                    <div class="top-nav-user-info">
+
+                        <strong title="@GetFullName(authState.User)">
+                            @GetFullName(authState.User)
+                        </strong>
+
+                        <span>
+                            @GetUserName(authState.User)
+                        </span>
+
+                    </div>
+
+
+                    <button type="button"
+                            class="logout-button"
+                            title="Oturumu kapat"
+                            disabled="@_isLoggingOut"
+                            @onclick="LogoutAsync">
+
+                        @if (_isLoggingOut)
+                        {
+                            <span>
+                                Çıkılıyor...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Çıkış
+                            </span>
+                        }
+
+                    </button>
+
+                </div>
+
+            </Authorized>
+
+        </AuthorizeView>
+
     </div>
 
 </header>
@@ -102,6 +162,8 @@
 
 @code {
     private bool _isMenuOpen;
+
+    private bool _isLoggingOut;
 
 
     private void ToggleMenu()
@@ -121,5 +183,130 @@
         return _isMenuOpen
             ? "menu-open"
             : string.Empty;
+    }
+
+    private async Task LogoutAsync()
+    {
+        if (_isLoggingOut)
+        {
+            return;
+        }
+
+
+        _isLoggingOut = true;
+
+
+        try
+        {
+            await AuthService.LogoutAsync();
+        }
+        finally
+        {
+            AuthStateProvider
+                .NotifyUserLoggedOut();
+
+
+            _isMenuOpen =
+                false;
+
+
+            _isLoggingOut =
+                false;
+
+
+            Navigation.NavigateTo(
+                "/login",
+                replace: true);
+        }
+    }
+
+
+    // =========================================================
+    // USER INFO
+    // =========================================================
+
+    private static string GetFullName(
+        ClaimsPrincipal user)
+    {
+        var fullName =
+            user.FindFirst("FullName")
+                ?.Value;
+
+
+        if (!string.IsNullOrWhiteSpace(
+            fullName))
+        {
+            return fullName;
+        }
+
+
+        var firstName =
+            user.FindFirst(
+                ClaimTypes.GivenName)
+                ?.Value;
+
+        var lastName =
+            user.FindFirst(
+                ClaimTypes.Surname)
+                ?.Value;
+
+
+        var result =
+            $"{firstName} {lastName}".Trim();
+
+
+        return string.IsNullOrWhiteSpace(result)
+            ? "Kullanıcı"
+            : result;
+    }
+
+
+    private static string GetUserName(
+        ClaimsPrincipal user)
+    {
+        return user.FindFirst(
+                   ClaimTypes.Name)
+                   ?.Value
+               ?? user.Identity?.Name
+               ?? string.Empty;
+    }
+
+
+    private static string GetInitials(
+        ClaimsPrincipal user)
+    {
+        var firstName =
+            user.FindFirst(
+                ClaimTypes.GivenName)
+                ?.Value;
+
+        var lastName =
+            user.FindFirst(
+                ClaimTypes.Surname)
+                ?.Value;
+
+
+        var firstInitial =
+            string.IsNullOrWhiteSpace(firstName)
+                ? string.Empty
+                : firstName[..1]
+                    .ToUpperInvariant();
+
+
+        var lastInitial =
+            string.IsNullOrWhiteSpace(lastName)
+                ? string.Empty
+                : lastName[..1]
+                    .ToUpperInvariant();
+
+
+        var result =
+            firstInitial +
+            lastInitial;
+
+
+        return string.IsNullOrWhiteSpace(result)
+            ? "K"
+            : result;
     }
 }

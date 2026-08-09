@@ -11,16 +11,16 @@ public class AuthService : IAuthService
 
     private readonly IAuthTokenStorage _tokenStorage;
 
+    private readonly SemaphoreSlim _refreshLock =
+        new(1, 1);
 
     public AuthService(
         HttpClient httpClient,
         IAuthTokenStorage tokenStorage)
     {
-        _httpClient =
-            httpClient;
+        _httpClient = httpClient;
 
-        _tokenStorage =
-            tokenStorage;
+        _tokenStorage = tokenStorage;
     }
 
 
@@ -110,77 +110,78 @@ public class AuthService : IAuthService
     public async Task<AuthResponse?> RefreshAsync(
         CancellationToken cancellationToken = default)
     {
-        var session =
-            await _tokenStorage.GetAsync();
+        await _refreshLock.WaitAsync(cancellationToken);
 
-
-        if (session is null ||
-            string.IsNullOrWhiteSpace(
-                session.RefreshToken))
+        try
         {
-            return null;
-        }
+            var session =
+                await _tokenStorage.GetAsync();
 
-
-        // Refresh token da dolmuşsa API'ye boşuna gitme.
-        if (session.RefreshTokenExpiresAtUtc <=
-            DateTime.UtcNow)
-        {
-            await _tokenStorage.ClearAsync();
-
-            return null;
-        }
-
-
-        var request =
-            new RefreshTokenRequest
+            if (session is null ||
+                string.IsNullOrWhiteSpace(
+                    session.RefreshToken))
             {
-                RefreshToken =
-                    session.RefreshToken
-            };
+                return null;
+            }
 
+            // Başka bir işlem biz beklerken token'ı
+            // yenilemiş olabilir.
+            if (session.AccessTokenExpiresAtUtc >
+                DateTime.UtcNow.AddSeconds(10))
+            {
+                return session;
+            }
 
-        using var response =
-            await _httpClient.PostAsJsonAsync(
-                "api/auth/refresh",
-                request,
-                cancellationToken);
+            if (session.RefreshTokenExpiresAtUtc <=
+                DateTime.UtcNow)
+            {
+                await _tokenStorage.ClearAsync();
 
+                return null;
+            }
 
-        if (!response.IsSuccessStatusCode)
-        {
-            await _tokenStorage.ClearAsync();
+            var request =
+                new RefreshTokenRequest
+                {
+                    RefreshToken =
+                        session.RefreshToken
+                };
 
+            using var response =
+                await _httpClient.PostAsJsonAsync(
+                    "api/auth/refresh",
+                    request,
+                    cancellationToken);
 
-            await EnsureSuccessAsync(
-                response,
-                cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                await _tokenStorage.ClearAsync();
 
+                return null;
+            }
 
-            return null;
+            var authResponse =
+                await response.Content
+                    .ReadFromJsonAsync<AuthResponse>(
+                        cancellationToken:
+                            cancellationToken);
+
+            if (authResponse is null)
+            {
+                await _tokenStorage.ClearAsync();
+
+                return null;
+            }
+
+            await _tokenStorage.SaveAsync(
+                authResponse);
+
+            return authResponse;
         }
-
-
-        var authResponse =
-            await response.Content
-                .ReadFromJsonAsync<AuthResponse>(
-                    cancellationToken:
-                        cancellationToken);
-
-
-        if (authResponse is null)
+        finally
         {
-            await _tokenStorage.ClearAsync();
-
-            return null;
+            _refreshLock.Release();
         }
-
-
-        await _tokenStorage.SaveAsync(
-            authResponse);
-
-
-        return authResponse;
     }
 
 
@@ -199,7 +200,9 @@ public class AuthService : IAuthService
         {
             if (session is not null &&
                 !string.IsNullOrWhiteSpace(
-                    session.RefreshToken))
+                     session.RefreshToken) &&
+                session.RefreshTokenExpiresAtUtc >
+                    DateTime.UtcNow)
             {
                 var request =
                     new LogoutRequest
@@ -236,48 +239,56 @@ public class AuthService : IAuthService
         return _tokenStorage.GetAsync();
     }
 
-
-    public async Task<bool> IsAuthenticatedAsync()
+    public async Task<AuthResponse?> GetValidSessionAsync(
+        CancellationToken cancellationToken = default)
     {
         var session =
             await _tokenStorage.GetAsync();
 
-
         if (session is null)
         {
-            return false;
+            return null;
         }
-
 
         if (string.IsNullOrWhiteSpace(
-                session.AccessToken))
-        {
-            return false;
-        }
-
-
-        // Access token hâlâ geçerliyse giriş var.
-        if (session.AccessTokenExpiresAtUtc >
-            DateTime.UtcNow)
-        {
-            return true;
-        }
-
-
-        // Access token bitmiş.
-        // Refresh token varsa yenilemeyi dene.
-        try
-        {
-            var refreshed =
-                await RefreshAsync();
-
-
-            return refreshed is not null;
-        }
-        catch
+            session.AccessToken))
         {
             await _tokenStorage.ClearAsync();
 
+            return null;
+        }
+
+        if (session.RefreshTokenExpiresAtUtc <=
+            DateTime.UtcNow)
+        {
+            await _tokenStorage.ClearAsync();
+
+            return null;
+        }
+
+        if (session.AccessTokenExpiresAtUtc >
+            DateTime.UtcNow.AddSeconds(10))
+        {
+            return session;
+        }
+
+        return await RefreshAsync(
+            cancellationToken);
+    }
+
+    public async Task<bool> IsAuthenticatedAsync(
+       CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var session =
+                await GetValidSessionAsync(
+                    cancellationToken);
+
+            return session is not null;
+        }
+        catch
+        {
             return false;
         }
     }

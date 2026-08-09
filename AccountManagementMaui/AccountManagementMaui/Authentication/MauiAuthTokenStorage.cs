@@ -10,7 +10,6 @@ public class MauiAuthTokenStorage : IAuthTokenStorage
     private const string StorageKey =
         "lts_auth_session";
 
-
     private static readonly JsonSerializerOptions JsonOptions =
         new(JsonSerializerDefaults.Web);
 
@@ -22,7 +21,6 @@ public class MauiAuthTokenStorage : IAuthTokenStorage
             JsonSerializer.Serialize(
                 authResponse,
                 JsonOptions);
-
 
         await SecureStorage.Default.SetAsync(
             StorageKey,
@@ -38,12 +36,10 @@ public class MauiAuthTokenStorage : IAuthTokenStorage
                 await SecureStorage.Default.GetAsync(
                     StorageKey);
 
-
             if (string.IsNullOrWhiteSpace(json))
             {
                 return null;
             }
-
 
             return JsonSerializer.Deserialize<AuthResponse>(
                 json,

@@ -10,9 +10,7 @@ public class WebAuthTokenStorage : IAuthTokenStorage
     private const string StorageKey =
         "lts_auth_session";
 
-
     private readonly IJSRuntime _jsRuntime;
-
 
     private static readonly JsonSerializerOptions JsonOptions =
         new(JsonSerializerDefaults.Web);
@@ -21,8 +19,7 @@ public class WebAuthTokenStorage : IAuthTokenStorage
     public WebAuthTokenStorage(
         IJSRuntime jsRuntime)
     {
-        _jsRuntime =
-            jsRuntime;
+        _jsRuntime = jsRuntime;
     }
 
 
@@ -33,7 +30,6 @@ public class WebAuthTokenStorage : IAuthTokenStorage
             JsonSerializer.Serialize(
                 authResponse,
                 JsonOptions);
-
 
         await _jsRuntime.InvokeVoidAsync(
             "localStorage.setItem",
@@ -49,12 +45,10 @@ public class WebAuthTokenStorage : IAuthTokenStorage
                 "localStorage.getItem",
                 StorageKey);
 
-
         if (string.IsNullOrWhiteSpace(json))
         {
             return null;
         }
-
 
         try
         {
@@ -62,7 +56,7 @@ public class WebAuthTokenStorage : IAuthTokenStorage
                 json,
                 JsonOptions);
         }
-        catch
+        catch (JsonException)
         {
             await ClearAsync();
 

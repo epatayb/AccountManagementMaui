@@ -1,0 +1,22 @@
+﻿@using AccountManagementMaui.Shared.Authentication
+
+@inject CustomAuthenticationStateProvider AuthStateProvider
+
+@code {
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(
+        bool firstRender)
+    {
+        if (!firstRender ||
+            _initialized)
+        {
+            return;
+        }
+
+        _initialized = true;
+
+        await AuthStateProvider
+            .InitializeAsync();
+    }
+}

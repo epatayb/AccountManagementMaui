@@ -1,0 +1,377 @@
+﻿@page "/register"
+
+@using Microsoft.AspNetCore.Authorization
+
+@using AccountManagementMaui.Shared.Layout
+@using AccountManagementMaui.Shared.Models.AuthModels
+@using AccountManagementMaui.Shared.Services.AuthServices
+@using AccountManagementMaui.Shared.Services.Common
+
+@attribute [AllowAnonymous]
+@layout AuthLayout
+
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Hesap Oluştur</PageTitle>
+
+
+<div class="register-page">
+
+    <div class="register-card">
+
+        <div class="register-header">
+
+            <div class="register-logo">
+                LTS
+            </div>
+
+            <div class="register-header-content">
+
+                <h1>
+                    Hesap Oluştur
+                </h1>
+
+                <p>
+                    Sisteme erişmek için kullanıcı hesabınızı oluşturun.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        @if (!string.IsNullOrWhiteSpace(
+                _errorMessage))
+        {
+            <div class="register-error">
+
+                @_errorMessage
+
+            </div>
+        }
+
+
+        <EditForm Model="_model"
+                  OnValidSubmit="RegisterAsync">
+
+            <DataAnnotationsValidator />
+
+
+            <div class="register-grid">
+
+                <div class="form-field">
+
+                    <label>
+                        Ad
+                    </label>
+
+                    <InputText class="form-control"
+                               maxlength="50"
+                               autocomplete="given-name"
+                               placeholder="Ad"
+                               disabled="@_isSubmitting"
+                               @bind-Value="_model.FirstName" />
+
+                    <ValidationMessage For="@(() => _model.FirstName)" />
+
+                </div>
+
+
+                <div class="form-field">
+
+                    <label>
+                        Soyad
+                    </label>
+
+                    <InputText class="form-control"
+                               maxlength="50"
+                               autocomplete="family-name"
+                               placeholder="Soyad"
+                               disabled="@_isSubmitting"
+                               @bind-Value="_model.LastName" />
+
+                    <ValidationMessage For="@(() => _model.LastName)" />
+
+                </div>
+
+
+                <div class="form-field">
+
+                    <label>
+                        Kullanıcı Adı
+                    </label>
+
+                    <InputText class="form-control"
+                               maxlength="50"
+                               autocomplete="username"
+                               placeholder="Kullanıcı adı"
+                               disabled="@_isSubmitting"
+                               @bind-Value="_model.UserName" />
+
+                    <ValidationMessage For="@(() => _model.UserName)" />
+
+                </div>
+
+
+                <div class="form-field">
+
+                    <label>
+                        Telefon
+                    </label>
+
+                    <input type="tel"
+                           class="form-control"
+                           maxlength="13"
+                           inputmode="numeric"
+                           autocomplete="tel"
+                           placeholder="(___)___-____"
+                           disabled="@_isSubmitting"
+                           value="@_model.PhoneNumber"
+                           @oninput="HandlePhoneInput" />
+
+                    <ValidationMessage For="@(() => _model.PhoneNumber)" />
+
+                </div>
+
+
+                <div class="form-field full-field">
+
+                    <label>
+                        E-Posta
+                    </label>
+
+                    <InputText type="email"
+                               class="form-control"
+                               maxlength="150"
+                               autocomplete="email"
+                               placeholder="ornek@firma.com"
+                               disabled="@_isSubmitting"
+                               @bind-Value="_model.Email" />
+
+                    <ValidationMessage For="@(() => _model.Email)" />
+
+                </div>
+
+
+                <div class="form-field">
+
+                    <label>
+                        Parola
+                    </label>
+
+                    <InputText type="@PasswordInputType"
+                               class="form-control"
+                               autocomplete="new-password"
+                               placeholder="Parola"
+                               disabled="@_isSubmitting"
+                               @bind-Value="_model.Password" />
+
+                    <ValidationMessage For="@(() => _model.Password)" />
+
+                </div>
+
+
+                <div class="form-field">
+
+                    <label>
+                        Parola Tekrar
+                    </label>
+
+                    <InputText type="@PasswordInputType"
+                               class="form-control"
+                               autocomplete="new-password"
+                               placeholder="Parola tekrar"
+                               disabled="@_isSubmitting"
+                               @bind-Value="_model.ConfirmPassword" />
+
+                    <ValidationMessage For="@(() => _model.ConfirmPassword)" />
+
+                </div>
+
+            </div>
+
+
+            <label class="show-password-label">
+
+                <input type="checkbox"
+                       disabled="@_isSubmitting"
+                       @bind="_showPasswords" />
+
+                <span>
+                    Parolaları göster
+                </span>
+
+            </label>
+
+
+            <button type="submit"
+                    class="register-button"
+                    disabled="@_isSubmitting">
+
+                @if (_isSubmitting)
+                {
+                    <span>
+                        Hesap oluşturuluyor...
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        Hesap Oluştur
+                    </span>
+                }
+
+            </button>
+
+        </EditForm>
+
+
+        <div class="register-footer">
+
+            <span>
+                Zaten hesabınız var mı?
+            </span>
+
+            <a href="/login">
+                Giriş Yap
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@code {
+    private readonly RegisterRequest _model =
+        new();
+
+    private bool _isSubmitting;
+
+    private bool _showPasswords;
+
+    private string? _errorMessage;
+
+
+    private string PasswordInputType =>
+        _showPasswords
+            ? "text"
+            : "password";
+
+
+    private async Task RegisterAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+
+        _errorMessage = null;
+
+        try
+        {
+            NormalizeModel();
+
+            await AuthService.RegisterAsync(
+                _model);
+
+            Navigation.NavigateTo(
+                "/login?registered=true",
+                replace: true);
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _errorMessage =
+                "Kayıt isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _errorMessage =
+                "Hesap oluşturulurken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+
+    private void NormalizeModel()
+    {
+        _model.FirstName =
+            _model.FirstName.Trim();
+
+        _model.LastName =
+            _model.LastName.Trim();
+
+        _model.UserName =
+            _model.UserName.Trim();
+
+        _model.Email =
+            _model.Email.Trim();
+
+        _model.PhoneNumber =
+            _model.PhoneNumber.Trim();
+    }
+
+
+    private void HandlePhoneInput(
+        ChangeEventArgs args)
+    {
+        var input =
+            args.Value?.ToString()
+            ?? string.Empty;
+
+        var digits =
+            new string(
+                input
+                    .Where(char.IsDigit)
+                    .Take(10)
+                    .ToArray());
+
+        _model.PhoneNumber =
+            FormatPhoneNumber(
+                digits);
+    }
+
+
+    private static string FormatPhoneNumber(
+        string digits)
+    {
+        if (string.IsNullOrEmpty(
+            digits))
+        {
+            return string.Empty;
+        }
+
+        if (digits.Length <= 3)
+        {
+            return $"({digits}";
+        }
+
+        if (digits.Length <= 6)
+        {
+            return
+                $"({digits[..3]}){digits[3..]}";
+        }
+
+        return
+            $"({digits[..3]})" +
+            $"{digits.Substring(3, 3)}-" +
+            $"{digits[6..]}";
+    }
+}

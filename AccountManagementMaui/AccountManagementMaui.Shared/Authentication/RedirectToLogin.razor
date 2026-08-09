@@ -1,0 +1,32 @@
+﻿@inject NavigationManager Navigation
+
+@code {
+    private bool _redirected;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender || _redirected)
+        {
+            return;
+        }
+
+        _redirected = true;
+
+        var relativeUrl =
+            Navigation.ToBaseRelativePath(
+                Navigation.Uri);
+
+        var returnUrl =
+            string.IsNullOrWhiteSpace(relativeUrl)
+                ? "/account-cards"
+                : $"/{relativeUrl}";
+
+        var loginUrl =
+            "/login?returnUrl=" +
+            Uri.EscapeDataString(returnUrl);
+
+        Navigation.NavigateTo(
+            loginUrl,
+            replace: true);
+    }
+}

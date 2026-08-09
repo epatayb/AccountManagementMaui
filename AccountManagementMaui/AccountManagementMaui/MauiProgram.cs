@@ -23,7 +23,9 @@ public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
-        var builder = MauiApp.CreateBuilder();
+        var builder =
+            MauiApp.CreateBuilder();
+
 
         // =========================================================
         // MAUI
@@ -43,10 +45,13 @@ public static class MauiProgram
         // BLAZOR WEB VIEW
         // =========================================================
 
-        builder.Services.AddMauiBlazorWebView();
+        builder.Services
+            .AddMauiBlazorWebView();
 
 #if DEBUG
-        builder.Services.AddBlazorWebViewDeveloperTools();
+        builder.Services
+            .AddBlazorWebViewDeveloperTools();
+
         builder.Logging.AddDebug();
 #endif
 
@@ -79,7 +84,8 @@ public static class MauiProgram
 
         builder.Services.AddAuthorizationCore();
 
-        builder.Services.AddCascadingAuthenticationState();
+        builder.Services
+            .AddCascadingAuthenticationState();
 
 
         // =========================================================
@@ -92,37 +98,11 @@ public static class MauiProgram
 
 
         // =========================================================
-        // AUTHENTICATION STATE PROVIDER
+        // AUTH HTTP CLIENT
         // =========================================================
 
-        builder.Services.AddScoped<
-            CustomAuthenticationStateProvider>();
-
-        builder.Services.AddScoped<
-            AuthenticationStateProvider>(
-            serviceProvider =>
-                serviceProvider.GetRequiredService<
-                    CustomAuthenticationStateProvider>());
-
-
-        // =========================================================
-        // AUTHENTICATED HTTP HANDLER
-        // =========================================================
-
-        builder.Services.AddTransient<
-            AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // AUTH SERVICE
-        // =========================================================
-
-        // Login ve Refresh istekleri token gerektirmediği için
-        // AuthenticatedHttpMessageHandler eklemiyoruz.
-
-        builder.Services.AddHttpClient<
-            IAuthService,
-            AuthService>(
+        builder.Services.AddHttpClient(
+            "AuthApi",
             client =>
             {
                 client.BaseAddress =
@@ -134,174 +114,122 @@ public static class MauiProgram
 
 
         // =========================================================
-        // CITY SERVICE
+        // AUTH SERVICE
         // =========================================================
 
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<IAuthService>(
+            serviceProvider =>
+            {
+                var factory =
+                    serviceProvider
+                        .GetRequiredService<
+                            IHttpClientFactory>();
+
+                var client =
+                    factory.CreateClient(
+                        "AuthApi");
+
+                var storage =
+                    serviceProvider
+                        .GetRequiredService<
+                            IAuthTokenStorage>();
+
+                return new AuthService(
+                    client,
+                    storage);
+            });
+
+
+        // =========================================================
+        // AUTHENTICATION STATE PROVIDER
+        // =========================================================
+
+        builder.Services.AddScoped<
+            CustomAuthenticationStateProvider>();
+
+        builder.Services.AddScoped<
+            AuthenticationStateProvider>(
+            serviceProvider =>
+                serviceProvider
+                    .GetRequiredService<
+                        CustomAuthenticationStateProvider>());
+
+
+        // =========================================================
+        // AUTHENTICATED HANDLER
+        // =========================================================
+
+        builder.Services.AddScoped<
+            AuthenticatedHttpMessageHandler>();
+
+
+        // =========================================================
+        // AUTHENTICATED API CLIENT
+        // =========================================================
+
+        builder.Services.AddScoped<HttpClient>(
+            serviceProvider =>
+            {
+                var handler =
+                    serviceProvider
+                        .GetRequiredService<
+                            AuthenticatedHttpMessageHandler>();
+
+                handler.InnerHandler =
+                    new HttpClientHandler();
+
+                return new HttpClient(
+                    handler,
+                    disposeHandler: true)
+                {
+                    BaseAddress =
+                        new Uri(apiBaseUrl),
+
+                    Timeout =
+                        TimeSpan.FromSeconds(30)
+                };
+            });
+
+
+        // =========================================================
+        // API SERVICES
+        // =========================================================
+
+        builder.Services.AddScoped<
             ICityService,
-            CityService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
+            CityService>();
 
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // DISTRICT SERVICE
-        // =========================================================
-
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<
             IDistrictService,
-            DistrictService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
+            DistrictService>();
 
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // USER SERVICE
-        // =========================================================
-
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<
             IUserService,
-            UserService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
+            UserService>();
 
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // TAX OFFICE SERVICE
-        // =========================================================
-
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<
             ITaxOfficeService,
-            TaxOfficeService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
+            TaxOfficeService>();
 
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // ACCOUNT CARD TYPE SERVICE
-        // =========================================================
-
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<
             IAccountCardTypeService,
-            AccountCardTypeService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
+            AccountCardTypeService>();
 
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // ACCOUNT CARD KIND SERVICE
-        // =========================================================
-
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<
             IAccountCardKindService,
-            AccountCardKindService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
+            AccountCardKindService>();
 
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // ACCOUNT CARD GROUP SERVICE
-        // =========================================================
-
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<
             IAccountCardGroupService,
-            AccountCardGroupService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
+            AccountCardGroupService>();
 
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // ACCOUNT CARD SUB GROUP SERVICE
-        // =========================================================
-
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<
             IAccountCardSubGroupService,
-            AccountCardSubGroupService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
+            AccountCardSubGroupService>();
 
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
-
-
-        // =========================================================
-        // ACCOUNT CARD SERVICE
-        // =========================================================
-
-        builder.Services.AddHttpClient<
+        builder.Services.AddScoped<
             IAccountCardService,
-            AccountCardService>(
-            client =>
-            {
-                client.BaseAddress =
-                    new Uri(apiBaseUrl);
-
-                client.Timeout =
-                    TimeSpan.FromSeconds(30);
-            })
-            .AddHttpMessageHandler<
-                AuthenticatedHttpMessageHandler>();
+            AccountCardService>();
 
 
         // =========================================================

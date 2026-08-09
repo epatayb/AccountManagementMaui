@@ -1,0 +1,281 @@
+﻿@page "/login"
+
+@using Microsoft.AspNetCore.Authorization
+
+@using AccountManagementMaui.Shared.Authentication
+@using AccountManagementMaui.Shared.Layout
+@using AccountManagementMaui.Shared.Models.AuthModels
+@using AccountManagementMaui.Shared.Services.AuthServices
+@using AccountManagementMaui.Shared.Services.Common
+
+@attribute [AllowAnonymous]
+@layout AuthLayout
+
+@inject IAuthService AuthService
+@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Giriş Yap</PageTitle>
+
+
+<div class="login-page">
+
+    <div class="login-card">
+
+        <div class="login-header">
+
+            <div class="login-logo">
+                LTS
+            </div>
+
+            <div class="login-header-content">
+
+                <h1>
+                    Sisteme Giriş
+                </h1>
+
+                <p>
+                    Hesabınızla giriş yaparak devam edin.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        @if (Registered)
+        {
+            <div class="login-message success-message">
+
+                Hesabınız başarıyla oluşturuldu.
+                Şimdi giriş yapabilirsiniz.
+
+            </div>
+        }
+
+
+        @if (!string.IsNullOrWhiteSpace(
+                _errorMessage))
+        {
+            <div class="login-message error-message">
+
+                @_errorMessage
+
+            </div>
+        }
+
+
+        <EditForm Model="_model"
+                  OnValidSubmit="LoginAsync">
+
+            <DataAnnotationsValidator />
+
+
+            <div class="form-field">
+
+                <label for="identifier">
+                    Kullanıcı Adı veya E-Posta
+                </label>
+
+                <InputText id="identifier"
+                           class="form-control"
+                           maxlength="150"
+                           autocomplete="username"
+                           placeholder="Kullanıcı adı veya e-posta"
+                           disabled="@_isSubmitting"
+                           @bind-Value="_model.Identifier" />
+
+                <ValidationMessage For="@(() => _model.Identifier)" />
+
+            </div>
+
+
+            <div class="form-field">
+
+                <label for="password">
+                    Parola
+                </label>
+
+                <div class="password-wrapper">
+
+                    <InputText id="password"
+                               type="@PasswordInputType"
+                               class="form-control password-control"
+                               autocomplete="current-password"
+                               placeholder="Parolanızı giriniz"
+                               disabled="@_isSubmitting"
+                               @bind-Value="_model.Password" />
+
+                    <button type="button"
+                            class="password-toggle"
+                            disabled="@_isSubmitting"
+                            @onclick="TogglePassword">
+
+                        @(_showPassword
+                                                ? "Gizle"
+                                                : "Göster")
+
+                    </button>
+
+                </div>
+
+                <ValidationMessage For="@(() => _model.Password)" />
+
+            </div>
+
+
+            <button type="submit"
+                    class="login-button"
+                    disabled="@_isSubmitting">
+
+                @if (_isSubmitting)
+                {
+                    <span>
+                        Giriş yapılıyor...
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        Giriş Yap
+                    </span>
+                }
+
+            </button>
+
+        </EditForm>
+
+
+        <div class="login-footer">
+
+            <span>
+                Hesabınız yok mu?
+            </span>
+
+            <a href="/register">
+                Hesap Oluştur
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@code {
+    private readonly LoginRequest _model =
+        new();
+
+    private bool _isSubmitting;
+
+    private bool _showPassword;
+
+    private string? _errorMessage;
+
+
+    [SupplyParameterFromQuery(
+        Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+
+    [SupplyParameterFromQuery(
+        Name = "registered")]
+    public bool Registered { get; set; }
+
+
+    private string PasswordInputType =>
+        _showPassword
+            ? "text"
+            : "password";
+
+
+    private async Task LoginAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+
+        _errorMessage = null;
+
+        try
+        {
+            _model.Identifier =
+                _model.Identifier.Trim();
+
+            var response =
+                await AuthService.LoginAsync(
+                    _model);
+
+            AuthStateProvider
+                .NotifyUserAuthenticated(
+                    response);
+
+            Navigation.NavigateTo(
+                GetSafeReturnUrl(),
+                replace: true);
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _errorMessage =
+                "Giriş isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _errorMessage =
+                "Giriş yapılırken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+
+    private void TogglePassword()
+    {
+        _showPassword =
+            !_showPassword;
+    }
+
+
+    private string GetSafeReturnUrl()
+    {
+        if (string.IsNullOrWhiteSpace(
+            ReturnUrl))
+        {
+            return "/account-cards";
+        }
+
+        if (!ReturnUrl.StartsWith('/') ||
+            ReturnUrl.StartsWith("//"))
+        {
+            return "/account-cards";
+        }
+
+        if (ReturnUrl.StartsWith(
+                "/login",
+                StringComparison.OrdinalIgnoreCase) ||
+            ReturnUrl.StartsWith(
+                "/register",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "/account-cards";
+        }
+
+        return ReturnUrl;
+    }
+}

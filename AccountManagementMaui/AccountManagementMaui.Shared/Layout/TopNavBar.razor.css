@@ -31,11 +31,6 @@
    BRAND
    ========================================================= */
 
-/*
-    NavLink bir component olduðu için
-    anchor'a ulaþmak amacýyla ::deep kullanýyoruz.
-*/
-
 ::deep .brand {
     display: inline-flex;
     flex: 0 0 auto;
@@ -50,7 +45,6 @@
         color: inherit;
         text-decoration: none !important;
     }
-
 
 .brand-logo {
     display: inline-flex;
@@ -75,7 +69,7 @@
 
 
 /* =========================================================
-   NAV CONTAINER
+   NAV
    ========================================================= */
 
 .top-nav-links {
@@ -98,12 +92,6 @@
    NAV LINK
    ========================================================= */
 
-/*
-    ÖNEMLÝ:
-    NavLink'in oluþturduðu <a> elementi child component
-    çýktýsý olduðu için ::deep gerekiyor.
-*/
-
 ::deep .top-nav-link {
     position: relative;
     display: inline-flex;
@@ -124,29 +112,16 @@
     transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-
-    /* Visited olunca mora dönmesin */
-
     ::deep .top-nav-link:visited {
         color: #475569 !important;
         text-decoration: none !important;
     }
-
-
-    /* =========================================================
-   HOVER
-   ========================================================= */
 
     ::deep .top-nav-link:hover {
         background: #f1f5f9;
         color: #1e293b !important;
         text-decoration: none !important;
     }
-
-
-    /* =========================================================
-   ACTIVE
-   ========================================================= */
 
     ::deep .top-nav-link.active {
         background: #eef2ff;
@@ -155,9 +130,6 @@
         text-decoration: none !important;
         box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.08);
     }
-
-
-        /* Aktif linkin altýndaki ince çizgi */
 
         ::deep .top-nav-link.active::after {
             position: absolute;
@@ -170,22 +142,100 @@
             content: "";
         }
 
-
-        /* Aktif link hover */
-
         ::deep .top-nav-link.active:hover {
             background: #e0e7ff;
             color: #3730a3 !important;
         }
 
-
-    /* =========================================================
-   KEYBOARD FOCUS
-   ========================================================= */
-
     ::deep .top-nav-link:focus-visible {
         outline: 2px solid #818cf8;
         outline-offset: 1px;
+    }
+
+
+/* =========================================================
+   USER AREA
+   ========================================================= */
+
+.top-nav-user {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    padding-left: 10px;
+    border-left: 1px solid #e2e8f0;
+}
+
+.top-nav-avatar {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.top-nav-user-info {
+    display: flex;
+    min-width: 0;
+    max-width: 130px;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+    .top-nav-user-info strong {
+        overflow: hidden;
+        color: #334155;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .top-nav-user-info span {
+        margin-top: 2px;
+        overflow: hidden;
+        color: #94a3b8;
+        font-size: 0.58rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+.logout-button {
+    display: inline-flex;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #dc2626;
+    font-size: 0.64rem;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+    .logout-button:hover:not(:disabled) {
+        border-color: #fca5a5;
+        background: #fef2f2;
+    }
+
+    .logout-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
     }
 
 
@@ -208,7 +258,6 @@
     border-radius: 8px;
     background: #ffffff;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
     .mobile-menu-button:hover {
@@ -226,8 +275,16 @@
 
 
 /* =========================================================
-   TABLET / MOBILE MENU
+   TABLET
    ========================================================= */
+
+@media (max-width: 1180px) {
+
+    .top-nav-user-info {
+        display: none;
+    }
+}
+
 
 @media (max-width: 1050px) {
 
@@ -276,6 +333,13 @@
             width: 3px;
             height: auto;
         }
+
+
+    .top-nav-user {
+        margin-left: auto;
+        padding-left: 0;
+        border-left: 0;
+    }
 }
 
 
@@ -300,5 +364,16 @@
 
     .top-nav-links.menu-open {
         grid-template-columns: 1fr;
+    }
+
+
+    .top-nav-avatar {
+        display: none;
+    }
+
+
+    .logout-button {
+        height: 29px;
+        padding: 0 7px;
     }
 }

@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // =========================================================
 // RAZOR / BLAZOR
 // =========================================================
@@ -37,7 +38,7 @@ var apiBaseUrl =
 
 
 // =========================================================
-// AUTHENTICATION / AUTHORIZATION
+// AUTHORIZATION
 // =========================================================
 
 builder.Services.AddAuthorizationCore();
@@ -45,176 +46,151 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 
 
-// Token saklama
+// =========================================================
+// TOKEN STORAGE
+// =========================================================
+
 builder.Services.AddScoped<
     IAuthTokenStorage,
     WebAuthTokenStorage>();
 
 
-// Authentication State Provider
-builder.Services.AddScoped<
-    CustomAuthenticationStateProvider>();
+// =========================================================
+// AUTH HTTP CLIENT
+// =========================================================
 
-builder.Services.AddScoped<AuthenticationStateProvider>(
-    serviceProvider =>
-        serviceProvider.GetRequiredService<
-            CustomAuthenticationStateProvider>());
+// Login / Register / Refresh / Logout için.
+// Bu client Bearer handler kullanmaz.
 
+builder.Services.AddHttpClient(
+    "AuthApi",
+    client =>
+    {
+        client.BaseAddress =
+            new Uri(apiBaseUrl);
 
-// JWT token'ý request header'a ekleyen handler
-builder.Services.AddTransient<
-    AuthenticatedHttpMessageHandler>();
+        client.Timeout =
+            TimeSpan.FromSeconds(30);
+    });
 
 
 // =========================================================
 // AUTH SERVICE
 // =========================================================
 
-// Login / refresh iþlemlerinde JWT handler kullanmýyoruz.
-builder.Services.AddHttpClient<IAuthService, AuthService>(
-    client =>
+builder.Services.AddScoped<IAuthService>(
+    serviceProvider =>
     {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
+        var factory =
+            serviceProvider
+                .GetRequiredService<
+                    IHttpClientFactory>();
+
+        var client =
+            factory.CreateClient(
+                "AuthApi");
+
+        var storage =
+            serviceProvider
+                .GetRequiredService<
+                    IAuthTokenStorage>();
+
+        return new AuthService(
+            client,
+            storage);
     });
 
 
 // =========================================================
-// CITY SERVICE
+// AUTHENTICATION STATE PROVIDER
 // =========================================================
 
-builder.Services.AddHttpClient<ICityService, CityService>(
-    client =>
+builder.Services.AddScoped<
+    CustomAuthenticationStateProvider>();
+
+builder.Services.AddScoped<
+    AuthenticationStateProvider>(
+    serviceProvider =>
+        serviceProvider
+            .GetRequiredService<
+                CustomAuthenticationStateProvider>());
+
+
+// =========================================================
+// AUTHENTICATED HTTP HANDLER
+// =========================================================
+
+builder.Services.AddScoped<
+    AuthenticatedHttpMessageHandler>();
+
+
+// =========================================================
+// AUTHENTICATED API HTTP CLIENT
+// =========================================================
+
+builder.Services.AddScoped<HttpClient>(
+    serviceProvider =>
     {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
+        var handler =
+            serviceProvider
+                .GetRequiredService<
+                    AuthenticatedHttpMessageHandler>();
+
+        handler.InnerHandler =
+            new HttpClientHandler();
+
+        return new HttpClient(
+            handler,
+            disposeHandler: true)
+        {
+            BaseAddress =
+                new Uri(apiBaseUrl),
+
+            Timeout =
+                TimeSpan.FromSeconds(30)
+        };
+    });
 
 
 // =========================================================
-// DISTRICT SERVICE
+// API SERVICES
 // =========================================================
 
-builder.Services.AddHttpClient<IDistrictService, DistrictService>(
-    client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
+builder.Services.AddScoped<
+    ICityService,
+    CityService>();
 
+builder.Services.AddScoped<
+    IDistrictService,
+    DistrictService>();
 
-// =========================================================
-// USER SERVICE
-// =========================================================
+builder.Services.AddScoped<
+    IUserService,
+    UserService>();
 
-builder.Services.AddHttpClient<IUserService, UserService>(
-    client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
-
-
-// =========================================================
-// TAX OFFICE SERVICE
-// =========================================================
-
-builder.Services.AddHttpClient<
+builder.Services.AddScoped<
     ITaxOfficeService,
-    TaxOfficeService>(
-    client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
+    TaxOfficeService>();
 
-
-// =========================================================
-// ACCOUNT CARD TYPE SERVICE
-// =========================================================
-
-builder.Services.AddHttpClient<
+builder.Services.AddScoped<
     IAccountCardTypeService,
-    AccountCardTypeService>(
-    client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
+    AccountCardTypeService>();
 
-
-// =========================================================
-// ACCOUNT CARD KIND SERVICE
-// =========================================================
-
-builder.Services.AddHttpClient<
+builder.Services.AddScoped<
     IAccountCardKindService,
-    AccountCardKindService>(
-    client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
+    AccountCardKindService>();
 
-
-// =========================================================
-// ACCOUNT CARD GROUP SERVICE
-// =========================================================
-
-builder.Services.AddHttpClient<
+builder.Services.AddScoped<
     IAccountCardGroupService,
-    AccountCardGroupService>(
-    client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
+    AccountCardGroupService>();
 
-
-// =========================================================
-// ACCOUNT CARD SUB GROUP SERVICE
-// =========================================================
-
-builder.Services.AddHttpClient<
+builder.Services.AddScoped<
     IAccountCardSubGroupService,
-    AccountCardSubGroupService>(
-    client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
+    AccountCardSubGroupService>();
 
-
-// =========================================================
-// ACCOUNT CARD SERVICE
-// =========================================================
-
-builder.Services.AddHttpClient<
+builder.Services.AddScoped<
     IAccountCardService,
-    AccountCardService>(
-    client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(30);
-    })
-    .AddHttpMessageHandler<
-        AuthenticatedHttpMessageHandler>();
+    AccountCardService>();
 
 
 // =========================================================
@@ -248,7 +224,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+app.MapStaticAssets();
 
 app.UseAntiforgery();
 
