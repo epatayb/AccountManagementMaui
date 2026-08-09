@@ -14,6 +14,10 @@ using AccountManagementMaui.Web.Authentication;
 using AccountManagementMaui.Web.Components;
 using AccountManagementMaui.Web.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using AccountManagementMaui.Shared.Services.VehicleTypeServices;
+using AccountManagementMaui.Shared.Services.VehicleKindServices;
+using AccountManagementMaui.Shared.Services.VehicleServices;
+using AccountManagementMaui.Shared.Services.VehicleLookupServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -192,6 +196,21 @@ builder.Services.AddScoped<
     IAccountCardService,
     AccountCardService>();
 
+builder.Services.AddScoped<
+    IVehicleTypeService,
+    VehicleTypeService>();
+
+builder.Services.AddScoped<
+    IVehicleKindService,
+    VehicleKindService>();
+
+builder.Services.AddScoped<
+    IVehicleService,
+    VehicleService>();
+
+builder.Services.AddScoped<
+    IVehicleLookupService,
+    VehicleLookupService>();
 
 // =========================================================
 // FORM FACTOR

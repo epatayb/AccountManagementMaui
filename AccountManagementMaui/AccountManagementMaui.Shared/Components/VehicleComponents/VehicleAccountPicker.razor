@@ -1,0 +1,334 @@
+﻿@using AccountManagementMaui.Shared.Models.VehicleLookupModels
+@using AccountManagementMaui.Shared.Services.Common
+@using AccountManagementMaui.Shared.Services.VehicleLookupServices
+
+@inject IVehicleLookupService VehicleLookupService
+
+
+<div class="account-picker">
+
+    <label class="picker-label">
+
+        @Label
+
+        @if (Required)
+        {
+            <span class="required-mark">*</span>
+        }
+
+    </label>
+
+
+    @if (SelectedItem is not null)
+    {
+        <div class="selected-account">
+
+            <div class="selected-account-content">
+
+                <strong>
+                    @SelectedItem.Title
+                </strong>
+
+                <span>
+                    @GetSelectedSubtitle()
+                </span>
+
+            </div>
+
+
+            @if (!Disabled)
+            {
+                <button type="button"
+                        class="clear-account-button"
+                        title="Seçimi kaldır"
+                        @onclick="ClearAsync">
+                    ×
+                </button>
+            }
+
+        </div>
+    }
+    else
+    {
+        <div class="picker-search">
+
+            <input type="search"
+                   class="picker-input"
+                   placeholder="@Placeholder"
+                   autocomplete="off"
+                   disabled="@Disabled"
+                   @bind="_search"
+                   @bind:event="oninput" />
+
+
+            <button type="button"
+                    class="picker-search-button"
+                    disabled="@(Disabled || _isLoading)"
+                    @onclick="SearchAsync">
+
+                @(_isLoading
+                            ? "..."
+                            : "Ara")
+
+        </button>
+
+        </div>
+
+
+    @if (!string.IsNullOrWhiteSpace(
+        _errorMessage))
+        {
+            <div class="picker-error">
+                @_errorMessage
+            </div>
+        }
+
+
+        @if (_showResults)
+        {
+            <div class="picker-results">
+
+                @if (_results.Count == 0)
+                {
+                    <div class="picker-empty">
+                        Kayıt bulunamadı.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in _results)
+                    {
+                        <button type="button"
+                                class="picker-result"
+                                @onclick="() => SelectAsync(item)">
+
+                            <span class="result-main">
+                                @item.Title
+                            </span>
+
+                            <span class="result-meta">
+
+                                @if (!string.IsNullOrWhiteSpace(
+                                                item.AccountCode))
+                                {
+                                    <span>
+                                        @item.AccountCode
+                                    </span>
+                                }
+
+                                <span>
+                                    @item.AccountCardTypeName
+                                    ·
+                                    @item.AccountCardKindName
+                                </span>
+
+                                @if (!string.IsNullOrWhiteSpace(
+                                                item.CityName))
+                                {
+                                    <span>
+                                        @item.CityName
+                                    </span>
+                                }
+
+                            </span>
+
+                        </button>
+                    }
+                }
+
+            </div>
+        }
+    }
+
+</div>
+
+
+@code {
+    private readonly List<VehicleAccountLookupDto> _results = [];
+
+
+    private string _search =
+        string.Empty;
+
+    private string? _errorMessage;
+
+
+    private bool _isLoading;
+
+    private bool _showResults;
+
+
+    [Parameter]
+    public string Label { get; set; } =
+        "Hesap";
+
+
+    [Parameter]
+    public string Placeholder { get; set; } =
+        "Hesap ara...";
+
+
+    [Parameter]
+    public bool DriverOnly { get; set; }
+
+
+    [Parameter]
+    public bool Required { get; set; }
+
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+
+    [Parameter]
+    public VehicleAccountLookupDto? SelectedItem { get; set; }
+
+
+    [Parameter]
+    public EventCallback<VehicleAccountLookupDto> OnSelected { get; set; }
+
+
+    [Parameter]
+    public EventCallback OnCleared { get; set; }
+
+    [Parameter]
+    public bool InvoiceOnly { get; set; }
+
+    private async Task SearchAsync()
+    {
+        if (Disabled)
+        {
+            return;
+        }
+
+
+        _isLoading = true;
+
+        _errorMessage = null;
+
+        _showResults = false;
+
+
+        try
+        {
+            List<VehicleAccountLookupDto> items;
+
+            if (DriverOnly)
+            {
+                items =
+                    await VehicleLookupService
+                        .GetDriversAsync(
+                            _search,
+                            30);
+            }
+            else if (InvoiceOnly)
+            {
+                items =
+                    await VehicleLookupService
+                        .GetInvoiceAccountsAsync(
+                            _search,
+                            30);
+            }
+            else
+            {
+                items =
+                    await VehicleLookupService
+                        .GetAccountsAsync(
+                            _search,
+                            30);
+            }
+
+            _results.Clear();
+
+            _results.AddRange(items);
+
+            _showResults = true;
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage =
+                "Hesap kartları yüklenemedi.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+
+    private async Task SelectAsync(
+        VehicleAccountLookupDto item)
+    {
+        _showResults = false;
+
+        _search = string.Empty;
+
+        _results.Clear();
+
+
+        await OnSelected.InvokeAsync(
+            item);
+    }
+
+
+    private async Task ClearAsync()
+    {
+        _showResults = false;
+
+        _search = string.Empty;
+
+        _results.Clear();
+
+
+        await OnCleared.InvokeAsync();
+    }
+
+
+    private string GetSelectedSubtitle()
+    {
+        if (SelectedItem is null)
+        {
+            return string.Empty;
+        }
+
+
+        var parts =
+            new List<string>();
+
+
+        if (!string.IsNullOrWhiteSpace(
+            SelectedItem.AccountCode))
+        {
+            parts.Add(
+                SelectedItem.AccountCode);
+        }
+
+
+        if (!string.IsNullOrWhiteSpace(
+            SelectedItem.PhoneNumber))
+        {
+            parts.Add(
+                SelectedItem.PhoneNumber);
+        }
+
+
+        if (!string.IsNullOrWhiteSpace(
+            SelectedItem.CityName))
+        {
+            parts.Add(
+                SelectedItem.CityName);
+        }
+
+
+        return parts.Count == 0
+            ? "Seçili hesap kartı"
+            : string.Join(
+                " · ",
+                parts);
+    }
+}

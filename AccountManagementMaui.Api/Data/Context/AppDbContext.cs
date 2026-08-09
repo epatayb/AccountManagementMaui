@@ -38,6 +38,12 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
     public DbSet<AppRefreshToken> AppRefreshToken => Set<AppRefreshToken>();
 
+    public DbSet<Vehicle> Vehicles { get; set; }
+
+    public DbSet<VehicleType> VehicleTypes { get; set; }
+
+    public DbSet<VehicleKind> VehicleKinds { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -53,6 +59,9 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         ConfigureAccountCardSubGroup(modelBuilder);
         ConfigureAccountCard(modelBuilder);
         ConfigureRefreshToken(modelBuilder);
+        ConfigureVehicleType(modelBuilder);
+        ConfigureVehicleKind(modelBuilder);
+        ConfigureVehicle(modelBuilder);
     }
 
     private static void ConfigureIdentityTables(
@@ -491,6 +500,205 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .WithMany(x => x.RefreshTokens)
             .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private void ConfigureVehicleType(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<VehicleType>();
+
+        entity.ToTable("VehicleTypes");
+
+        entity.HasKey(x => x.Id);
+
+
+        entity.Property(x => x.TypeName)
+            .IsRequired()
+            .HasMaxLength(50);
+
+
+        entity.HasIndex(x => x.TypeName)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+
+        ConfigureBaseEntity(entity);
+    }
+
+    private void ConfigureVehicleKind(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<VehicleKind>();
+
+        entity.ToTable("VehicleKinds");
+
+        entity.HasKey(x => x.Id);
+
+
+        entity.Property(x => x.KindName)
+            .IsRequired()
+            .HasMaxLength(50);
+
+
+        entity.HasIndex(x => x.KindName)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+
+        ConfigureBaseEntity(entity);
+    }
+
+    private void ConfigureVehicle(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<Vehicle>();
+
+        entity.ToTable("Vehicles");
+
+        entity.HasKey(x => x.Id);
+
+        // PLAKA
+        entity.Property(x => x.Plate)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        entity.Property(x => x.NormalizedPlate)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        entity.HasIndex(x => x.NormalizedPlate)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0 AND [IsActive] = 1");
+
+
+        // DORSE
+        entity.Property(x => x.TrailerPlate)
+            .HasMaxLength(20);
+
+
+        // ARAÇ DETAY
+        entity.Property(x => x.Brand)
+            .HasMaxLength(100);
+
+        entity.Property(x => x.Model)
+            .HasMaxLength(100);
+
+        entity.Property(x => x.Country)
+            .HasMaxLength(100);
+
+
+        // RUHSAT SAHİBİ
+        entity.Property(x => x.LicenseOwnerName)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        entity.Property(x => x.LicenseOwnerTaxNumber)
+            .HasMaxLength(10);
+
+        entity.Property(x => x.LicenseOwnerIdentityNumber)
+            .HasMaxLength(11);
+
+        entity.Property(x => x.LicenseOwnerAddress)
+            .HasMaxLength(500);
+
+
+        // YETKİLİ
+        entity.Property(x => x.AuthorizedName)
+            .HasMaxLength(100);
+
+        entity.Property(x => x.AuthorizedPhone)
+            .HasMaxLength(20);
+
+        
+        // DURUM
+        entity.Property(x => x.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
+
+
+        // ROW VERSION
+        entity.Property(x => x.RowVersion)
+            .IsRowVersion();
+
+
+        // ARAÇ TİPİ
+        entity.HasOne(x => x.VehicleType)
+            .WithMany(x => x.Vehicles)
+            .HasForeignKey(x => x.VehicleTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // ARAÇ TÜRÜ
+        entity.HasOne(x => x.VehicleKind)
+            .WithMany(x => x.Vehicles)
+            .HasForeignKey(x => x.VehicleKindId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // ŞOFÖR
+        entity.HasOne(x => x.DriverAccountCard)
+            .WithMany()
+            .HasForeignKey(x => x.DriverAccountCardId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // REFERANS
+        entity.HasOne(x => x.ReferenceAccountCard)
+            .WithMany()
+            .HasForeignKey(x => x.ReferenceAccountCardId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // RUHSAT CARİSİ
+        entity.HasOne(x => x.LicenseAccountCard)
+            .WithMany()
+            .HasForeignKey(x => x.LicenseAccountCardId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // FATURA HESABI
+        entity.HasOne(x => x.InvoiceAccountCard)
+            .WithMany()
+            .HasForeignKey(x => x.InvoiceAccountCardId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // RUHSAT ŞEHİR
+        entity.HasOne(x => x.LicenseOwnerCity)
+            .WithMany()
+            .HasForeignKey(x => x.LicenseOwnerCityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // RUHSAT VERGİ DAİRESİ
+        entity.HasOne(x => x.LicenseOwnerTaxOffice)
+            .WithMany()
+            .HasForeignKey(x => x.LicenseOwnerTaxOfficeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        // INDEXES
+        entity.HasIndex(x => x.VehicleTypeId);
+
+        entity.HasIndex(x => x.VehicleKindId);
+
+        entity.HasIndex(x => x.DriverAccountCardId);
+
+        entity.HasIndex(x => x.ReferenceAccountCardId);
+
+        entity.HasIndex(x => x.LicenseAccountCardId);
+
+        entity.HasIndex(x => x.InvoiceAccountCardId);
+
+        entity.HasIndex(x => x.LicenseOwnerCityId);
+
+        entity.HasIndex(x => x.LicenseOwnerTaxOfficeId);
+
+        entity.HasIndex(x => x.IsActive);
+
+        entity.HasIndex(x => x.InsuranceExpiryDate);
+
+        entity.HasIndex(x => x.InspectionExpiryDate);
+
+
+        ConfigureBaseEntity(entity);
     }
 
     public override int SaveChanges()

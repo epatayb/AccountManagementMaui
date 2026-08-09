@@ -1,0 +1,839 @@
+.vehicles-page {
+    display: flex;
+    height: calc(100vh - 74px);
+    min-height: 0;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    background: #f8fafc;
+}
+
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.vehicles-toolbar {
+    display: flex;
+    min-height: 42px;
+    align-items: center;
+    gap: 12px;
+}
+
+.toolbar-title {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: baseline;
+    gap: 7px;
+}
+
+    .toolbar-title h1 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 750;
+    }
+
+    .toolbar-title span {
+        color: #94a3b8;
+        font-size: .62rem;
+    }
+
+.toolbar-controls {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 6px;
+}
+
+.search-form {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 5px;
+}
+
+
+/* =========================================================
+   FILTERS
+   ========================================================= */
+
+.search-input,
+.filter-select,
+.page-size-select {
+    height: 30px;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #0f172a;
+    font-size: .66rem;
+    outline: none;
+    transition: border-color .12s ease, box-shadow .12s ease;
+}
+
+.search-input {
+    width: min(360px, 30vw);
+    padding: 0 9px;
+}
+
+.filter-select {
+    width: 125px;
+    padding: 0 6px;
+}
+
+.status-select {
+    width: 110px;
+}
+
+.search-input:focus,
+.filter-select:focus,
+.page-size-select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, .08);
+}
+
+.search-input:disabled,
+.filter-select:disabled {
+    cursor: not-allowed;
+    background: #f1f5f9;
+    opacity: .7;
+}
+
+
+/* =========================================================
+   TOOLBAR BUTTONS
+   ========================================================= */
+
+.compact-button {
+    display: inline-flex;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0 9px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: .64rem;
+    font-weight: 650;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+}
+
+    .compact-button:disabled {
+        cursor: not-allowed;
+        opacity: .5;
+    }
+
+.primary-button,
+.new-button {
+    border-color: #4f46e5;
+    background: #4f46e5;
+    color: #fff;
+}
+
+    .primary-button:hover:not(:disabled),
+    .new-button:hover:not(:disabled) {
+        border-color: #4338ca;
+        background: #4338ca;
+    }
+
+.secondary-button {
+    border-color: #cbd5e1;
+    background: #fff;
+    color: #475569;
+}
+
+    .secondary-button:hover:not(:disabled) {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+.new-button {
+    margin-left: auto;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.compact-message {
+    display: flex;
+    min-height: 30px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 9px;
+    border: 1px solid;
+    border-radius: 6px;
+    font-size: .65rem;
+}
+
+.success-message {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.error-message {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.message-button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: .62rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   TABLE CONTAINER
+   ========================================================= */
+
+.vehicles-table-shell {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .03);
+}
+
+.table-scroll {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.vehicles-table {
+    width: 100%;
+    min-width: 1380px;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+    .vehicles-table th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        height: 34px;
+        box-sizing: border-box;
+        padding: 0 8px;
+        border-bottom: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        font-size: .61rem;
+        font-weight: 700;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .vehicles-table td {
+        height: 50px;
+        box-sizing: border-box;
+        padding: 4px 8px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        font-size: .65rem;
+        vertical-align: middle;
+    }
+
+    .vehicles-table tbody tr {
+        transition: background-color .1s ease;
+    }
+
+        .vehicles-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+
+/* =========================================================
+   COLUMNS
+   ========================================================= */
+
+.vehicle-column {
+    width: 170px;
+}
+
+.driver-column {
+    width: 180px;
+}
+
+.account-column {
+    width: 180px;
+}
+
+.trailer-column {
+    width: 100px;
+}
+
+.document-column {
+    width: 155px;
+}
+
+.status-column {
+    width: 72px;
+}
+
+.action-column {
+    width: 285px;
+}
+
+
+/* =========================================================
+   CELLS
+   ========================================================= */
+
+.vehicle-cell,
+.driver-cell,
+.account-cell,
+.document-cell {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+    .vehicle-cell strong,
+    .driver-cell strong,
+    .account-cell strong {
+        overflow: hidden;
+        color: #334155;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+.plate {
+    color: #0f172a !important;
+    font-size: .72rem;
+    font-weight: 750;
+}
+
+.vehicle-cell span,
+.driver-cell span,
+.account-cell span,
+.document-cell span {
+    overflow: hidden;
+    color: #64748b;
+    font-size: .59rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vehicle-cell small {
+    overflow: hidden;
+    color: #94a3b8;
+    font-size: .56rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.plate-secondary {
+    color: #334155;
+    font-size: .65rem;
+    font-weight: 650;
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.status-badge {
+    display: inline-flex;
+    min-width: 45px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: .56rem;
+    font-weight: 700;
+}
+
+.active-status {
+    border: 1px solid #bbf7d0;
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.passive-status {
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+
+/* =========================================================
+   ROW ACTIONS
+   ========================================================= */
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.row-action-button {
+    display: inline-flex;
+    min-height: 27px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    border: 1px solid #dbe3ee;
+    border-radius: 5px;
+    background: #fff;
+    color: #475569;
+    font-size: .57rem;
+    font-weight: 650;
+    cursor: pointer;
+    transition: border-color .12s ease, background-color .12s ease, color .12s ease;
+}
+
+    .row-action-button:disabled {
+        cursor: not-allowed;
+        opacity: .45;
+    }
+
+.view-button:hover:not(:disabled) {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.edit-button:hover:not(:disabled) {
+    border-color: #a5b4fc;
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.status-button:hover:not(:disabled) {
+    border-color: #fbbf24;
+    background: #fffbeb;
+    color: #a16207;
+}
+
+.delete-button:hover:not(:disabled) {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+
+/* =========================================================
+   EMPTY / LOADING
+   ========================================================= */
+
+.table-state {
+    height: 120px !important;
+    color: #94a3b8 !important;
+    font-size: .68rem !important;
+    text-align: center;
+}
+
+
+/* =========================================================
+   FOOTER / PAGINATION
+   ========================================================= */
+
+.table-footer {
+    display: flex;
+    min-height: 38px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 9px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.page-size-area,
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: .61rem;
+}
+
+.page-size-select {
+    width: 58px;
+    height: 26px;
+    padding: 0 4px;
+}
+
+.page-button {
+    display: inline-flex;
+    width: 28px;
+    height: 26px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #fff;
+    color: #475569;
+    font-size: .85rem;
+    cursor: pointer;
+}
+
+    .page-button:hover:not(:disabled) {
+        border-color: #a5b4fc;
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+    .page-button:disabled {
+        cursor: not-allowed;
+        opacity: .4;
+    }
+
+.page-info {
+    min-width: 95px;
+    text-align: center;
+}
+
+
+/* =========================================================
+   GENERAL MODAL
+   ========================================================= */
+
+.vehicle-modal-error {
+    margin-bottom: 8px;
+    padding: 7px 9px;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: .64rem;
+}
+
+.vehicle-modal-loading {
+    display: flex;
+    min-height: 180px;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: .7rem;
+}
+
+
+/* =========================================================
+   DETAIL MODAL
+   ========================================================= */
+
+.vehicle-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-section {
+    padding: 9px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    background: #fff;
+}
+
+.detail-section-title {
+    margin-bottom: 7px;
+    color: #334155;
+    font-size: .69rem;
+    font-weight: 750;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 10px;
+}
+
+.detail-item {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px 7px;
+    border-radius: 5px;
+    background: #f8fafc;
+}
+
+.detail-item-wide {
+    grid-column: 1 / -1;
+}
+
+.detail-item > span {
+    color: #94a3b8;
+    font-size: .56rem;
+    font-weight: 600;
+}
+
+.detail-item > strong {
+    overflow-wrap: anywhere;
+    color: #334155;
+    font-size: .65rem;
+    font-weight: 650;
+}
+
+
+/* =========================================================
+   STATUS CONFIRMATION
+   ========================================================= */
+
+.vehicle-confirmation,
+.delete-confirmation {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    color: #475569;
+    font-size: .66rem;
+}
+
+    .vehicle-confirmation p,
+    .delete-confirmation p {
+        margin: 0;
+        line-height: 1.5;
+    }
+
+.status-warning,
+.delete-warning {
+    padding: 7px 9px;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: .61rem;
+    line-height: 1.45;
+}
+
+
+/* =========================================================
+   DELETE FORM
+   ========================================================= */
+
+.delete-field {
+    margin-top: 10px;
+}
+
+    .delete-field label {
+        display: block;
+        margin-bottom: 4px;
+        color: #334155;
+        font-size: .64rem;
+        font-weight: 650;
+    }
+
+.required-mark {
+    color: #dc2626;
+}
+
+.form-control {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #0f172a;
+    font-size: .66rem;
+    outline: none;
+}
+
+textarea.form-control {
+    min-height: 82px;
+    padding: 7px 8px;
+    resize: vertical;
+}
+
+.form-control:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, .08);
+}
+
+.validation-message {
+    display: block;
+    margin-top: 3px;
+    color: #dc2626;
+    font-size: .58rem;
+}
+
+
+/* =========================================================
+   MODAL ACTIONS
+   ========================================================= */
+
+.modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 11px;
+}
+
+.btn {
+    display: inline-flex;
+    min-width: 80px;
+    height: 32px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    border: 1px solid;
+    border-radius: 6px;
+    font-size: .64rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+    .btn:disabled {
+        cursor: not-allowed;
+        opacity: .55;
+    }
+
+.btn-primary {
+    border-color: #4f46e5;
+    background: #4f46e5;
+    color: #fff;
+}
+
+    .btn-primary:hover:not(:disabled) {
+        border-color: #4338ca;
+        background: #4338ca;
+    }
+
+.btn-outline-secondary {
+    border-color: #cbd5e1;
+    background: #fff;
+    color: #475569;
+}
+
+    .btn-outline-secondary:hover:not(:disabled) {
+        background: #f8fafc;
+    }
+
+.btn-danger {
+    border-color: #dc2626;
+    background: #dc2626;
+    color: #fff;
+}
+
+    .btn-danger:hover:not(:disabled) {
+        border-color: #b91c1c;
+        background: #b91c1c;
+    }
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.table-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+    border: 2px solid #f8fafc;
+    border-radius: 999px;
+    background: #cbd5e1;
+}
+
+    .table-scroll::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .vehicles-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .toolbar-controls {
+        width: 100%;
+    }
+
+    .search-form {
+        flex-wrap: wrap;
+    }
+
+    .search-input {
+        width: 100%;
+    }
+
+    .new-button {
+        margin-left: 0;
+    }
+}
+
+
+@media (max-width: 700px) {
+    .vehicles-page {
+        height: auto;
+        min-height: calc(100vh - 74px);
+        padding: 7px;
+    }
+
+    .toolbar-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .search-form {
+        width: 100%;
+    }
+
+    .filter-select {
+        flex: 1;
+    }
+
+    .vehicles-table-shell {
+        min-height: 550px;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-item-wide {
+        grid-column: auto;
+    }
+
+    .table-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+}

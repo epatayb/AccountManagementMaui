@@ -1,0 +1,1315 @@
+﻿@page "/definitions"
+
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+
+@using AccountManagementMaui.Shared.Components.Common
+@using AccountManagementMaui.Shared.Models.VehicleKindModels
+@using AccountManagementMaui.Shared.Models.VehicleTypeModels
+@using AccountManagementMaui.Shared.Services.Common
+@using AccountManagementMaui.Shared.Services.VehicleKindServices
+@using AccountManagementMaui.Shared.Services.VehicleTypeServices
+
+@inject IVehicleTypeService VehicleTypeService
+@inject IVehicleKindService VehicleKindService
+
+<PageTitle>Tanımlar</PageTitle>
+
+
+<div class="definitions-page">
+
+    <header class="definitions-toolbar">
+
+        <div class="toolbar-title">
+            <h1>Tanımlar</h1>
+        </div>
+
+
+        <div class="toolbar-controls">
+
+            <select class="definition-select"
+                    value="@_selectedDefinition"
+                    disabled="@IsAnyOperationRunning()"
+                    @onchange="DefinitionChangedAsync">
+
+                <option value="@VehicleTypeDefinition">
+                    Araç Tipleri
+                </option>
+
+                <option value="@VehicleKindDefinition">
+                    Araç Türleri
+                </option>
+
+            </select>
+
+
+            <form class="search-form"
+                  @onsubmit="SearchAsync"
+                  @onsubmit:preventDefault>
+
+                <input type="search"
+                       class="search-input"
+                       placeholder="@GetSearchPlaceholder()"
+                       maxlength="50"
+                       autocomplete="off"
+                       disabled="@_isLoading"
+                       @bind="_search"
+                       @bind:event="oninput" />
+
+
+                <button type="submit"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading">
+                    Ara
+                </button>
+
+
+                @if (!string.IsNullOrWhiteSpace(_search))
+                {
+                    <button type="button"
+                            class="compact-button secondary-button"
+                            disabled="@_isLoading"
+                            @onclick="ClearSearchAsync">
+                        Temizle
+                    </button>
+                }
+
+
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="RefreshAsync">
+                    Yenile
+                </button>
+
+            </form>
+
+
+            <div class="operation-buttons">
+
+                <button type="button"
+                        class="compact-button primary-button"
+                        disabled="@IsAnyOperationRunning()"
+                        @onclick="OpenCreateModal">
+                    Yeni
+                </button>
+
+
+                <button type="button"
+                        class="compact-button edit-button"
+                        disabled="@(!CanUseSelectedRecord())"
+                        @onclick="OpenEditModal">
+                    Güncelle
+                </button>
+
+
+                <button type="button"
+                        class="compact-button delete-button"
+                        disabled="@(!CanUseSelectedRecord())"
+                        @onclick="OpenDeleteModal">
+                    Sil
+                </button>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="compact-message success-message">
+            @_successMessage
+        </div>
+    }
+
+
+    @if (!string.IsNullOrWhiteSpace(_loadErrorMessage))
+    {
+        <div class="compact-message error-message">
+
+            <span>
+                @_loadErrorMessage
+            </span>
+
+            <button type="button"
+                    class="message-button"
+                    @onclick="RefreshAsync">
+                Tekrar Dene
+            </button>
+
+        </div>
+    }
+
+
+    <section class="definition-content">
+
+        <div class="definition-summary">
+
+            <strong>
+                @GetDefinitionTitle()
+            </strong>
+
+            <span>
+                @_items.Count kayıt
+            </span>
+
+            @if (_selectedItem is not null)
+            {
+                <span class="selected-summary">
+                    Seçili:
+                    <strong>@_selectedItem.Name</strong>
+                </span>
+            }
+
+        </div>
+
+
+        <div class="table-scroll">
+
+            <table class="definition-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th class="selection-column"></th>
+
+                        <th>
+                            @GetNameColumnTitle()
+                        </th>
+
+                        <th class="audit-column">
+                            Oluşturulma
+                        </th>
+
+                        <th class="audit-column">
+                            Güncellenme
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @if (_isLoading && _items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="4"
+                                class="table-state">
+                                Kayıtlar yükleniyor...
+                            </td>
+                        </tr>
+                    }
+                    else if (_items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="4"
+                                class="table-state">
+                                Kayıt bulunamadı.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _items)
+                        {
+                            <tr class="@GetRowClass(item)"
+                                @onclick="() => SelectItem(item)">
+
+                                <td class="selection-column">
+
+                                    <span class="@GetSelectionClass(item)">
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="definition-name-cell">
+
+                                        <strong>
+                                            @item.Name
+                                        </strong>
+
+                                        <span>
+                                            #@item.Id
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="audit-cell">
+
+                                        <strong>
+                                            @GetAuditUserName(
+                                            item.CreatedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        item.CreatedDate)
+                                </span>
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            @if (item.ModifiedDate.HasValue)
+                                    {
+                                        <div class="audit-cell">
+
+                                            <strong>
+                                                @GetAuditUserName(
+                                                item.ModifiedByUserFullName)
+                                </strong>
+
+                                <span>
+                                    @FormatDate(
+                                                                        item.ModifiedDate.Value)
+                                </span>
+
+                            </div>
+                                                        }
+                                    else
+                                    {
+                                        <span class="empty-value">
+                                            -
+                                        </span>
+                                    }
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+@* =========================================================
+   CREATE / UPDATE
+   ========================================================= *@
+
+<AppModal IsOpen="_showFormModal"
+          Title="@GetFormTitle()"
+          Description="@GetFormDescription()"
+          Size="medium"
+          DisableClose="_isSaving"
+          OnClose="CloseFormModal">
+
+    @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+    {
+        <div class="modal-message">
+            @_modalErrorMessage
+        </div>
+    }
+
+
+    <EditForm Model="_formModel"
+              OnValidSubmit="SaveAsync">
+
+        <DataAnnotationsValidator />
+
+
+        <div class="definition-form">
+
+            <div class="form-field">
+
+                <label for="definition-name">
+
+                    @GetNameColumnTitle()
+
+                    <span class="required-mark">
+                        *
+                    </span>
+
+                </label>
+
+
+                <InputText id="definition-name"
+                           class="form-control"
+                           maxlength="50"
+                           autocomplete="off"
+                           disabled="@_isSaving"
+                           @bind-Value="_formModel.Name" />
+
+
+                <ValidationMessage For="@(() => _formModel.Name)" />
+
+            </div>
+
+
+            <div class="form-actions">
+
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        disabled="@_isSaving"
+                        @onclick="CloseFormModal">
+                    Vazgeç
+                </button>
+
+
+                <button type="submit"
+                        class="btn btn-primary"
+                        disabled="@_isSaving">
+
+                    @if (_isSaving)
+                    {
+                        <span>
+                            Kaydediliyor...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            @(_editingId.HasValue
+                                                    ? "Güncelle"
+                                                    : "Kaydet")
+                    </span>
+                                        }
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </EditForm>
+
+</AppModal>
+
+
+@* =========================================================
+   DELETE
+   ========================================================= *@
+
+<AppModal IsOpen="@(_itemPendingDelete is not null)"
+          Title="Kaydı Sil"
+          Description="Silme işlemini tamamlamak için açıklama girin."
+          Size="small"
+          DisableClose="_isDeleting"
+          OnClose="CloseDeleteModal">
+
+    <div class="delete-modal-content">
+
+        @if (!string.IsNullOrWhiteSpace(_modalErrorMessage))
+        {
+            <div class="modal-message inline-modal-error">
+                @_modalErrorMessage
+            </div>
+        }
+
+
+        @if (_itemPendingDelete is not null)
+        {
+            <div class="delete-record-summary">
+
+                <strong>
+                    @_itemPendingDelete.Name
+                </strong>
+
+                <span>
+                    @GetDefinitionSingularTitle()
+                </span>
+
+            </div>
+
+
+            <p class="delete-confirmation">
+                Bu kaydı silmek istediğinize emin misiniz?
+            </p>
+
+
+            <EditForm Model="_deleteModel"
+                      OnValidSubmit="DeleteAsync">
+
+                <DataAnnotationsValidator />
+
+
+                <div class="delete-field">
+
+                    <label for="delete-reason">
+                        Silme Açıklaması
+                    </label>
+
+
+                    <InputTextArea id="delete-reason"
+                                   class="form-control delete-reason"
+                                   rows="4"
+                                   maxlength="500"
+                                   disabled="@_isDeleting"
+                                   @bind-Value="_deleteModel.DeleteReason" />
+
+
+                    <ValidationMessage For="@(() => _deleteModel.DeleteReason)" />
+
+                </div>
+
+
+                <div class="delete-modal-actions">
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled="@_isDeleting"
+                            @onclick="CloseDeleteModal">
+                        Vazgeç
+                    </button>
+
+
+                    <button type="submit"
+                            class="btn btn-danger"
+                            disabled="@_isDeleting">
+
+                        @(_isDeleting
+                                            ? "Siliniyor..."
+                                            : "Kaydı Sil")
+
+                </button>
+
+                </div>
+
+            </EditForm>
+                }
+
+    </div>
+
+</AppModal>
+
+
+@code {
+    private const string VehicleTypeDefinition =
+        "vehicle-type";
+
+    private const string VehicleKindDefinition =
+        "vehicle-kind";
+
+
+    private static readonly CultureInfo TurkishCulture =
+        CultureInfo.GetCultureInfo("tr-TR");
+
+
+    private readonly List<DefinitionRow> _items = [];
+
+
+    private string _selectedDefinition =
+        VehicleTypeDefinition;
+
+    private string _search =
+        string.Empty;
+
+
+    private DefinitionRow? _selectedItem;
+
+    private DefinitionRow? _itemPendingDelete;
+
+
+    private DefinitionFormModel _formModel =
+        new();
+
+    private DefinitionDeleteFormModel _deleteModel =
+        new();
+
+
+    private int? _editingId;
+
+
+    private bool _isLoading;
+
+    private bool _isSaving;
+
+    private bool _isDeleting;
+
+    private bool _showFormModal;
+
+
+    private string? _loadErrorMessage;
+
+    private string? _modalErrorMessage;
+
+    private string? _successMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+
+    // =========================================================
+    // DEFINITION CHANGE
+    // =========================================================
+
+    private async Task DefinitionChangedAsync(
+        ChangeEventArgs args)
+    {
+        _selectedDefinition =
+            args.Value?.ToString()
+            ?? VehicleTypeDefinition;
+
+
+        _search =
+            string.Empty;
+
+
+        _selectedItem =
+            null;
+
+
+        _successMessage =
+            null;
+
+
+        await LoadAsync();
+    }
+
+
+    // =========================================================
+    // LOAD
+    // =========================================================
+
+    private async Task LoadAsync(
+        int? selectId = null)
+    {
+        _isLoading = true;
+
+        _loadErrorMessage = null;
+
+
+        try
+        {
+            _items.Clear();
+
+
+            if (_selectedDefinition ==
+                VehicleTypeDefinition)
+            {
+                var items =
+                    await VehicleTypeService
+                        .GetAllAsync(_search);
+
+
+                _items.AddRange(
+                    items.Select(x =>
+                        new DefinitionRow
+                        {
+                            Id = x.Id,
+
+                            Name = x.TypeName,
+
+                            CreatedDate =
+                                x.CreatedDate,
+
+                            CreatedByUserFullName =
+                                x.CreatedByUserFullName,
+
+                            ModifiedDate =
+                                x.ModifiedDate,
+
+                            ModifiedByUserFullName =
+                                x.ModifiedByUserFullName
+                        }));
+            }
+            else
+            {
+                var items =
+                    await VehicleKindService
+                        .GetAllAsync(_search);
+
+
+                _items.AddRange(
+                    items.Select(x =>
+                        new DefinitionRow
+                        {
+                            Id = x.Id,
+
+                            Name = x.KindName,
+
+                            CreatedDate =
+                                x.CreatedDate,
+
+                            CreatedByUserFullName =
+                                x.CreatedByUserFullName,
+
+                            ModifiedDate =
+                                x.ModifiedDate,
+
+                            ModifiedByUserFullName =
+                                x.ModifiedByUserFullName
+                        }));
+            }
+
+
+            _items.Sort(
+                (left, right) =>
+                    string.Compare(
+                        left.Name,
+                        right.Name,
+                        true,
+                        TurkishCulture));
+
+
+            if (selectId.HasValue)
+            {
+                _selectedItem =
+                    _items.FirstOrDefault(
+                        x => x.Id == selectId.Value);
+            }
+            else if (_selectedItem is not null)
+            {
+                var oldSelectedId =
+                    _selectedItem.Id;
+
+
+                _selectedItem =
+                    _items.FirstOrDefault(
+                        x => x.Id == oldSelectedId);
+            }
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _loadErrorMessage =
+                "Listeleme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _loadErrorMessage =
+                "Tanımlar yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+
+    // =========================================================
+    // SELECT
+    // =========================================================
+
+    private void SelectItem(
+        DefinitionRow item)
+    {
+        if (IsAnyOperationRunning())
+        {
+            return;
+        }
+
+
+        _selectedItem =
+            _selectedItem?.Id == item.Id
+                ? null
+                : item;
+    }
+
+
+    // =========================================================
+    // CREATE
+    // =========================================================
+
+    private void OpenCreateModal()
+    {
+        ResetDeleteModal();
+
+
+        _editingId =
+            null;
+
+
+        _formModel =
+            new DefinitionFormModel();
+
+
+        _modalErrorMessage =
+            null;
+
+        _successMessage =
+            null;
+
+        _showFormModal =
+            true;
+    }
+
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    private void OpenEditModal()
+    {
+        if (_selectedItem is null)
+        {
+            return;
+        }
+
+
+        ResetDeleteModal();
+
+
+        _editingId =
+            _selectedItem.Id;
+
+
+        _formModel =
+            new DefinitionFormModel
+            {
+                Name =
+                    _selectedItem.Name
+            };
+
+
+        _modalErrorMessage =
+            null;
+
+        _successMessage =
+            null;
+
+        _showFormModal =
+            true;
+    }
+
+
+    private void CloseFormModal()
+    {
+        if (_isSaving)
+        {
+            return;
+        }
+
+
+        ResetFormModal();
+    }
+
+
+    private void ResetFormModal()
+    {
+        _showFormModal =
+            false;
+
+        _editingId =
+            null;
+
+        _formModel =
+            new DefinitionFormModel();
+
+        _modalErrorMessage =
+            null;
+    }
+
+
+    // =========================================================
+    // SAVE
+    // =========================================================
+
+    private async Task SaveAsync()
+    {
+        _isSaving = true;
+
+        _modalErrorMessage = null;
+
+        _successMessage = null;
+
+
+        try
+        {
+            var name =
+                _formModel.Name.Trim();
+
+
+            int savedId;
+
+
+            if (_selectedDefinition ==
+                VehicleTypeDefinition)
+            {
+                if (_editingId.HasValue)
+                {
+                    var response =
+                        await VehicleTypeService
+                            .UpdateAsync(
+                                _editingId.Value,
+                                new UpdateVehicleTypeRequest
+                                {
+                                    TypeName = name
+                                });
+
+
+                    savedId =
+                        response.Id;
+
+
+                    _successMessage =
+                        $"{response.TypeName} güncellendi.";
+                }
+                else
+                {
+                    var response =
+                        await VehicleTypeService
+                            .CreateAsync(
+                                new CreateVehicleTypeRequest
+                                {
+                                    TypeName = name
+                                });
+
+
+                    savedId =
+                        response.Id;
+
+
+                    _successMessage =
+                        $"{response.TypeName} eklendi.";
+                }
+            }
+            else
+            {
+                if (_editingId.HasValue)
+                {
+                    var response =
+                        await VehicleKindService
+                            .UpdateAsync(
+                                _editingId.Value,
+                                new UpdateVehicleKindRequest
+                                {
+                                    KindName = name
+                                });
+
+
+                    savedId =
+                        response.Id;
+
+
+                    _successMessage =
+                        $"{response.KindName} güncellendi.";
+                }
+                else
+                {
+                    var response =
+                        await VehicleKindService
+                            .CreateAsync(
+                                new CreateVehicleKindRequest
+                                {
+                                    KindName = name
+                                });
+
+
+                    savedId =
+                        response.Id;
+
+
+                    _successMessage =
+                        $"{response.KindName} eklendi.";
+                }
+            }
+
+
+            ResetFormModal();
+
+
+            await LoadAsync(
+                savedId);
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Kayıt isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Kayıt işlemi sırasında beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    private void OpenDeleteModal()
+    {
+        if (_selectedItem is null)
+        {
+            return;
+        }
+
+
+        ResetFormModal();
+
+
+        _itemPendingDelete =
+            _selectedItem;
+
+
+        _deleteModel =
+            new DefinitionDeleteFormModel();
+
+
+        _modalErrorMessage =
+            null;
+
+        _successMessage =
+            null;
+    }
+
+
+    private void CloseDeleteModal()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+
+        ResetDeleteModal();
+    }
+
+
+    private void ResetDeleteModal()
+    {
+        _itemPendingDelete =
+            null;
+
+        _deleteModel =
+            new DefinitionDeleteFormModel();
+
+        _modalErrorMessage =
+            null;
+    }
+
+
+    private async Task DeleteAsync()
+    {
+        if (_itemPendingDelete is null)
+        {
+            return;
+        }
+
+
+        _isDeleting = true;
+
+        _modalErrorMessage = null;
+
+        _successMessage = null;
+
+
+        var deletedName =
+            _itemPendingDelete.Name;
+
+
+        try
+        {
+            var reason =
+                _deleteModel.DeleteReason.Trim();
+
+
+            if (_selectedDefinition ==
+                VehicleTypeDefinition)
+            {
+                await VehicleTypeService
+                    .DeleteAsync(
+                        _itemPendingDelete.Id,
+                        new DeleteVehicleTypeRequest
+                        {
+                            DeleteReason = reason
+                        });
+            }
+            else
+            {
+                await VehicleKindService
+                    .DeleteAsync(
+                        _itemPendingDelete.Id,
+                        new DeleteVehicleKindRequest
+                        {
+                            DeleteReason = reason
+                        });
+            }
+
+
+            ResetDeleteModal();
+
+
+            _selectedItem =
+                null;
+
+
+            _successMessage =
+                $"{deletedName} silindi.";
+
+
+            await LoadAsync();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Silme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Silme işlemi sırasında beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+
+    // =========================================================
+    // SEARCH / REFRESH
+    // =========================================================
+
+    private async Task SearchAsync()
+    {
+        _selectedItem =
+            null;
+
+        _successMessage =
+            null;
+
+
+        await LoadAsync();
+    }
+
+
+    private async Task ClearSearchAsync()
+    {
+        _search =
+            string.Empty;
+
+        _selectedItem =
+            null;
+
+        _successMessage =
+            null;
+
+
+        await LoadAsync();
+    }
+
+
+    private async Task RefreshAsync()
+    {
+        _successMessage =
+            null;
+
+
+        await LoadAsync(
+            _selectedItem?.Id);
+    }
+
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    private bool CanUseSelectedRecord()
+    {
+        return
+            _selectedItem is not null &&
+            !IsAnyOperationRunning();
+    }
+
+
+    private bool IsAnyOperationRunning()
+    {
+        return
+            _isLoading ||
+            _isSaving ||
+            _isDeleting;
+    }
+
+
+    private string GetDefinitionTitle()
+    {
+        return _selectedDefinition ==
+               VehicleTypeDefinition
+            ? "Araç Tipleri"
+            : "Araç Türleri";
+    }
+
+
+    private string GetDefinitionSingularTitle()
+    {
+        return _selectedDefinition ==
+               VehicleTypeDefinition
+            ? "Araç Tipi"
+            : "Araç Türü";
+    }
+
+
+    private string GetNameColumnTitle()
+    {
+        return _selectedDefinition ==
+               VehicleTypeDefinition
+            ? "Araç Tipi Adı"
+            : "Araç Türü Adı";
+    }
+
+
+    private string GetSearchPlaceholder()
+    {
+        return _selectedDefinition ==
+               VehicleTypeDefinition
+            ? "Araç tipi ara..."
+            : "Araç türü ara...";
+    }
+
+
+    private string GetFormTitle()
+    {
+        if (_editingId.HasValue)
+        {
+            return
+                $"{GetDefinitionSingularTitle()} Güncelle";
+        }
+
+
+        return
+            $"Yeni {GetDefinitionSingularTitle()}";
+    }
+
+
+    private string GetFormDescription()
+    {
+        return _editingId.HasValue
+            ? "Seçili tanım kaydını güncelleyin."
+            : "Yeni tanım kaydı oluşturun.";
+    }
+
+
+    private string GetRowClass(
+        DefinitionRow item)
+    {
+        return _selectedItem?.Id ==
+               item.Id
+            ? "selected-row"
+            : string.Empty;
+    }
+
+
+    private string GetSelectionClass(
+        DefinitionRow item)
+    {
+        return _selectedItem?.Id ==
+               item.Id
+            ? "selection-dot selected"
+            : "selection-dot";
+    }
+
+
+    private static string GetAuditUserName(
+        string? name)
+    {
+        return string.IsNullOrWhiteSpace(name)
+            ? "-"
+            : name;
+    }
+
+
+    private static string FormatDate(
+        DateTime date)
+    {
+        return date.ToLocalTime()
+            .ToString(
+                "dd.MM.yyyy HH:mm",
+                TurkishCulture);
+    }
+
+
+    private sealed class DefinitionRow
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; } =
+            string.Empty;
+
+        public DateTime CreatedDate { get; set; }
+
+        public string? CreatedByUserFullName { get; set; }
+
+        public DateTime? ModifiedDate { get; set; }
+
+        public string? ModifiedByUserFullName { get; set; }
+    }
+
+
+    private sealed class DefinitionFormModel
+    {
+        [Required(
+            ErrorMessage = "Tanım adı zorunludur.")]
+        [StringLength(
+            50,
+            ErrorMessage =
+                "Tanım adı en fazla 50 karakter olabilir.")]
+        public string Name { get; set; } =
+            string.Empty;
+    }
+
+
+    private sealed class DefinitionDeleteFormModel
+    {
+        [Required(
+            ErrorMessage =
+                "Silme açıklaması zorunludur.")]
+        [StringLength(
+            500,
+            ErrorMessage =
+                "Silme açıklaması en fazla 500 karakter olabilir.")]
+        public string DeleteReason { get; set; } =
+            string.Empty;
+    }
+}

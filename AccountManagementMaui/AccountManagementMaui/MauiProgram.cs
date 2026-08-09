@@ -1,6 +1,5 @@
 ﻿using AccountManagementMaui.Authentication;
 using AccountManagementMaui.Services;
-
 using AccountManagementMaui.Shared.Authentication;
 using AccountManagementMaui.Shared.Services;
 using AccountManagementMaui.Shared.Services.AccountCardGroupServices;
@@ -13,7 +12,10 @@ using AccountManagementMaui.Shared.Services.CityServices;
 using AccountManagementMaui.Shared.Services.DistrictServices;
 using AccountManagementMaui.Shared.Services.TaxOfficeServices;
 using AccountManagementMaui.Shared.Services.UserServices;
-
+using AccountManagementMaui.Shared.Services.VehicleKindServices;
+using AccountManagementMaui.Shared.Services.VehicleLookupServices;
+using AccountManagementMaui.Shared.Services.VehicleServices;
+using AccountManagementMaui.Shared.Services.VehicleTypeServices;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -231,6 +233,21 @@ public static class MauiProgram
             IAccountCardService,
             AccountCardService>();
 
+        builder.Services.AddScoped<
+            IVehicleKindService,
+            VehicleKindService>();
+
+        builder.Services.AddScoped<
+            IVehicleTypeService,
+            VehicleTypeService>();
+
+        builder.Services.AddScoped<
+            IVehicleService,
+            VehicleService>();
+
+        builder.Services.AddScoped<
+            IVehicleLookupService,
+            VehicleLookupService>();
 
         // =========================================================
         // BUILD

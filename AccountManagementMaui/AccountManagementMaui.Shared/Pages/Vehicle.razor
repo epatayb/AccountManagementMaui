@@ -1,0 +1,3018 @@
+﻿@page "/vehicles"
+
+@using System.Globalization
+
+@using AccountManagementMaui.Shared.Components.Common
+@using AccountManagementMaui.Shared.Components.VehicleComponents
+
+@using AccountManagementMaui.Shared.Models.VehicleKindModels
+@using AccountManagementMaui.Shared.Models.VehicleLookupModels
+@using AccountManagementMaui.Shared.Models.VehicleModels
+@using AccountManagementMaui.Shared.Models.VehicleTypeModels
+
+@using AccountManagementMaui.Shared.Services.Common
+@using AccountManagementMaui.Shared.Services.VehicleKindServices
+@using AccountManagementMaui.Shared.Services.VehicleServices
+@using AccountManagementMaui.Shared.Services.VehicleTypeServices
+
+
+@inject IVehicleService VehicleService
+@inject IVehicleTypeService VehicleTypeService
+@inject IVehicleKindService VehicleKindService
+
+
+<PageTitle>Araçlar</PageTitle>
+
+
+<div class="vehicles-page">
+
+    @* =========================================================
+       TOOLBAR
+       ========================================================= *@
+
+    <header class="vehicles-toolbar">
+
+        <div class="toolbar-title">
+
+            <h1>
+                Araçlar
+            </h1>
+
+            <span>
+                @_result.TotalCount kayıt
+            </span>
+
+        </div>
+
+
+        <div class="toolbar-controls">
+
+            <form class="search-form"
+                  @onsubmit="SearchAsync"
+                  @onsubmit:preventDefault>
+
+                <input type="search"
+                       class="search-input"
+                       placeholder="Plaka, dorse, şoför, ruhsat veya fatura hesabı ara..."
+                       autocomplete="off"
+                       disabled="@_isLoading"
+                       @bind="_search"
+                       @bind:event="oninput" />
+
+
+                <select class="filter-select"
+                        disabled="@_isLoading"
+                        @bind="_vehicleTypeId">
+
+                    <option value="">
+                        Tüm Tipler
+                    </option>
+
+                    @foreach (var type in _vehicleTypes)
+                    {
+                        <option value="@type.Id">
+                            @type.TypeName
+                        </option>
+                    }
+
+                </select>
+
+
+                <select class="filter-select"
+                        disabled="@_isLoading"
+                        @bind="_vehicleKindId">
+
+                    <option value="">
+                        Tüm Türler
+                    </option>
+
+                    @foreach (var kind in _vehicleKinds)
+                    {
+                        <option value="@kind.Id">
+                            @kind.KindName
+                        </option>
+                    }
+
+                </select>
+
+
+                <select class="filter-select status-select"
+                        disabled="@_isLoading"
+                        @bind="_statusFilter">
+
+                    <option value="">
+                        Tüm Durumlar
+                    </option>
+
+                    <option value="active">
+                        Aktif
+                    </option>
+
+                    <option value="passive">
+                        Pasif
+                    </option>
+
+                </select>
+
+
+                <button type="submit"
+                        class="compact-button primary-button"
+                        disabled="@_isLoading">
+                    Ara
+                </button>
+
+
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="ClearFiltersAsync">
+                    Temizle
+                </button>
+
+
+                <button type="button"
+                        class="compact-button secondary-button"
+                        disabled="@_isLoading"
+                        @onclick="RefreshAsync">
+                    Yenile
+                </button>
+
+            </form>
+
+
+            <button type="button"
+                    class="compact-button new-button"
+                    disabled="@IsAnyOperationRunning()"
+                    @onclick="OpenCreateModal">
+                + Yeni Araç
+            </button>
+
+        </div>
+
+    </header>
+
+
+    @* =========================================================
+       SUCCESS
+       ========================================================= *@
+
+    @if (!string.IsNullOrWhiteSpace(
+        _successMessage))
+    {
+        <div class="compact-message success-message">
+
+            <span>
+                @_successMessage
+            </span>
+
+        </div>
+    }
+
+
+    @* =========================================================
+       LOAD ERROR
+       ========================================================= *@
+
+    @if (!string.IsNullOrWhiteSpace(
+        _errorMessage))
+    {
+        <div class="compact-message error-message">
+
+            <span>
+                @_errorMessage
+            </span>
+
+
+            <button type="button"
+                    class="message-button"
+                    @onclick="RefreshAsync">
+                Tekrar Dene
+            </button>
+
+        </div>
+    }
+
+
+    @* =========================================================
+       TABLE
+       ========================================================= *@
+
+    <section class="vehicles-table-shell">
+
+        <div class="table-scroll">
+
+            <table class="vehicles-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th class="vehicle-column">
+                            Araç
+                        </th>
+
+                        <th class="driver-column">
+                            Şoför
+                        </th>
+
+                        <th class="account-column">
+                            Ruhsat Carisi
+                        </th>
+
+                        <th class="account-column">
+                            Fatura Hesabı
+                        </th>
+
+                        <th class="trailer-column">
+                            Dorse
+                        </th>
+
+                        <th class="document-column">
+                            Belgeler
+                        </th>
+
+                        <th class="status-column">
+                            Durum
+                        </th>
+
+                        <th class="action-column">
+                            İşlemler
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @if (_isLoading &&
+                                        _result.Items.Count == 0)
+                    {
+                        <tr>
+
+                            <td colspan="8"
+                                class="table-state">
+
+                                Araçlar yükleniyor...
+
+                            </td>
+
+                        </tr>
+                    }
+                    else if (_result.Items.Count == 0)
+                    {
+                        <tr>
+
+                            <td colspan="8"
+                                class="table-state">
+
+                                Araç kaydı bulunamadı.
+
+                            </td>
+
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var vehicle in _result.Items)
+                        {
+                            <tr>
+
+                                @* =================================
+                                   VEHICLE
+                                   ================================= *@
+
+                                <td>
+
+                                    <div class="vehicle-cell">
+
+                                        <strong class="plate">
+                                            @vehicle.Plate
+                                        </strong>
+
+
+                                        <span>
+                                            @vehicle.VehicleTypeName
+                                            ·
+                                            @vehicle.VehicleKindName
+                                        </span>
+
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                                                        vehicle.Brand) ||
+                                                                        !string.IsNullOrWhiteSpace(
+                                                                        vehicle.Model))
+                                        {
+                                            <small>
+                                                @GetBrandModel(vehicle)
+                                            </small>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+
+                                @* =================================
+                                   DRIVER
+                                   ================================= *@
+
+                                <td>
+
+                                    <div class="driver-cell">
+
+                                        <strong>
+                                            @vehicle.DriverName
+                                        </strong>
+
+
+                                        <span>
+                                            TC:
+                                            @MaskIdentityNumber(
+                                            vehicle.DriverIdentityNumber)
+                                </span>
+
+
+                                <span>
+                                    @DisplayValue(
+                                                                        vehicle.DriverPhoneNumber)
+                                </span>
+
+                            </div>
+
+                        </td>
+
+
+                        @* =================================
+                                   LICENSE ACCOUNT
+                                   ================================= *@
+
+                        <td>
+
+                            <div class="account-cell">
+
+                                <strong>
+                                    @vehicle.LicenseAccountCardName
+                                </strong>
+
+
+                                <span>
+                                    @vehicle.LicenseOwnerCityName
+                                </span>
+
+                            </div>
+
+                        </td>
+
+
+                        @* =================================
+                                   INVOICE
+                                   ================================= *@
+
+                        <td>
+
+                            <div class="account-cell">
+
+                                <strong>
+                                    @vehicle.InvoiceAccountCardName
+                                </strong>
+
+                            </div>
+
+                        </td>
+
+
+                        @* =================================
+                                   TRAILER
+                                   ================================= *@
+
+                        <td>
+
+                            <span class="plate-secondary">
+
+                                @DisplayValue(
+                                                                vehicle.TrailerPlate)
+
+                            </span>
+
+                        </td>
+
+
+                        @* =================================
+                                   DOCUMENTS
+                                   ================================= *@
+
+                        <td>
+
+                            <div class="document-cell">
+
+                                <span>
+                                    @RenderDateText(
+                                                                        "Sigorta",
+                                                                        vehicle.InsuranceExpiryDate)
+                                </span>
+
+
+                                <span>
+                                    @RenderDateText(
+                                                                        "Muayene",
+                                                                        vehicle.InspectionExpiryDate)
+                                </span>
+
+                            </div>
+
+                        </td>
+
+
+                        @* =================================
+                                   STATUS
+                                   ================================= *@
+
+                        <td>
+
+                            <span class="status-badge @(vehicle.IsActive
+                                                                          ? "active-status"
+                                                                          : "passive-status")">
+
+                                @(vehicle.IsActive
+                                                                ? "Aktif"
+                                                                : "Pasif")
+
+                            </span>
+
+                        </td>
+
+
+                        @* =================================
+                                   ACTIONS
+                                   ================================= *@
+
+                        <td>
+
+                            <div class="row-actions">
+
+                                <button type="button"
+                                        class="row-action-button view-button"
+                                        title="Görüntüle"
+                                        disabled="@IsAnyOperationRunning()"
+                                        @onclick="() => OpenDetailModalAsync(vehicle.Id)">
+                                    Görüntüle
+                                </button>
+
+
+                                <button type="button"
+                                        class="row-action-button edit-button"
+                                        title="Düzenle"
+                                        disabled="@IsAnyOperationRunning()"
+                                        @onclick="() => OpenEditModalAsync(vehicle.Id)">
+                                    Düzenle
+                                </button>
+
+
+                                <button type="button"
+                                        class="row-action-button status-button"
+                                        disabled="@IsAnyOperationRunning()"
+                                        @onclick="() => OpenStatusModalAsync(vehicle.Id)">
+
+                                    @(vehicle.IsActive
+                                                                        ? "Pasife Al"
+                                                                        : "Aktif Et")
+
+                                </button>
+
+
+                                        <button type="button"
+                                                class="row-action-button delete-button"
+                                                title="Sil"
+                                                disabled="@IsAnyOperationRunning()"
+                                                @onclick="() => OpenDeleteModalAsync(vehicle.Id)">
+                                            Sil
+                                        </button>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                                        }
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        @* =====================================================
+           PAGINATION
+           ===================================================== *@
+
+        <footer class="table-footer">
+
+            <div class="page-size-area">
+
+                <span>
+                    Sayfa başına
+                </span>
+
+
+                <select class="page-size-select"
+                        value="@_pageSize"
+                        disabled="@_isLoading"
+                        @onchange="PageSizeChangedAsync">
+
+                    <option value="25">
+                        25
+                    </option>
+
+                    <option value="50">
+                        50
+                    </option>
+
+                    <option value="100">
+                        100
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="pagination">
+
+                <button type="button"
+                        class="page-button"
+                        disabled="@(_isLoading ||
+                                                            _result.Page <= 1)"
+                        @onclick="PreviousPageAsync">
+                    ‹
+                </button>
+
+
+                <span class="page-info">
+
+                    Sayfa
+
+                    <strong>
+                        @_result.Page
+                    </strong>
+
+                    /
+
+                    <strong>
+                        @GetTotalPages()
+                    </strong>
+
+                </span>
+
+
+                <button type="button"
+                        class="page-button"
+                        disabled="@(_isLoading ||
+                                                            _result.Page >=
+                                                            GetTotalPages())"
+                        @onclick="NextPageAsync">
+                    ›
+                </button>
+
+            </div>
+
+        </footer>
+
+    </section>
+
+</div>
+
+
+@* =============================================================
+   CREATE / UPDATE VEHICLE MODAL
+   ============================================================= *@
+
+<AppModal IsOpen="_showVehicleModal"
+          Title="@GetVehicleFormTitle()"
+          Description="@GetVehicleFormDescription()"
+          Size="large"
+          DisableClose="_isSaving"
+          OnClose="CloseVehicleModal">
+
+    @if (!string.IsNullOrWhiteSpace(
+        _modalErrorMessage))
+    {
+        <div class="vehicle-modal-error">
+            @_modalErrorMessage
+        </div>
+    }
+
+
+    @if (_isLoadingVehicle)
+    {
+        <div class="vehicle-modal-loading">
+            Araç bilgileri yükleniyor...
+        </div>
+    }
+    else
+    {
+        <VehicleForm @key="_formKey"
+                     State="_formState"
+                     IsSubmitting="_isSaving"
+                     SubmitText="@GetVehicleSubmitText()"
+                     OnValidSubmit="SaveVehicleAsync"
+                     OnCancel="CloseVehicleModal" />
+    }
+
+</AppModal>
+
+
+@* =============================================================
+   DETAIL MODAL
+   ============================================================= *@
+
+<AppModal IsOpen="_showDetailModal"
+          Title="Araç Detayı"
+          Description="Araç ve ilişkili kart bilgileri."
+          Size="large"
+          DisableClose="false"
+          OnClose="CloseDetailModal">
+
+    @if (!string.IsNullOrWhiteSpace(
+        _actionErrorMessage))
+    {
+        <div class="vehicle-modal-error">
+            @_actionErrorMessage
+        </div>
+    }
+
+
+    @if (_selectedVehicle is null &&
+        string.IsNullOrWhiteSpace(
+        _actionErrorMessage))
+    {
+        <div class="vehicle-modal-loading">
+            Araç bilgileri yükleniyor...
+        </div>
+    }
+    else if (_selectedVehicle is not null)
+    {
+        <div class="vehicle-detail">
+
+            @* =============================================
+               VEHICLE
+               ============================================= *@
+
+            <section class="detail-section">
+
+                <div class="detail-section-title">
+                    Araç Bilgileri
+                </div>
+
+
+                <div class="detail-grid">
+
+                    <div class="detail-item">
+
+                        <span>Plaka</span>
+
+                        <strong>
+                            @_selectedVehicle.Plate
+                        </strong>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <span>Araç Tipi</span>
+
+                        <strong>
+                            @_selectedVehicle.VehicleTypeName
+                        </strong>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <span>Araç Türü</span>
+
+                        <strong>
+                            @_selectedVehicle.VehicleKindName
+                        </strong>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <span>Dorse</span>
+
+                        <strong>
+                            @DisplayValue(
+                            _selectedVehicle.TrailerPlate)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Marka</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.Brand)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Model</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.Model)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Ülke</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.Country)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Durum</span>
+
+                    <strong>
+                        @(_selectedVehicle.IsActive
+                                                ? "Aktif"
+                                                : "Pasif")
+                    </strong>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            @* =============================================
+               DRIVER / REFERENCE
+               ============================================= *@
+
+            <section class="detail-section">
+
+                <div class="detail-section-title">
+                    Şoför ve Referans
+                </div>
+
+
+                <div class="detail-grid">
+
+                    <div class="detail-item">
+
+                        <span>Şoför</span>
+
+                        <strong>
+                            @_selectedVehicle.DriverName
+                        </strong>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <span>Şoför TC</span>
+
+                        <strong>
+                            @MaskIdentityNumber(
+                                                _selectedVehicle.DriverIdentityNumber)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Şoför Telefon</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.DriverPhoneNumber)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Şoför Ruhsat Sahibidir</span>
+
+                    <strong>
+                        @(_selectedVehicle.DriverIsLicenseOwner
+                                                ? "Evet"
+                                                : "Hayır")
+                    </strong>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <span>Referans</span>
+
+                        <strong>
+                            @DisplayValue(
+                                                _selectedVehicle.ReferenceName)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Referans Telefon</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.ReferencePhoneNumber)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        @* =============================================
+               ACCOUNTS
+               ============================================= *@
+
+        <section class="detail-section">
+
+            <div class="detail-section-title">
+                Cari Bilgileri
+            </div>
+
+
+            <div class="detail-grid">
+
+                <div class="detail-item">
+
+                    <span>Araç Ruhsat Carisi</span>
+
+                    <strong>
+                        @_selectedVehicle.LicenseAccountCardName
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Fatura Hesabı</span>
+
+                    <strong>
+                        @_selectedVehicle.InvoiceAccountCardName
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Referans Fatura Caridir</span>
+
+                    <strong>
+                        @(_selectedVehicle.ReferenceIsInvoiceAccount
+                                                ? "Evet"
+                                                : "Hayır")
+                                                      </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Ruhsat Cari Fatura Caridir</span>
+
+                    <strong>
+                        @(_selectedVehicle.LicenseOwnerIsInvoiceAccount
+                                                ? "Evet"
+                                                : "Hayır")
+                    </strong>
+
+                                        </div>
+
+                                    </div>
+
+                                </section>
+
+
+                                @* =============================================
+               LICENSE OWNER
+               ============================================= *@
+
+                                <section class="detail-section">
+
+                                    <div class="detail-section-title">
+                                        Ruhsat Sahibi
+                                    </div>
+
+
+                                    <div class="detail-grid">
+
+                                        <div class="detail-item">
+
+                                            <span>Ad / Ünvan</span>
+
+                                            <strong>
+                                                @_selectedVehicle.LicenseOwnerName
+                                            </strong>
+
+                                        </div>
+
+
+                                        <div class="detail-item">
+
+                                            <span>TC No</span>
+
+                                            <strong>
+                                                @MaskIdentityNumber(
+                                                _selectedVehicle.LicenseOwnerIdentityNumber)
+                    </strong>
+
+                    </div>
+
+
+                    <div class="detail-item">
+
+                        <span>Vergi No</span>
+
+                        <strong>
+                            @MaskTaxNumber(
+                                                _selectedVehicle.LicenseOwnerTaxNumber)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Şehir</span>
+
+                    <strong>
+                        @_selectedVehicle.LicenseOwnerCityName
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Vergi Dairesi</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.LicenseOwnerTaxOfficeName)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item detail-item-wide">
+
+                    <span>Adres</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.LicenseOwnerAddress)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        @* =============================================
+               AUTHORIZED / DOCUMENTS
+               ============================================= *@
+
+        <section class="detail-section">
+
+            <div class="detail-section-title">
+                Yetkili ve Belgeler
+            </div>
+
+
+            <div class="detail-grid">
+
+                <div class="detail-item">
+
+                    <span>Yetkili</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.AuthorizedName)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Yetkili Telefon</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.AuthorizedPhone)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Sigorta Bitiş</span>
+
+                    <strong>
+                        @FormatNullableDate(
+                                                _selectedVehicle.InsuranceExpiryDate)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Muayene Bitiş</span>
+
+                    <strong>
+                        @FormatNullableDate(
+                                                _selectedVehicle.InspectionExpiryDate)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        @* =============================================
+               AUDIT
+               ============================================= *@
+
+        <section class="detail-section">
+
+            <div class="detail-section-title">
+                Kayıt Bilgileri
+            </div>
+
+
+            <div class="detail-grid">
+
+                <div class="detail-item">
+
+                    <span>Oluşturan</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.CreatedByUserFullName)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Oluşturulma</span>
+
+                    <strong>
+                        @FormatDateTime(
+                                                _selectedVehicle.CreatedDate)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Güncelleyen</span>
+
+                    <strong>
+                        @DisplayValue(
+                                                _selectedVehicle.ModifiedByUserFullName)
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-item">
+
+                    <span>Son Güncelleme</span>
+
+                    <strong>
+                        @FormatNullableDateTime(
+                                                _selectedVehicle.ModifiedDate)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div class="modal-actions">
+
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    @onclick="CloseDetailModal">
+                Kapat
+            </button>
+
+
+            <button type="button"
+                    class="btn btn-primary"
+                    @onclick="EditSelectedVehicleAsync">
+                Düzenle
+            </button>
+
+        </div>
+
+    </div>
+        }
+
+</AppModal>
+
+
+@* =============================================================
+   STATUS MODAL
+   ============================================================= *@
+
+<AppModal IsOpen="_showStatusModal"
+          Title="@GetStatusModalTitle()"
+          Description="Araç durumunu değiştirmeden önce işlemi onaylayın."
+          Size="small"
+          DisableClose="_isChangingStatus"
+          OnClose="CloseStatusModal">
+
+    @if (!string.IsNullOrWhiteSpace(
+        _actionErrorMessage))
+    {
+        <div class="vehicle-modal-error">
+            @_actionErrorMessage
+        </div>
+    }
+
+
+    @if (_vehiclePendingStatus is not null)
+    {
+        <div class="vehicle-confirmation">
+
+            <p>
+
+                <strong>
+                    @_vehiclePendingStatus.Plate
+                </strong>
+
+                plakalı araç
+
+                <strong>
+                    @(_vehiclePendingStatus.IsActive
+                                    ? "pasife"
+                                    : "aktife")
+            </strong>
+
+                alınacaktır.
+
+            </p>
+
+
+        @if (_vehiclePendingStatus.IsActive)
+            {
+                <div class="status-warning">
+
+                    Pasife alınan araç sistemde korunur ancak
+                    aktif araç seçimlerinde kullanılmamalıdır.
+
+                </div>
+            }
+
+
+            <div class="modal-actions">
+
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        disabled="@_isChangingStatus"
+                        @onclick="CloseStatusModal">
+                    Vazgeç
+                </button>
+
+
+                <button type="button"
+                        class="btn btn-primary"
+                        disabled="@_isChangingStatus"
+                        @onclick="ChangeVehicleStatusAsync">
+
+                    @if (_isChangingStatus)
+                    {
+                        <span>
+                            İşleniyor...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            @(_vehiclePendingStatus.IsActive
+                                                ? "Pasife Al"
+                                                : "Aktif Et")
+                </span>
+                                }
+
+                </button>
+
+            </div>
+
+        </div>
+    }
+
+</AppModal>
+
+
+@* =============================================================
+   DELETE MODAL
+   ============================================================= *@
+
+<AppModal IsOpen="@(_vehiclePendingDelete is not null)"
+          Title="Araç Kaydını Sil"
+          Description="Silme işlemini tamamlamak için açıklama girin."
+          Size="small"
+          DisableClose="_isDeleting"
+          OnClose="CloseDeleteModal">
+
+    @if (!string.IsNullOrWhiteSpace(
+        _actionErrorMessage))
+    {
+        <div class="vehicle-modal-error">
+            @_actionErrorMessage
+        </div>
+    }
+
+
+    @if (_vehiclePendingDelete is not null)
+    {
+        <EditForm Model="_deleteVehicleModel"
+                  OnValidSubmit="DeleteVehicleAsync">
+
+            <DataAnnotationsValidator />
+
+
+            <div class="delete-confirmation">
+
+                <p>
+
+                    <strong>
+                        @_vehiclePendingDelete.Plate
+                    </strong>
+
+                    plakalı araç kaydını silmek istediğinize
+                    emin misiniz?
+
+                </p>
+
+
+                <div class="delete-warning">
+
+                    Bu işlem fiziksel silme yapmaz.
+                    Kayıt sistem geçmişinde korunur.
+
+                </div>
+
+            </div>
+
+
+            <div class="delete-field">
+
+                <label for="vehicle-delete-reason">
+
+                    Silme Açıklaması
+
+                    <span class="required-mark">
+                        *
+                    </span>
+
+                </label>
+
+
+                <InputTextArea id="vehicle-delete-reason"
+                               class="form-control"
+                               rows="4"
+                               maxlength="500"
+                               disabled="@_isDeleting"
+                               @bind-Value="_deleteVehicleModel.DeleteReason" />
+
+
+                <ValidationMessage For="@(() => _deleteVehicleModel.DeleteReason)" />
+
+            </div>
+
+
+            <div class="modal-actions">
+
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        disabled="@_isDeleting"
+                        @onclick="CloseDeleteModal">
+                    Vazgeç
+                </button>
+
+
+                <button type="submit"
+                        class="btn btn-danger"
+                        disabled="@_isDeleting">
+
+                    @if (_isDeleting)
+                    {
+                        <span>
+                            Siliniyor...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            Kaydı Sil
+                        </span>
+                    }
+
+                </button>
+
+            </div>
+
+        </EditForm>
+    }
+
+</AppModal>
+
+
+@code {
+    private static readonly CultureInfo TurkishCulture =
+        CultureInfo.GetCultureInfo(
+            "tr-TR");
+
+
+    // =========================================================
+    // LIST
+    // =========================================================
+
+    private VehicleListResponse _result =
+        new()
+        {
+            Page = 1,
+            PageSize = 25
+        };
+
+
+    private List<VehicleTypeListDto> _vehicleTypes =
+        [];
+
+
+    private List<VehicleKindListDto> _vehicleKinds =
+        [];
+
+
+    // =========================================================
+    // FILTERS
+    // =========================================================
+
+    private string _search =
+        string.Empty;
+
+
+    private int? _vehicleTypeId;
+
+    private int? _vehicleKindId;
+
+
+    private string _statusFilter =
+        string.Empty;
+
+
+    // =========================================================
+    // PAGINATION
+    // =========================================================
+
+    private int _page =
+        1;
+
+
+    private int _pageSize =
+        25;
+
+
+    // =========================================================
+    // VEHICLE FORM
+    // =========================================================
+
+    private VehicleFormState _formState =
+        new();
+
+
+    private int? _editingVehicleId;
+
+
+    private bool _showVehicleModal;
+
+    private bool _isLoadingVehicle;
+
+    private bool _isSaving;
+
+
+    private Guid _formKey =
+        Guid.NewGuid();
+
+
+    // =========================================================
+    // DETAIL
+    // =========================================================
+
+    private VehicleDetailDto? _selectedVehicle;
+
+    private bool _showDetailModal;
+
+
+    // =========================================================
+    // STATUS
+    // =========================================================
+
+    private VehicleDetailDto? _vehiclePendingStatus;
+
+    private bool _showStatusModal;
+
+    private bool _isChangingStatus;
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    private VehicleDetailDto? _vehiclePendingDelete;
+
+
+    private DeleteVehicleRequest _deleteVehicleModel =
+        new();
+
+
+    private bool _isDeleting;
+
+
+    // =========================================================
+    // GENERAL STATE
+    // =========================================================
+
+    private bool _isLoading;
+
+
+    private string? _errorMessage;
+
+    private string? _modalErrorMessage;
+
+    private string? _actionErrorMessage;
+
+    private string? _successMessage;
+
+
+    // =========================================================
+    // INITIALIZE
+    // =========================================================
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLookupsAsync();
+
+        await LoadVehiclesAsync();
+    }
+
+
+    // =========================================================
+    // LOOKUPS
+    // =========================================================
+
+    private async Task LoadLookupsAsync()
+    {
+        try
+        {
+            var typeTask =
+                VehicleTypeService.GetAllAsync();
+
+
+            var kindTask =
+                VehicleKindService.GetAllAsync();
+
+
+            await Task.WhenAll(
+                typeTask,
+                kindTask);
+
+
+            _vehicleTypes =
+                (await typeTask)
+                    .OrderBy(
+                        x => x.TypeName)
+                    .ToList();
+
+
+            _vehicleKinds =
+                (await kindTask)
+                    .OrderBy(
+                        x => x.KindName)
+                    .ToList();
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage =
+                "Araç tanımları yüklenirken API sunucusuna ulaşılamadı.";
+        }
+        catch
+        {
+            _errorMessage =
+                "Araç tanımları yüklenirken beklenmeyen bir hata oluştu.";
+        }
+    }
+
+
+    // =========================================================
+    // LOAD VEHICLES
+    // =========================================================
+
+    private async Task LoadVehiclesAsync()
+    {
+        _isLoading =
+            true;
+
+
+        _errorMessage =
+            null;
+
+
+        try
+        {
+            _result =
+                await VehicleService.GetAllAsync(
+                    search:
+                        _search,
+
+                    vehicleTypeId:
+                        _vehicleTypeId,
+
+                    vehicleKindId:
+                        _vehicleKindId,
+
+                    isActive:
+                        GetStatusFilter(),
+
+                    sortBy:
+                        "plate",
+
+                    sortDirection:
+                        "asc",
+
+                    page:
+                        _page,
+
+                    pageSize:
+                        _pageSize);
+
+
+            if (_result.TotalPages > 0 &&
+                _page > _result.TotalPages)
+            {
+                _page =
+                    _result.TotalPages;
+
+
+                _result =
+                    await VehicleService.GetAllAsync(
+                        search:
+                            _search,
+
+                        vehicleTypeId:
+                            _vehicleTypeId,
+
+                        vehicleKindId:
+                            _vehicleKindId,
+
+                        isActive:
+                            GetStatusFilter(),
+
+                        sortBy:
+                            "plate",
+
+                        sortDirection:
+                            "asc",
+
+                        page:
+                            _page,
+
+                        pageSize:
+                            _pageSize);
+            }
+        }
+        catch (ApiException exception)
+        {
+            _errorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _errorMessage =
+                "Araç listesi isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _errorMessage =
+                "Araçlar yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoading =
+                false;
+        }
+    }
+
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
+
+    private async Task SearchAsync()
+    {
+        _successMessage =
+            null;
+
+
+        _page =
+            1;
+
+
+        await LoadVehiclesAsync();
+    }
+
+
+    private async Task ClearFiltersAsync()
+    {
+        _search =
+            string.Empty;
+
+
+        _vehicleTypeId =
+            null;
+
+
+        _vehicleKindId =
+            null;
+
+
+        _statusFilter =
+            string.Empty;
+
+
+        _page =
+            1;
+
+
+        _successMessage =
+            null;
+
+
+        await LoadVehiclesAsync();
+    }
+
+
+    private async Task RefreshAsync()
+    {
+        _successMessage =
+            null;
+
+
+        await LoadVehiclesAsync();
+    }
+
+
+    // =========================================================
+    // PAGINATION
+    // =========================================================
+
+    private async Task PreviousPageAsync()
+    {
+        if (_page <= 1)
+        {
+            return;
+        }
+
+
+        _page--;
+
+
+        await LoadVehiclesAsync();
+    }
+
+
+    private async Task NextPageAsync()
+    {
+        if (_page >= GetTotalPages())
+        {
+            return;
+        }
+
+
+        _page++;
+
+
+        await LoadVehiclesAsync();
+    }
+
+
+    private async Task PageSizeChangedAsync(
+        ChangeEventArgs args)
+    {
+        if (!int.TryParse(
+                args.Value?.ToString(),
+                out var pageSize))
+        {
+            return;
+        }
+
+
+        if (pageSize is not 25 and
+            not 50 and
+            not 100)
+        {
+            return;
+        }
+
+
+        _pageSize =
+            pageSize;
+
+
+        _page =
+            1;
+
+
+        await LoadVehiclesAsync();
+    }
+
+
+    // =========================================================
+    // CREATE
+    // =========================================================
+
+    private void OpenCreateModal()
+    {
+        ResetDetailModal();
+
+        ResetStatusModal();
+
+        ResetDeleteModal();
+
+
+        _editingVehicleId =
+            null;
+
+
+        _formState =
+            new VehicleFormState
+            {
+                Model =
+                    new VehicleFormModel()
+            };
+
+
+        _modalErrorMessage =
+            null;
+
+
+        _successMessage =
+            null;
+
+
+        _formKey =
+            Guid.NewGuid();
+
+
+        _showVehicleModal =
+            true;
+    }
+
+
+    // =========================================================
+    // EDIT
+    // =========================================================
+
+    private async Task OpenEditModalAsync(
+        int vehicleId)
+    {
+        ResetDetailModal();
+
+        ResetStatusModal();
+
+        ResetDeleteModal();
+
+
+        _showVehicleModal =
+            true;
+
+
+        _isLoadingVehicle =
+            true;
+
+
+        _modalErrorMessage =
+            null;
+
+
+        _successMessage =
+            null;
+
+
+        try
+        {
+            var vehicle =
+                await VehicleService
+                    .GetByIdAsync(
+                        vehicleId);
+
+
+            if (vehicle is null)
+            {
+                _modalErrorMessage =
+                    "Araç kaydı bulunamadı.";
+
+                return;
+            }
+
+
+            _editingVehicleId =
+                vehicle.Id;
+
+
+            _formState =
+                new VehicleFormState
+                {
+                    Model =
+                        new VehicleFormModel
+                        {
+                            Plate =
+                                vehicle.Plate,
+
+                            VehicleTypeId =
+                                vehicle.VehicleTypeId,
+
+                            VehicleKindId =
+                                vehicle.VehicleKindId,
+
+                            TrailerPlate =
+                                vehicle.TrailerPlate,
+
+                            Brand =
+                                vehicle.Brand,
+
+                            Model =
+                                vehicle.Model,
+
+                            Country =
+                                vehicle.Country,
+
+
+                            DriverAccountCardId =
+                                vehicle.DriverAccountCardId,
+
+                            DriverIsLicenseOwner =
+                                vehicle.DriverIsLicenseOwner,
+
+
+                            ReferenceAccountCardId =
+                                vehicle.ReferenceAccountCardId,
+
+
+                            LicenseAccountCardId =
+                                vehicle.LicenseAccountCardId,
+
+
+                            InvoiceAccountCardId =
+                                vehicle.InvoiceAccountCardId,
+
+                            ReferenceIsInvoiceAccount =
+                                vehicle.ReferenceIsInvoiceAccount,
+
+                            LicenseOwnerIsInvoiceAccount =
+                                vehicle.LicenseOwnerIsInvoiceAccount,
+
+
+                            LicenseOwnerName =
+                                vehicle.LicenseOwnerName,
+
+                            LicenseOwnerTaxNumber =
+                                vehicle.LicenseOwnerTaxNumber,
+
+                            LicenseOwnerIdentityNumber =
+                                vehicle.LicenseOwnerIdentityNumber,
+
+                            LicenseOwnerAddress =
+                                vehicle.LicenseOwnerAddress,
+
+                            LicenseOwnerCityId =
+                                vehicle.LicenseOwnerCityId,
+
+                            LicenseOwnerTaxOfficeId =
+                                vehicle.LicenseOwnerTaxOfficeId,
+
+
+                            AuthorizedName =
+                                vehicle.AuthorizedName,
+
+                            AuthorizedPhone =
+                                vehicle.AuthorizedPhone,
+
+
+                            InsuranceExpiryDate =
+                                vehicle.InsuranceExpiryDate,
+
+                            InspectionExpiryDate =
+                                vehicle.InspectionExpiryDate,
+
+
+                            RowVersion =
+                                vehicle.RowVersion
+                        },
+
+
+                    Driver =
+                        new VehicleAccountLookupDto
+                        {
+                            Id =
+                                vehicle.DriverAccountCardId,
+
+                            Title =
+                                vehicle.DriverName,
+
+                            PhoneNumber =
+                                vehicle.DriverPhoneNumber
+                        },
+
+
+                    LicenseAccount =
+                        new VehicleAccountLookupDto
+                        {
+                            Id =
+                                vehicle.LicenseAccountCardId,
+
+                            Title =
+                                vehicle.LicenseAccountCardName
+                        },
+
+
+                    InvoiceAccount =
+                        new VehicleAccountLookupDto
+                        {
+                            Id =
+                                vehicle.InvoiceAccountCardId,
+
+                            Title =
+                                vehicle.InvoiceAccountCardName
+                        }
+                };
+
+
+            if (vehicle.ReferenceAccountCardId.HasValue)
+            {
+                _formState.Reference =
+                    new VehicleAccountLookupDto
+                    {
+                        Id =
+                            vehicle.ReferenceAccountCardId.Value,
+
+                        Title =
+                            vehicle.ReferenceName
+                            ?? "Referans",
+
+                        PhoneNumber =
+                            vehicle.ReferencePhoneNumber
+                    };
+            }
+
+
+            _formKey =
+                Guid.NewGuid();
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "Araç bilgileri yüklenirken API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Araç bilgileri yüklenirken istek zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Araç bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isLoadingVehicle =
+                false;
+        }
+    }
+
+
+    // =========================================================
+    // SAVE
+    // =========================================================
+
+    private async Task SaveVehicleAsync()
+    {
+        _isSaving =
+            true;
+
+
+        _modalErrorMessage =
+            null;
+
+
+        _successMessage =
+            null;
+
+
+        var model =
+            _formState.Model;
+
+
+        try
+        {
+            if (_editingVehicleId.HasValue)
+            {
+                var request =
+                    new UpdateVehicleRequest
+                    {
+                        Plate =
+                            model.Plate.Trim(),
+
+                        VehicleTypeId =
+                            model.VehicleTypeId,
+
+                        VehicleKindId =
+                            model.VehicleKindId,
+
+                        TrailerPlate =
+                            NormalizeOptional(
+                                model.TrailerPlate),
+
+                        Brand =
+                            NormalizeOptional(
+                                model.Brand),
+
+                        Model =
+                            NormalizeOptional(
+                                model.Model),
+
+                        Country =
+                            NormalizeOptional(
+                                model.Country),
+
+
+                        DriverAccountCardId =
+                            model.DriverAccountCardId,
+
+                        DriverIsLicenseOwner =
+                            model.DriverIsLicenseOwner,
+
+
+                        ReferenceAccountCardId =
+                            model.ReferenceAccountCardId,
+
+
+                        LicenseAccountCardId =
+                            model.LicenseAccountCardId,
+
+
+                        InvoiceAccountCardId =
+                            model.InvoiceAccountCardId,
+
+                        ReferenceIsInvoiceAccount =
+                            model.ReferenceIsInvoiceAccount,
+
+                        LicenseOwnerIsInvoiceAccount =
+                            model.LicenseOwnerIsInvoiceAccount,
+
+
+                        LicenseOwnerName =
+                            model.LicenseOwnerName.Trim(),
+
+                        LicenseOwnerTaxNumber =
+                            NormalizeOptional(
+                                model.LicenseOwnerTaxNumber),
+
+                        LicenseOwnerIdentityNumber =
+                            NormalizeOptional(
+                                model.LicenseOwnerIdentityNumber),
+
+                        LicenseOwnerAddress =
+                            NormalizeOptional(
+                                model.LicenseOwnerAddress),
+
+                        LicenseOwnerCityId =
+                            model.LicenseOwnerCityId,
+
+                        LicenseOwnerTaxOfficeId =
+                            model.LicenseOwnerTaxOfficeId,
+
+
+                        AuthorizedName =
+                            NormalizeOptional(
+                                model.AuthorizedName),
+
+                        AuthorizedPhone =
+                            NormalizeOptional(
+                                model.AuthorizedPhone),
+
+
+                        InsuranceExpiryDate =
+                            model.InsuranceExpiryDate,
+
+                        InspectionExpiryDate =
+                            model.InspectionExpiryDate,
+
+
+                        RowVersion =
+                            model.RowVersion
+                    };
+
+
+                var updated =
+                    await VehicleService
+                        .UpdateAsync(
+                            _editingVehicleId.Value,
+                            request);
+
+
+                var plate =
+                    updated.Plate;
+
+
+                ResetVehicleModal();
+
+
+                _successMessage =
+                    $"{plate} plakalı araç güncellendi.";
+
+
+                await LoadVehiclesAsync();
+            }
+            else
+            {
+                var request =
+                    new CreateVehicleRequest
+                    {
+                        Plate =
+                            model.Plate.Trim(),
+
+                        VehicleTypeId =
+                            model.VehicleTypeId,
+
+                        VehicleKindId =
+                            model.VehicleKindId,
+
+                        TrailerPlate =
+                            NormalizeOptional(
+                                model.TrailerPlate),
+
+                        Brand =
+                            NormalizeOptional(
+                                model.Brand),
+
+                        Model =
+                            NormalizeOptional(
+                                model.Model),
+
+                        Country =
+                            NormalizeOptional(
+                                model.Country),
+
+
+                        DriverAccountCardId =
+                            model.DriverAccountCardId,
+
+                        DriverIsLicenseOwner =
+                            model.DriverIsLicenseOwner,
+
+
+                        ReferenceAccountCardId =
+                            model.ReferenceAccountCardId,
+
+
+                        LicenseAccountCardId =
+                            model.LicenseAccountCardId,
+
+
+                        InvoiceAccountCardId =
+                            model.InvoiceAccountCardId,
+
+                        ReferenceIsInvoiceAccount =
+                            model.ReferenceIsInvoiceAccount,
+
+                        LicenseOwnerIsInvoiceAccount =
+                            model.LicenseOwnerIsInvoiceAccount,
+
+
+                        LicenseOwnerName =
+                            model.LicenseOwnerName.Trim(),
+
+                        LicenseOwnerTaxNumber =
+                            NormalizeOptional(
+                                model.LicenseOwnerTaxNumber),
+
+                        LicenseOwnerIdentityNumber =
+                            NormalizeOptional(
+                                model.LicenseOwnerIdentityNumber),
+
+                        LicenseOwnerAddress =
+                            NormalizeOptional(
+                                model.LicenseOwnerAddress),
+
+                        LicenseOwnerCityId =
+                            model.LicenseOwnerCityId,
+
+                        LicenseOwnerTaxOfficeId =
+                            model.LicenseOwnerTaxOfficeId,
+
+
+                        AuthorizedName =
+                            NormalizeOptional(
+                                model.AuthorizedName),
+
+                        AuthorizedPhone =
+                            NormalizeOptional(
+                                model.AuthorizedPhone),
+
+
+                        InsuranceExpiryDate =
+                            model.InsuranceExpiryDate,
+
+                        InspectionExpiryDate =
+                            model.InspectionExpiryDate
+                    };
+
+
+                var created =
+                    await VehicleService
+                        .CreateAsync(
+                            request);
+
+
+                var plate =
+                    created.Plate;
+
+
+                ResetVehicleModal();
+
+
+                _page =
+                    1;
+
+
+                _successMessage =
+                    $"{plate} plakalı araç eklendi.";
+
+
+                await LoadVehiclesAsync();
+            }
+        }
+        catch (ApiException exception)
+        {
+            _modalErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _modalErrorMessage =
+                "API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _modalErrorMessage =
+                "Araç kaydetme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _modalErrorMessage =
+                "Araç kaydedilirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isSaving =
+                false;
+        }
+    }
+
+
+    // =========================================================
+    // VEHICLE MODAL RESET
+    // =========================================================
+
+    private void CloseVehicleModal()
+    {
+        if (_isSaving)
+        {
+            return;
+        }
+
+
+        ResetVehicleModal();
+    }
+
+
+    private void ResetVehicleModal()
+    {
+        _showVehicleModal =
+            false;
+
+
+        _isLoadingVehicle =
+            false;
+
+
+        _editingVehicleId =
+            null;
+
+
+        _modalErrorMessage =
+            null;
+
+
+        _formState =
+            new VehicleFormState();
+
+
+        _formKey =
+            Guid.NewGuid();
+    }
+
+
+    // =========================================================
+    // DETAIL
+    // =========================================================
+
+    private async Task OpenDetailModalAsync(
+        int vehicleId)
+    {
+        ResetVehicleModal();
+
+        ResetStatusModal();
+
+        ResetDeleteModal();
+
+
+        _actionErrorMessage =
+            null;
+
+
+        _selectedVehicle =
+            null;
+
+
+        _showDetailModal =
+            true;
+
+
+        try
+        {
+            _selectedVehicle =
+                await VehicleService
+                    .GetByIdAsync(
+                        vehicleId);
+
+
+            if (_selectedVehicle is null)
+            {
+                _actionErrorMessage =
+                    "Araç kaydı bulunamadı.";
+            }
+        }
+        catch (ApiException exception)
+        {
+            _actionErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _actionErrorMessage =
+                "Araç bilgileri yüklenirken API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _actionErrorMessage =
+                "Araç detay isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _actionErrorMessage =
+                "Araç bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+    }
+
+
+    private void CloseDetailModal()
+    {
+        ResetDetailModal();
+    }
+
+
+    private void ResetDetailModal()
+    {
+        _showDetailModal =
+            false;
+
+
+        _selectedVehicle =
+            null;
+
+
+        _actionErrorMessage =
+            null;
+    }
+
+
+    private async Task EditSelectedVehicleAsync()
+    {
+        if (_selectedVehicle is null)
+        {
+            return;
+        }
+
+
+        var id =
+            _selectedVehicle.Id;
+
+
+        ResetDetailModal();
+
+
+        await OpenEditModalAsync(
+            id);
+    }
+
+
+    // =========================================================
+    // STATUS
+    // =========================================================
+
+    private async Task OpenStatusModalAsync(
+        int vehicleId)
+    {
+        ResetVehicleModal();
+
+        ResetDetailModal();
+
+        ResetDeleteModal();
+
+
+        _actionErrorMessage =
+            null;
+
+
+        _vehiclePendingStatus =
+            null;
+
+
+        try
+        {
+            _vehiclePendingStatus =
+                await VehicleService
+                    .GetByIdAsync(
+                        vehicleId);
+
+
+            _showStatusModal =
+                _vehiclePendingStatus is not null;
+        }
+        catch (ApiException exception)
+        {
+            _actionErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _actionErrorMessage =
+                "Araç bilgileri yüklenirken API sunucusuna ulaşılamadı.";
+        }
+        catch
+        {
+            _actionErrorMessage =
+                "Araç bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+    }
+
+
+    private async Task ChangeVehicleStatusAsync()
+    {
+        if (_vehiclePendingStatus is null)
+        {
+            return;
+        }
+
+
+        _isChangingStatus =
+            true;
+
+
+        _actionErrorMessage =
+            null;
+
+
+        var newStatus =
+            !_vehiclePendingStatus.IsActive;
+
+
+        var plate =
+            _vehiclePendingStatus.Plate;
+
+
+        try
+        {
+            var request =
+                new ChangeVehicleStatusRequest
+                {
+                    IsActive =
+                        newStatus,
+
+                    RowVersion =
+                        _vehiclePendingStatus.RowVersion
+                };
+
+
+            await VehicleService
+                .ChangeStatusAsync(
+                    _vehiclePendingStatus.Id,
+                    request);
+
+
+            ResetStatusModal();
+
+
+            _successMessage =
+                newStatus
+                    ? $"{plate} plakalı araç aktif hale getirildi."
+                    : $"{plate} plakalı araç pasife alındı.";
+
+
+            await LoadVehiclesAsync();
+        }
+        catch (ApiException exception)
+        {
+            _actionErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _actionErrorMessage =
+                "Araç durumu değiştirilirken API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _actionErrorMessage =
+                "Durum değiştirme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _actionErrorMessage =
+                "Araç durumu değiştirilirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isChangingStatus =
+                false;
+        }
+    }
+
+
+    private void CloseStatusModal()
+    {
+        if (_isChangingStatus)
+        {
+            return;
+        }
+
+
+        ResetStatusModal();
+    }
+
+
+    private void ResetStatusModal()
+    {
+        _showStatusModal =
+            false;
+
+
+        _vehiclePendingStatus =
+            null;
+
+
+        _actionErrorMessage =
+            null;
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    private async Task OpenDeleteModalAsync(
+        int vehicleId)
+    {
+        ResetVehicleModal();
+
+        ResetDetailModal();
+
+        ResetStatusModal();
+
+
+        _actionErrorMessage =
+            null;
+
+
+        _vehiclePendingDelete =
+            null;
+
+
+        _deleteVehicleModel =
+            new DeleteVehicleRequest();
+
+
+        try
+        {
+            _vehiclePendingDelete =
+                await VehicleService
+                    .GetByIdAsync(
+                        vehicleId);
+
+
+            if (_vehiclePendingDelete is null)
+            {
+                _actionErrorMessage =
+                    "Araç kaydı bulunamadı.";
+
+                return;
+            }
+
+
+            _deleteVehicleModel.RowVersion =
+                _vehiclePendingDelete.RowVersion;
+        }
+        catch (ApiException exception)
+        {
+            _actionErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _actionErrorMessage =
+                "Araç bilgileri yüklenirken API sunucusuna ulaşılamadı.";
+        }
+        catch
+        {
+            _actionErrorMessage =
+                "Araç bilgileri yüklenirken beklenmeyen bir hata oluştu.";
+        }
+    }
+
+
+    private async Task DeleteVehicleAsync()
+    {
+        if (_vehiclePendingDelete is null)
+        {
+            return;
+        }
+
+
+        _isDeleting =
+            true;
+
+
+        _actionErrorMessage =
+            null;
+
+
+        var plate =
+            _vehiclePendingDelete.Plate;
+
+
+        try
+        {
+            _deleteVehicleModel.DeleteReason =
+                _deleteVehicleModel.DeleteReason.Trim();
+
+
+            await VehicleService
+                .DeleteAsync(
+                    _vehiclePendingDelete.Id,
+                    _deleteVehicleModel);
+
+
+            ResetDeleteModal();
+
+
+            _successMessage =
+                $"{plate} plakalı araç kaydı silindi.";
+
+
+            await LoadVehiclesAsync();
+        }
+        catch (ApiException exception)
+        {
+            _actionErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _actionErrorMessage =
+                "Silme işlemi sırasında API sunucusuna ulaşılamadı.";
+        }
+        catch (TaskCanceledException)
+        {
+            _actionErrorMessage =
+                "Silme isteği zaman aşımına uğradı.";
+        }
+        catch
+        {
+            _actionErrorMessage =
+                "Araç silinirken beklenmeyen bir hata oluştu.";
+        }
+        finally
+        {
+            _isDeleting =
+                false;
+        }
+    }
+
+
+    private void CloseDeleteModal()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+
+        ResetDeleteModal();
+    }
+
+
+    private void ResetDeleteModal()
+    {
+        _vehiclePendingDelete =
+            null;
+
+
+        _deleteVehicleModel =
+            new DeleteVehicleRequest();
+
+
+        _actionErrorMessage =
+            null;
+    }
+
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    private bool IsAnyOperationRunning()
+    {
+        return
+            _isLoading ||
+            _isLoadingVehicle ||
+            _isSaving ||
+            _isChangingStatus ||
+            _isDeleting;
+    }
+
+
+    private bool? GetStatusFilter()
+    {
+        return _statusFilter switch
+        {
+            "active" =>
+                true,
+
+            "passive" =>
+                false,
+
+            _ =>
+                null
+        };
+    }
+
+
+    private int GetTotalPages()
+    {
+        return _result.TotalPages <= 0
+            ? 1
+            : _result.TotalPages;
+    }
+
+
+    private string GetVehicleFormTitle()
+    {
+        return _editingVehicleId.HasValue
+            ? "Araç Bilgilerini Güncelle"
+            : "Yeni Araç";
+    }
+
+
+    private string GetVehicleFormDescription()
+    {
+        return _editingVehicleId.HasValue
+            ? "Seçilen araç kartının bilgilerini düzenleyin."
+            : "Yeni araç kartının bilgilerini girin.";
+    }
+
+
+    private string GetVehicleSubmitText()
+    {
+        return _editingVehicleId.HasValue
+            ? "Değişiklikleri Kaydet"
+            : "Araç Kaydet";
+    }
+
+
+    private string GetStatusModalTitle()
+    {
+        if (_vehiclePendingStatus is null)
+        {
+            return "Araç Durumu";
+        }
+
+
+        return _vehiclePendingStatus.IsActive
+            ? "Aracı Pasife Al"
+            : "Aracı Aktif Et";
+    }
+
+
+    private static string GetBrandModel(
+        VehicleListDto vehicle)
+    {
+        return string.Join(
+            " / ",
+            new[]
+            {
+                vehicle.Brand,
+                vehicle.Model
+            }
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x)));
+    }
+
+
+    private static string DisplayValue(
+        string? value)
+    {
+        return string.IsNullOrWhiteSpace(
+            value)
+            ? "-"
+            : value;
+    }
+
+
+    private static string MaskIdentityNumber(
+        string? value)
+    {
+        if (string.IsNullOrWhiteSpace(
+            value))
+        {
+            return "-";
+        }
+
+
+        if (value.Length < 5)
+        {
+            return "****";
+        }
+
+
+        return value[..2] +
+               "*******" +
+               value[^2..];
+    }
+
+
+    private static string MaskTaxNumber(
+        string? value)
+    {
+        if (string.IsNullOrWhiteSpace(
+            value))
+        {
+            return "-";
+        }
+
+
+        if (value.Length < 4)
+        {
+            return "****";
+        }
+
+
+        return value[..2] +
+               "******" +
+               value[^2..];
+    }
+
+
+    private static string RenderDateText(
+        string title,
+        DateTime? date)
+    {
+        return date.HasValue
+            ? $"{title}: {date.Value.ToString("dd.MM.yyyy", TurkishCulture)}"
+            : $"{title}: -";
+    }
+
+
+    private static string FormatNullableDate(
+        DateTime? date)
+    {
+        return date.HasValue
+            ? date.Value.ToString(
+                "dd.MM.yyyy",
+                TurkishCulture)
+            : "-";
+    }
+
+
+    private static string FormatDateTime(
+        DateTime date)
+    {
+        return date.ToLocalTime()
+            .ToString(
+                "dd.MM.yyyy HH:mm",
+                TurkishCulture);
+    }
+
+
+    private static string FormatNullableDateTime(
+        DateTime? date)
+    {
+        return date.HasValue
+            ? date.Value
+                .ToLocalTime()
+                .ToString(
+                    "dd.MM.yyyy HH:mm",
+                    TurkishCulture)
+            : "-";
+    }
+
+
+    private static string? NormalizeOptional(
+        string? value)
+    {
+        return string.IsNullOrWhiteSpace(
+            value)
+            ? null
+            : value.Trim();
+    }
+}
