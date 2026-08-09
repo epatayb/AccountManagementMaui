@@ -12,15 +12,11 @@ public class AccountCardDetailDto
     // Tip
     public int AccountCardTypeId { get; set; }
 
-    public string AccountCardTypeCode { get; set; } = string.Empty;
-
     public string AccountCardTypeName { get; set; } = string.Empty;
 
 
     // Tür
     public int AccountCardKindId { get; set; }
-
-    public string AccountCardKindCode { get; set; } = string.Empty;
 
     public string AccountCardKindName { get; set; } = string.Empty;
 

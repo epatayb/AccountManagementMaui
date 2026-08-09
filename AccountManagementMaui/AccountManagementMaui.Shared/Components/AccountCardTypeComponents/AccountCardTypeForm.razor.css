@@ -4,24 +4,30 @@
 
 .form-grid {
     display: grid;
-    grid-template-columns: 150px minmax(220px, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
 }
 
-.form-field label {
-    display: block;
-    margin-bottom: 5px;
-    color: #334155;
-    font-size: 0.78rem;
-    font-weight: 650;
+.form-field {
+    min-width: 0;
 }
 
-.form-field .form-control {
-    width: 100%;
-    min-height: 36px;
-    border-radius: 6px;
-    font-size: 0.82rem;
-}
+    .form-field label {
+        display: block;
+        margin-bottom: 5px;
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 650;
+    }
+
+    .form-field .form-control {
+        width: 100%;
+        min-width: 0;
+        min-height: 36px;
+        box-sizing: border-box;
+        border-radius: 6px;
+        font-size: 0.82rem;
+    }
 
 .required-mark {
     color: #dc2626;
@@ -37,6 +43,7 @@
 .form-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 8px;
     margin-top: 18px;
     padding-top: 14px;
@@ -60,4 +67,8 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
     }
+
+        .form-actions .btn {
+            width: 100%;
+        }
 }

@@ -37,23 +37,19 @@ namespace AccountManagementMaui.Api.Controllers
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(x =>
-                    x.KindCode.Contains(search) ||
                     x.KindName.Contains(search) ||
-                    x.AccountCardType.TypeCode.Contains(search) ||
                     x.AccountCardType.TypeName.Contains(search));
             }
 
             var items = await query
-                .OrderBy(x => x.AccountCardType.TypeCode)
-                .ThenBy(x => x.KindCode)
+                .OrderBy(x => x.AccountCardType.TypeName)
+                .ThenBy(x => x.KindName)
                 .Select(x => new AccountCardKindListDto
                 {
                     Id = x.Id,
-                    KindCode = x.KindCode,
                     KindName = x.KindName,
 
                     AccountCardTypeId = x.AccountCardTypeId,
-                    AccountCardTypeCode = x.AccountCardType.TypeCode,
                     AccountCardTypeName = x.AccountCardType.TypeName,
 
                     CreatedDate = x.CreatedDate,
@@ -100,19 +96,8 @@ namespace AccountManagementMaui.Api.Controllers
         [FromBody] CreateAccountCardKindRequest request,
         CancellationToken cancellationToken)
         {
-            var kindCode = request.KindCode?
-                .Trim()
-                .ToUpperInvariant() ?? string.Empty;
-
             var kindName =
                 request.KindName?.Trim() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(kindCode))
-            {
-                ModelState.AddModelError(
-                    nameof(request.KindCode),
-                    "Kart tür kodu boş geçilemez.");
-            }
 
             if (string.IsNullOrWhiteSpace(kindName))
             {
@@ -141,11 +126,8 @@ namespace AccountManagementMaui.Api.Controllers
 
             var duplicateExists =
                 await _context.AccountCardKinds.AnyAsync(
-                    x =>
-                        x.KindCode == kindCode ||
-                        (
-                            x.AccountCardTypeId ==
-                            request.AccountCardTypeId &&
+                    x => (
+                            x.AccountCardTypeId == request.AccountCardTypeId &&
                             x.KindName == kindName
                         ),
                     cancellationToken);
@@ -160,10 +142,8 @@ namespace AccountManagementMaui.Api.Controllers
 
             var item = new AccountCardKind
             {
-                KindCode = kindCode,
                 KindName = kindName,
-                AccountCardTypeId =
-                    request.AccountCardTypeId
+                AccountCardTypeId = request.AccountCardTypeId
             };
 
             _context.AccountCardKinds.Add(item);
@@ -222,19 +202,8 @@ namespace AccountManagementMaui.Api.Controllers
                 });
             }
 
-            var kindCode = request.KindCode?
-                .Trim()
-                .ToUpperInvariant() ?? string.Empty;
-
             var kindName =
                 request.KindName?.Trim() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(kindCode))
-            {
-                ModelState.AddModelError(
-                    nameof(request.KindCode),
-                    "Kart tür kodu boş geçilemez.");
-            }
 
             if (string.IsNullOrWhiteSpace(kindName))
             {
@@ -266,7 +235,6 @@ namespace AccountManagementMaui.Api.Controllers
                     x =>
                         x.Id != id &&
                         (
-                            x.KindCode == kindCode ||
                             (
                                 x.AccountCardTypeId ==
                                 request.AccountCardTypeId &&
@@ -283,7 +251,6 @@ namespace AccountManagementMaui.Api.Controllers
                 });
             }
 
-            item.KindCode = kindCode;
             item.KindName = kindName;
             item.AccountCardTypeId =
                 request.AccountCardTypeId;
@@ -371,14 +338,10 @@ namespace AccountManagementMaui.Api.Controllers
                 .Select(x => new AccountCardKindDetailDto
                 {
                     Id = x.Id,
-                    KindCode = x.KindCode,
                     KindName = x.KindName,
 
                     AccountCardTypeId =
                         x.AccountCardTypeId,
-
-                    AccountCardTypeCode =
-                        x.AccountCardType.TypeCode,
 
                     AccountCardTypeName =
                         x.AccountCardType.TypeName,

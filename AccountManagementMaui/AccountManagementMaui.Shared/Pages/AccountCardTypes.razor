@@ -24,7 +24,7 @@
 
                 <input type="search"
                        class="search-input"
-                       placeholder="Ana hesap tip kodu veya adı ara..."
+                       placeholder="Ana hesap tip adı ara..."
                        maxlength="50"
                        autocomplete="off"
                        @bind="_search"
@@ -133,7 +133,7 @@
                                         <strong>@item.TypeName</strong>
 
                                         <span>
-                                            #@item.Id · Kod: @item.TypeCode
+                                            #@item.Id
                                         </span>
                                     </div>
                                 </td>
@@ -240,10 +240,6 @@
                 <strong>
                     @_itemPendingDelete.TypeName
                 </strong>
-
-                <span>
-                    @_itemPendingDelete.TypeCode
-                </span>
             </div>
 
             <p class="delete-confirmation">
@@ -346,7 +342,6 @@
 
         _formModel = new AccountCardTypeFormModel
         {
-            TypeCode = item.TypeCode,
             TypeName = item.TypeName
         };
 
@@ -385,7 +380,6 @@
             {
                 var request = new UpdateAccountCardTypeRequest
                 {
-                    TypeCode = _formModel.TypeCode.Trim(),
                     TypeName = _formModel.TypeName.Trim()
                 };
 
@@ -401,7 +395,6 @@
             {
                 var request = new CreateAccountCardTypeRequest
                 {
-                    TypeCode = _formModel.TypeCode.Trim(),
                     TypeName = _formModel.TypeName.Trim()
                 };
 
@@ -612,7 +605,7 @@
     private string GetFormDescription()
     {
         return _editingId.HasValue
-            ? "Hesabın ait olduğu ana sınıfın kodunu veya adını düzenleyin."
+            ? "Hesabın ait olduğu ana sınıfın adını düzenleyin."
             : "Hesap kartlarının ait olacağı ana hesap sınıfını tanımlayın.";
     }
 

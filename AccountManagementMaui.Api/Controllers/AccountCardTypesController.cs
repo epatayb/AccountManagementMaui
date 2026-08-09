@@ -32,17 +32,14 @@ public class AccountCardTypesController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(x =>
-                x.TypeCode.Contains(search) ||
-                x.TypeName.Contains(search));
+            query = query.Where(x => x.TypeName.Contains(search));
         }
 
         var items = await query
-            .OrderBy(x => x.TypeCode)
+            .OrderBy(x => x.TypeName)
             .Select(x => new AccountCardTypeListDto
             {
                 Id = x.Id,
-                TypeCode = x.TypeCode,
                 TypeName = x.TypeName,
 
                 CreatedDate = x.CreatedDate,
@@ -95,18 +92,7 @@ public class AccountCardTypesController : ControllerBase
         [FromBody] CreateAccountCardTypeRequest request,
         CancellationToken cancellationToken)
     {
-        var typeCode = request.TypeCode
-            .Trim()
-            .ToUpperInvariant();
-
         var typeName = request.TypeName.Trim();
-
-        if (string.IsNullOrWhiteSpace(typeCode))
-        {
-            ModelState.AddModelError(
-                nameof(request.TypeCode),
-                "Kart tip kodu boş geçilemez.");
-        }
 
         if (string.IsNullOrWhiteSpace(typeName))
         {
@@ -121,9 +107,7 @@ public class AccountCardTypesController : ControllerBase
         }
 
         var duplicateExists = await _context.AccountCardTypes
-            .AnyAsync(
-                x => x.TypeCode == typeCode ||
-                     x.TypeName == typeName,
+            .AnyAsync(x => x.TypeName == typeName,
                 cancellationToken);
 
         if (duplicateExists)
@@ -136,7 +120,6 @@ public class AccountCardTypesController : ControllerBase
 
         var item = new AccountCardType
         {
-            TypeCode = typeCode,
             TypeName = typeName
         };
 
@@ -196,18 +179,7 @@ public class AccountCardTypesController : ControllerBase
             });
         }
 
-        var typeCode = request.TypeCode
-            .Trim()
-            .ToUpperInvariant();
-
         var typeName = request.TypeName.Trim();
-
-        if (string.IsNullOrWhiteSpace(typeCode))
-        {
-            ModelState.AddModelError(
-                nameof(request.TypeCode),
-                "Kart tip kodu boş geçilemez.");
-        }
 
         if (string.IsNullOrWhiteSpace(typeName))
         {
@@ -223,11 +195,7 @@ public class AccountCardTypesController : ControllerBase
 
         var duplicateExists = await _context.AccountCardTypes
             .AnyAsync(
-                x => x.Id != id &&
-                     (
-                         x.TypeCode == typeCode ||
-                         x.TypeName == typeName
-                     ),
+                x => x.Id != id && x.TypeName == typeName,
                 cancellationToken);
 
         if (duplicateExists)
@@ -238,7 +206,6 @@ public class AccountCardTypesController : ControllerBase
             });
         }
 
-        item.TypeCode = typeCode;
         item.TypeName = typeName;
 
         try
@@ -333,7 +300,6 @@ public class AccountCardTypesController : ControllerBase
             .Select(x => new AccountCardTypeDetailDto
             {
                 Id = x.Id,
-                TypeCode = x.TypeCode,
                 TypeName = x.TypeName,
 
                 CreatedDate = x.CreatedDate,

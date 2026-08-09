@@ -24,29 +24,12 @@
                     @foreach (var type in AccountCardTypes)
                     {
                         <option value="@type.Id">
-                            @type.TypeCode - @type.TypeName
+                            @type.TypeName
                         </option>
                     }
                 </InputSelect>
 
                 <ValidationMessage For="@(() => Model.AccountCardTypeId)" />
-            </div>
-
-            <div class="form-field code-field">
-                <label for="kind-code">
-                    Hesap Kart Tür Kodu
-                    <span class="required-mark">*</span>
-                </label>
-
-                <InputText id="kind-code"
-                           class="form-control"
-                           maxlength="7"
-                           placeholder="Örnek: MUS"
-                           autocomplete="off"
-                           disabled="@IsSubmitting"
-                           @bind-Value="Model.KindCode" />
-
-                <ValidationMessage For="@(() => Model.KindCode)" />
             </div>
 
             <div class="form-field name-field">

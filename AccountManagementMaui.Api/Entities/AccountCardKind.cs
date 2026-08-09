@@ -6,7 +6,7 @@ namespace AccountManagementMaui.Api.Entities
     {
         public int Id { get; set; }
 
-        public string KindCode { get; set; } = string.Empty;
+        public string? KindCode { get; set; } = string.Empty;
 
         public string KindName { get; set; } = string.Empty;
         

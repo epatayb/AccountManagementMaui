@@ -70,12 +70,6 @@ public class AccountCardsController : ControllerBase
                 (x.ContactPerson != null &&
                  x.ContactPerson.Contains(search)) ||
 
-                x.AccountCardType.TypeCode.Contains(search) ||
-                x.AccountCardType.TypeName.Contains(search) ||
-
-                x.AccountCardKind.KindCode.Contains(search) ||
-                x.AccountCardKind.KindName.Contains(search) ||
-
                 (x.AccountCardGroup != null &&
                  x.AccountCardGroup.GroupName.Contains(search)) ||
 
@@ -160,9 +154,6 @@ public class AccountCardsController : ControllerBase
                 AccountCardTypeId =
                     x.AccountCardTypeId,
 
-                AccountCardTypeCode =
-                    x.AccountCardType.TypeCode,
-
                 AccountCardTypeName =
                     x.AccountCardType.TypeName,
 
@@ -170,9 +161,6 @@ public class AccountCardsController : ControllerBase
                 // Tür
                 AccountCardKindId =
                     x.AccountCardKindId,
-
-                AccountCardKindCode =
-                    x.AccountCardKind.KindCode,
 
                 AccountCardKindName =
                     x.AccountCardKind.KindName,
@@ -853,9 +841,6 @@ public class AccountCardsController : ControllerBase
                 AccountCardTypeId =
                     x.AccountCardTypeId,
 
-                AccountCardTypeCode =
-                    x.AccountCardType.TypeCode,
-
                 AccountCardTypeName =
                     x.AccountCardType.TypeName,
 
@@ -863,9 +848,6 @@ public class AccountCardsController : ControllerBase
                 // Tür
                 AccountCardKindId =
                     x.AccountCardKindId,
-
-                AccountCardKindCode =
-                    x.AccountCardKind.KindCode,
 
                 AccountCardKindName =
                     x.AccountCardKind.KindName,

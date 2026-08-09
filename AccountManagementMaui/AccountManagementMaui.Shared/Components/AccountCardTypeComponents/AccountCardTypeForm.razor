@@ -7,22 +7,6 @@
 
     <div class="card-type-form">
         <div class="form-grid">
-            <div class="form-field code-field">
-                <label for="type-code">
-                    Ana Hesap Tip Kodu
-                    <span class="required-mark">*</span>
-                </label>
-
-                <InputText id="type-code"
-                           class="form-control"
-                           maxlength="7"
-                           placeholder="Örnek: CAR"
-                           autocomplete="off"
-                           disabled="@IsSubmitting"
-                           @bind-Value="Model.TypeCode" />
-
-                <ValidationMessage For="@(() => Model.TypeCode)" />
-            </div>
 
             <div class="form-field">
                 <label for="type-name">

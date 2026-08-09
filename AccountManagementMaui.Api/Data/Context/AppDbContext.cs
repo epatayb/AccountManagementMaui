@@ -255,18 +255,13 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         entity.HasKey(x => x.Id);
 
         entity.Property(x => x.TypeCode)
-            .IsRequired()
-            .HasMaxLength(20);
+            .IsRequired(false);
 
         entity.Property(x => x.TypeName)
             .IsRequired()
             .HasMaxLength(50);
 
         ConfigureBaseEntity(entity);
-
-        entity.HasIndex(x => x.TypeCode)
-            .IsUnique()
-            .HasFilter("[IsDeleted] = 0");
 
         entity.HasIndex(x => x.TypeName)
             .IsUnique()
@@ -283,18 +278,13 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         entity.HasKey(x => x.Id);
 
         entity.Property(x => x.KindCode)
-            .IsRequired()
-            .HasMaxLength(20);
+            .IsRequired(false);
 
         entity.Property(x => x.KindName)
             .IsRequired()
             .HasMaxLength(50);
 
         ConfigureBaseEntity(entity);
-
-        entity.HasIndex(x => x.KindCode)
-            .IsUnique()
-            .HasFilter("[IsDeleted] = 0");
 
         entity.HasIndex(x => new
         {

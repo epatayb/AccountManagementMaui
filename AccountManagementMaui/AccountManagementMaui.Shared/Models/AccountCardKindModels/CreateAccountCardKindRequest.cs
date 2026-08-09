@@ -4,10 +4,6 @@ namespace AccountManagementMaui.Shared.Models.AccountCardKindModels;
 
 public class CreateAccountCardKindRequest
 {
-    [Display(Name = "Hesap Kart Tür Kodu")]
-    [Required(ErrorMessage = "{0} bilgisi boş geçilemez.")]
-    [MaxLength(7, ErrorMessage = "En fazla {1} karakter girilebilir.")]
-    public string KindCode { get; set; } = null!;
 
     [Display(Name = "Hesap Kart Tür Adı")]
     [Required(ErrorMessage = "{0} bilgisi boş geçilemez.")]
