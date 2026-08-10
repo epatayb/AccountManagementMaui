@@ -1837,7 +1837,7 @@
     // =========================================================
 
     private async Task OpenEditModalAsync(
-        int vehicleId)
+    int vehicleId)
     {
         ResetDetailModal();
 
@@ -1883,6 +1883,10 @@
                 vehicle.Id;
 
 
+            // =====================================================
+            // FORM MODEL
+            // =====================================================
+
             _formState =
                 new VehicleFormState
                 {
@@ -1898,6 +1902,7 @@
                             VehicleKindId =
                                 vehicle.VehicleKindId,
 
+
                             TrailerPlate =
                                 vehicle.TrailerPlate,
 
@@ -1911,6 +1916,10 @@
                                 vehicle.Country,
 
 
+                            // =====================================
+                            // DRIVER
+                            // =====================================
+
                             DriverAccountCardId =
                                 vehicle.DriverAccountCardId,
 
@@ -1918,13 +1927,25 @@
                                 vehicle.DriverIsLicenseOwner,
 
 
+                            // =====================================
+                            // REFERENCE
+                            // =====================================
+
                             ReferenceAccountCardId =
                                 vehicle.ReferenceAccountCardId,
 
 
+                            // =====================================
+                            // LICENSE
+                            // =====================================
+
                             LicenseAccountCardId =
                                 vehicle.LicenseAccountCardId,
 
+
+                            // =====================================
+                            // INVOICE
+                            // =====================================
 
                             InvoiceAccountCardId =
                                 vehicle.InvoiceAccountCardId,
@@ -1935,6 +1956,10 @@
                             LicenseOwnerIsInvoiceAccount =
                                 vehicle.LicenseOwnerIsInvoiceAccount,
 
+
+                            // =====================================
+                            // LICENSE SNAPSHOT
+                            // =====================================
 
                             LicenseOwnerName =
                                 vehicle.LicenseOwnerName,
@@ -1955,12 +1980,20 @@
                                 vehicle.LicenseOwnerTaxOfficeId,
 
 
+                            // =====================================
+                            // AUTHORIZED
+                            // =====================================
+
                             AuthorizedName =
                                 vehicle.AuthorizedName,
 
                             AuthorizedPhone =
                                 vehicle.AuthorizedPhone,
 
+
+                            // =====================================
+                            // DOCUMENTS
+                            // =====================================
 
                             InsuranceExpiryDate =
                                 vehicle.InsuranceExpiryDate,
@@ -1971,45 +2004,35 @@
 
                             RowVersion =
                                 vehicle.RowVersion
-                        },
-
-
-                    Driver =
-                        new VehicleAccountLookupDto
-                        {
-                            Id =
-                                vehicle.DriverAccountCardId,
-
-                            Title =
-                                vehicle.DriverName,
-
-                            PhoneNumber =
-                                vehicle.DriverPhoneNumber
-                        },
-
-
-                    LicenseAccount =
-                        new VehicleAccountLookupDto
-                        {
-                            Id =
-                                vehicle.LicenseAccountCardId,
-
-                            Title =
-                                vehicle.LicenseAccountCardName
-                        },
-
-
-                    InvoiceAccount =
-                        new VehicleAccountLookupDto
-                        {
-                            Id =
-                                vehicle.InvoiceAccountCardId,
-
-                            Title =
-                                vehicle.InvoiceAccountCardName
                         }
                 };
 
+
+            // =====================================================
+            // DRIVER LOOKUP
+            // =====================================================
+
+            if (vehicle.DriverAccountCardId.HasValue)
+            {
+                _formState.Driver =
+                    new VehicleAccountLookupDto
+                    {
+                        Id =
+                            vehicle.DriverAccountCardId.Value,
+
+                        Title =
+                            vehicle.DriverName
+                            ?? "Şoför",
+
+                        PhoneNumber =
+                            vehicle.DriverPhoneNumber
+                    };
+            }
+
+
+            // =====================================================
+            // REFERENCE LOOKUP
+            // =====================================================
 
             if (vehicle.ReferenceAccountCardId.HasValue)
             {
@@ -2025,6 +2048,44 @@
 
                         PhoneNumber =
                             vehicle.ReferencePhoneNumber
+                    };
+            }
+
+
+            // =====================================================
+            // LICENSE LOOKUP
+            // =====================================================
+
+            if (vehicle.LicenseAccountCardId.HasValue)
+            {
+                _formState.LicenseAccount =
+                    new VehicleAccountLookupDto
+                    {
+                        Id =
+                            vehicle.LicenseAccountCardId.Value,
+
+                        Title =
+                            vehicle.LicenseAccountCardName
+                            ?? "Ruhsat Carisi"
+                    };
+            }
+
+
+            // =====================================================
+            // INVOICE LOOKUP
+            // =====================================================
+
+            if (vehicle.InvoiceAccountCardId.HasValue)
+            {
+                _formState.InvoiceAccount =
+                    new VehicleAccountLookupDto
+                    {
+                        Id =
+                            vehicle.InvoiceAccountCardId.Value,
+
+                        Title =
+                            vehicle.InvoiceAccountCardName
+                            ?? "Fatura Carisi"
                     };
             }
 
@@ -2098,6 +2159,7 @@
                         VehicleKindId =
                             model.VehicleKindId,
 
+
                         TrailerPlate =
                             NormalizeOptional(
                                 model.TrailerPlate),
@@ -2115,23 +2177,58 @@
                                 model.Country),
 
 
+                        // =========================================
+                        // DRIVER
+                        // =========================================
+
                         DriverAccountCardId =
-                            model.DriverAccountCardId,
+                            model.IsNewDriver
+                                ? null
+                                : model.DriverAccountCardId,
+
+                        DriverAccount =
+                            BuildAccountInput(
+                                model.DriverAccount),
 
                         DriverIsLicenseOwner =
                             model.DriverIsLicenseOwner,
 
 
+                        // =========================================
+                        // REFERENCE
+                        // =========================================
+
                         ReferenceAccountCardId =
                             model.ReferenceAccountCardId,
 
+                        ReferenceAccount =
+                            BuildAccountInput(
+                                model.ReferenceAccount),
+
+
+                        // =========================================
+                        // LICENSE
+                        // =========================================
 
                         LicenseAccountCardId =
                             model.LicenseAccountCardId,
 
+                        LicenseAccount =
+                            BuildAccountInput(
+                                model.LicenseAccount),
+
+
+                        // =========================================
+                        // INVOICE
+                        // =========================================
 
                         InvoiceAccountCardId =
                             model.InvoiceAccountCardId,
+
+                        InvoiceAccount =
+                            BuildAccountInput(
+                                model.InvoiceAccount),
+
 
                         ReferenceIsInvoiceAccount =
                             model.ReferenceIsInvoiceAccount,
@@ -2140,8 +2237,13 @@
                             model.LicenseOwnerIsInvoiceAccount,
 
 
+                        // =========================================
+                        // SNAPSHOT
+                        // =========================================
+
                         LicenseOwnerName =
-                            model.LicenseOwnerName.Trim(),
+                            NormalizeOptional(
+                                model.LicenseOwnerName),
 
                         LicenseOwnerTaxNumber =
                             NormalizeOptional(
@@ -2184,10 +2286,9 @@
 
 
                 var updated =
-                    await VehicleService
-                        .UpdateAsync(
-                            _editingVehicleId.Value,
-                            request);
+                    await VehicleService.UpdateAsync(
+                        _editingVehicleId.Value,
+                        request);
 
 
                 var plate =
@@ -2217,6 +2318,7 @@
                         VehicleKindId =
                             model.VehicleKindId,
 
+
                         TrailerPlate =
                             NormalizeOptional(
                                 model.TrailerPlate),
@@ -2234,23 +2336,58 @@
                                 model.Country),
 
 
+                        // =========================================
+                        // DRIVER
+                        // =========================================
+
                         DriverAccountCardId =
-                            model.DriverAccountCardId,
+                            model.IsNewDriver
+                                ? null
+                                : model.DriverAccountCardId,
+
+                        DriverAccount =
+                            BuildAccountInput(
+                                model.DriverAccount),
 
                         DriverIsLicenseOwner =
                             model.DriverIsLicenseOwner,
 
 
+                        // =========================================
+                        // REFERENCE
+                        // =========================================
+
                         ReferenceAccountCardId =
                             model.ReferenceAccountCardId,
 
+                        ReferenceAccount =
+                            BuildAccountInput(
+                                model.ReferenceAccount),
+
+
+                        // =========================================
+                        // LICENSE
+                        // =========================================
 
                         LicenseAccountCardId =
                             model.LicenseAccountCardId,
 
+                        LicenseAccount =
+                            BuildAccountInput(
+                                model.LicenseAccount),
+
+
+                        // =========================================
+                        // INVOICE
+                        // =========================================
 
                         InvoiceAccountCardId =
                             model.InvoiceAccountCardId,
+
+                        InvoiceAccount =
+                            BuildAccountInput(
+                                model.InvoiceAccount),
+
 
                         ReferenceIsInvoiceAccount =
                             model.ReferenceIsInvoiceAccount,
@@ -2260,7 +2397,8 @@
 
 
                         LicenseOwnerName =
-                            model.LicenseOwnerName.Trim(),
+                            NormalizeOptional(
+                                model.LicenseOwnerName),
 
                         LicenseOwnerTaxNumber =
                             NormalizeOptional(
@@ -2299,9 +2437,8 @@
 
 
                 var created =
-                    await VehicleService
-                        .CreateAsync(
-                            request);
+                    await VehicleService.CreateAsync(
+                        request);
 
 
                 var plate =
@@ -2311,12 +2448,12 @@
                 ResetVehicleModal();
 
 
+                _successMessage =
+                    $"{plate} plakalı araç oluşturuldu.";
+
+
                 _page =
                     1;
-
-
-                _successMessage =
-                    $"{plate} plakalı araç eklendi.";
 
 
                 await LoadVehiclesAsync();
@@ -2330,7 +2467,7 @@
         catch (HttpRequestException)
         {
             _modalErrorMessage =
-                "API sunucusuna ulaşılamadı.";
+                "Araç kaydedilirken API sunucusuna ulaşılamadı.";
         }
         catch (TaskCanceledException)
         {
@@ -3014,5 +3151,53 @@
             value)
             ? null
             : value.Trim();
+    }
+
+    private static VehicleAccountInputDto?
+    BuildAccountInput(
+        VehicleAccountInputDto? input)
+    {
+        if (input is null ||
+            !input.HasAnyValue())
+        {
+            return null;
+        }
+
+
+        return new VehicleAccountInputDto
+        {
+            Title =
+                NormalizeOptional(
+                    input.Title),
+
+            IdentityNumber =
+                NormalizeOptional(
+                    input.IdentityNumber),
+
+            TaxNumber =
+                NormalizeOptional(
+                    input.TaxNumber),
+
+            PhoneNumber =
+                NormalizeOptional(
+                    input.PhoneNumber),
+
+            Email =
+                NormalizeOptional(
+                    input.Email),
+
+            Address =
+                NormalizeOptional(
+                    input.Address),
+
+            CityId =
+                input.CityId,
+
+            DistrictId =
+                input.DistrictId,
+
+            TaxOfficeId =
+                input.TaxOfficeId
+        };
     }
 }

@@ -240,11 +240,15 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
 
     public class CreateVehicleRequest
     {
-        [Required(ErrorMessage = "Plaka zorunludur.")]
+        // =====================================================
+        // VEHICLE
+        // =====================================================
+
+        [Required(
+            ErrorMessage = "Plaka zorunludur.")]
         [StringLength(
             20,
-            ErrorMessage =
-                "Plaka en fazla 20 karakter olabilir.")]
+            ErrorMessage = "Plaka en fazla 20 karakter olabilir.")]
         public string Plate { get; set; } =
             string.Empty;
 
@@ -256,6 +260,7 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         public int VehicleTypeId { get; set; }
 
 
+        // Araç Türü ZORUNLU
         [Range(
             1,
             int.MaxValue,
@@ -279,28 +284,50 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         public string? Country { get; set; }
 
 
+        // =====================================================
+        // DRIVER
+        // =====================================================
 
         public int? DriverAccountCardId { get; set; }
 
-        public VehicleAccountInputDto? DriverAccount { get; set; }
+        public VehicleAccountInputDto?
+            DriverAccount
+        { get; set; }
 
         public bool DriverIsLicenseOwner { get; set; }
 
 
+        // =====================================================
+        // REFERENCE
+        // =====================================================
+
         public int? ReferenceAccountCardId { get; set; }
 
-        public VehicleAccountInputDto? ReferenceAccount { get; set; }
+        public VehicleAccountInputDto?
+            ReferenceAccount
+        { get; set; }
 
+
+        // =====================================================
+        // LICENSE
+        // =====================================================
 
         public int? LicenseAccountCardId { get; set; }
 
-        public VehicleAccountInputDto? LicenseAccount { get; set; }
+        public VehicleAccountInputDto?
+            LicenseAccount
+        { get; set; }
 
+
+        // =====================================================
+        // INVOICE
+        // =====================================================
 
         public int? InvoiceAccountCardId { get; set; }
 
-        public VehicleAccountInputDto? InvoiceAccount { get; set; }
-
+        public VehicleAccountInputDto?
+            InvoiceAccount
+        { get; set; }
 
 
         public bool ReferenceIsInvoiceAccount { get; set; }
@@ -308,9 +335,12 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         public bool LicenseOwnerIsInvoiceAccount { get; set; }
 
 
+        // =====================================================
+        // LICENSE OWNER SNAPSHOT
+        // =====================================================
+
         [StringLength(200)]
-        public string LicenseOwnerName { get; set; } =
-            string.Empty;
+        public string? LicenseOwnerName { get; set; }
 
 
         [StringLength(10)]
@@ -325,10 +355,14 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         public string? LicenseOwnerAddress { get; set; }
 
 
-        public int LicenseOwnerCityId { get; set; }
+        public int? LicenseOwnerCityId { get; set; }
 
         public int? LicenseOwnerTaxOfficeId { get; set; }
 
+
+        // =====================================================
+        // AUTHORIZED
+        // =====================================================
 
         [StringLength(100)]
         public string? AuthorizedName { get; set; }
@@ -337,6 +371,10 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         [StringLength(20)]
         public string? AuthorizedPhone { get; set; }
 
+
+        // =====================================================
+        // DOCUMENTS
+        // =====================================================
 
         public DateTime? InsuranceExpiryDate { get; set; }
 
@@ -387,20 +425,57 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
     {
         public string? Title { get; set; }
 
+
         public string? IdentityNumber { get; set; }
+
 
         public string? TaxNumber { get; set; }
 
+
         public string? PhoneNumber { get; set; }
+
 
         public string? Email { get; set; }
 
+
         public string? Address { get; set; }
+
 
         public int? CityId { get; set; }
 
+
         public int? DistrictId { get; set; }
 
+
         public int? TaxOfficeId { get; set; }
+
+
+        public bool HasAnyValue()
+        {
+            return
+                !string.IsNullOrWhiteSpace(
+                    Title) ||
+
+                !string.IsNullOrWhiteSpace(
+                    IdentityNumber) ||
+
+                !string.IsNullOrWhiteSpace(
+                    TaxNumber) ||
+
+                !string.IsNullOrWhiteSpace(
+                    PhoneNumber) ||
+
+                !string.IsNullOrWhiteSpace(
+                    Email) ||
+
+                !string.IsNullOrWhiteSpace(
+                    Address) ||
+
+                CityId.HasValue ||
+
+                DistrictId.HasValue ||
+
+                TaxOfficeId.HasValue;
+        }
     }
 }

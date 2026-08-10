@@ -123,9 +123,9 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
         public string VehicleTypeName { get; set; } = string.Empty;
 
-        public int? VehicleKindId { get; set; }
+        public int VehicleKindId { get; set; }
 
-        public string? VehicleKindName { get; set; } = string.Empty;
+        public string VehicleKindName { get; set; } = string.Empty;
 
         public string? TrailerPlate { get; set; }
 

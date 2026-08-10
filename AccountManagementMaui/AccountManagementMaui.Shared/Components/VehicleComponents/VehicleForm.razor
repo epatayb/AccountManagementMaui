@@ -1078,12 +1078,13 @@
 
 
     private async Task LoadTaxOfficesAsync(
-        int cityId)
+    int? cityId)
     {
         _taxOffices.Clear();
 
 
-        if (cityId <= 0)
+        if (!cityId.HasValue ||
+            cityId.Value <= 0)
         {
             return;
         }
@@ -1092,7 +1093,7 @@
         var items =
             await VehicleLookupService
                 .GetTaxOfficesAsync(
-                    cityId);
+                    cityId.Value);
 
 
         _taxOffices =

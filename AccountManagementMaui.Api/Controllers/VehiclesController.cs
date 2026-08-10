@@ -1531,40 +1531,6 @@ namespace AccountManagementMaui.Api.Controllers
         }
 
 
-        private static VehicleAccountInputDto?
-    BuildLegacyLicenseInput(
-        CreateVehicleRequest request)
-        {
-            var model =
-                new VehicleAccountInputDto
-                {
-                    Title =
-                        request.LicenseOwnerName,
-
-                    TaxNumber =
-                        request.LicenseOwnerTaxNumber,
-
-                    IdentityNumber =
-                        request.LicenseOwnerIdentityNumber,
-
-                    Address =
-                        request.LicenseOwnerAddress,
-
-                    CityId =
-                        NormalizeId(
-                            request.LicenseOwnerCityId),
-
-                    TaxOfficeId =
-                        NormalizeId(
-                            request.LicenseOwnerTaxOfficeId)
-                };
-
-
-            return model.HasAnyValue()
-                ? model
-                : null;
-        }
-
         // =====================================================
         // VEHICLE DEFINITIONS VALIDATION
         // =====================================================
