@@ -32,13 +32,21 @@
 
 
         @* =====================================================
-           ARAÇ BİLGİLERİ
+           ARAÇ
            ===================================================== *@
 
         <section class="form-section">
 
-            <div class="section-title">
-                Araç Bilgileri
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        Araç Bilgileri
+                    </div>
+
+                    <div class="section-description">
+                        Araca ait temel bilgileri girin.
+                    </div>
+                </div>
             </div>
 
 
@@ -92,18 +100,6 @@
 
                 <div class="form-field">
 
-                    <label>Dorse Plakası</label>
-
-                    <InputText class="form-control plate-input"
-                               maxlength="20"
-                               disabled="@IsSubmitting"
-                               @bind-Value="State.Model.TrailerPlate" />
-
-                </div>
-
-
-                <div class="form-field">
-
                     <label>
                         Araç Türü
                         <span class="required-mark">*</span>
@@ -127,6 +123,18 @@
                     </InputSelect>
 
                     <ValidationMessage For="@(() => State.Model.VehicleKindId)" />
+
+                </div>
+
+
+                <div class="form-field">
+
+                    <label>Dorse Plakası</label>
+
+                    <InputText class="form-control plate-input"
+                               maxlength="20"
+                               disabled="@IsSubmitting"
+                               @bind-Value="State.Model.TrailerPlate" />
 
                 </div>
 
@@ -157,7 +165,7 @@
 
                 <div class="form-field full-width">
 
-                    <label>Araç Ülke</label>
+                    <label>Ülke</label>
 
                     <InputText class="form-control"
                                maxlength="100"
@@ -173,79 +181,299 @@
 
 
         @* =====================================================
-           ŞOFÖR / REFERANS
+           ŞOFÖR
            ===================================================== *@
 
         <section class="form-section">
 
-            <div class="section-title">
-                Şoför ve Referans
+            <div class="section-header">
+
+                <div>
+                    <div class="section-title">
+                        Şoför Bilgileri
+                    </div>
+
+                    <div class="section-description">
+                        Mevcut şoförü seçebilir veya yeni şoför bilgilerini girebilirsiniz.
+                    </div>
+                </div>
+
+
+                <label class="checkbox-label mode-checkbox">
+
+                    <input type="checkbox"
+                           checked="@State.Model.IsNewDriver"
+                           disabled="@IsSubmitting"
+                           @onchange="NewDriverChangedAsync" />
+
+                    <span>
+                        Yeni Şoför
+                    </span>
+
+                </label>
+
             </div>
 
 
-            <div class="form-grid">
+            @if (!State.Model.IsNewDriver)
+            {
+                <div class="picker-wrapper">
 
-                <div class="form-field">
-
-                    <VehicleAccountPicker Label="Şoför"
+                    <VehicleAccountPicker Label="Mevcut Şoför"
                                           Placeholder="Şoför adı, hesap kodu veya TC ara..."
-                                          Required="true"
                                           DriverOnly="true"
                                           Disabled="@IsSubmitting"
                                           SelectedItem="State.Driver"
                                           OnSelected="DriverSelectedAsync"
                                           OnCleared="DriverClearedAsync" />
 
-                    <ValidationMessage For="@(() => State.Model.DriverAccountCardId)" />
+                </div>
+            }
 
+
+            <div class="account-manual-area">
+
+                <div class="manual-area-title">
+                    @(State.Driver is null
+                                        ? "Şoför Bilgileri"
+                                        : "Seçili Şoför Bilgileri")
                 </div>
 
 
-                <div class="form-field readonly-field">
+                <div class="form-grid">
 
-                    <label>Şoför Bilgileri</label>
+                    <div class="form-field">
 
-                    <div class="readonly-box">
+                        <label>
+                            Ad / Ünvan
+                            <span class="required-mark">*</span>
+                        </label>
 
-                        <span>
-                            TC:
-                            @DisplayIdentity(
-                            _driverDetail?.IdentityNumber)
-                        </span>
+                        <InputText class="form-control"
+                                   maxlength="200"
+                                   disabled="@IsDriverManualDisabled()"
+                                   @bind-Value="State.Model.DriverAccount.Title" />
 
-                        <span>
-                            Tel:
-                            @Display(
-                                                        _driverDetail?.PhoneNumber)
-                        </span>
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label>
+                            Telefon
+                            <span class="required-mark">*</span>
+                        </label>
+
+                        <InputText class="form-control"
+                                   maxlength="20"
+                                   inputmode="tel"
+                                   disabled="@IsDriverManualDisabled()"
+                                   @bind-Value="State.Model.DriverAccount.PhoneNumber" />
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label>TC No</label>
+
+                        <InputText class="form-control"
+                                   maxlength="11"
+                                   inputmode="numeric"
+                                   disabled="@IsDriverManualDisabled()"
+                                   @bind-Value="State.Model.DriverAccount.IdentityNumber" />
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label>Vergi No</label>
+
+                        <InputText class="form-control"
+                                   maxlength="10"
+                                   inputmode="numeric"
+                                   disabled="@IsDriverManualDisabled()"
+                                   @bind-Value="State.Model.DriverAccount.TaxNumber" />
+
+                    </div>
+
+
+                    <div class="form-field full-width">
+
+                        <label>E-posta</label>
+
+                        <InputText class="form-control"
+                                   maxlength="150"
+                                   disabled="@IsDriverManualDisabled()"
+                                   @bind-Value="State.Model.DriverAccount.Email" />
+
+                    </div>
+
+
+                    <div class="form-field full-width">
+
+                        <label>Adres</label>
+
+                        <InputTextArea class="form-control address-input"
+                                       maxlength="500"
+                                       rows="2"
+                                       disabled="@IsDriverManualDisabled()"
+                                       @bind-Value="State.Model.DriverAccount.Address" />
 
                     </div>
 
                 </div>
 
 
-                <div class="form-field">
+                <ValidationMessage For="@(() => State.Model.DriverAccount)" />
 
-                    <VehicleAccountPicker Label="Referans"
-                                          Placeholder="Referans cari ara..."
-                                          Disabled="@IsSubmitting"
-                                          SelectedItem="State.Reference"
-                                          OnSelected="ReferenceSelectedAsync"
-                                          OnCleared="ReferenceClearedAsync" />
+            </div>
 
+
+            <div class="checkbox-row">
+
+                <label class="checkbox-label">
+
+                    <input type="checkbox"
+                           checked="@State.Model.DriverIsLicenseOwner"
+                           disabled="@IsSubmitting"
+                           @onchange="DriverIsLicenseOwnerChangedAsync" />
+
+                    <span>
+                        Şoför aynı zamanda ruhsat carisidir
+                    </span>
+
+                </label>
+
+            </div>
+
+        </section>
+
+
+        @* =====================================================
+           REFERANS
+           ===================================================== *@
+
+        <section class="form-section">
+
+            <div class="section-header">
+
+                <div>
+                    <div class="section-title">
+                        Referans Bilgileri
+                    </div>
+
+                    <div class="section-description">
+                        Referans opsiyoneldir. Mevcut cari seçebilir veya yeni referans girebilirsiniz.
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="picker-wrapper">
+
+                <VehicleAccountPicker Label="Mevcut Referans"
+                                      Placeholder="Referans cari ara..."
+                                      Disabled="@IsSubmitting"
+                                      SelectedItem="State.Reference"
+                                      OnSelected="ReferenceSelectedAsync"
+                                      OnCleared="ReferenceClearedAsync" />
+
+            </div>
+
+
+            <div class="account-manual-area">
+
+                <div class="manual-area-title">
+                    @(State.Reference is null
+                                        ? "Yeni Referans Bilgileri"
+                                        : "Seçili Referans Bilgileri")
                 </div>
 
 
-                <div class="form-field readonly-field">
+                <div class="form-grid">
 
-                    <label>Referans Telefon</label>
+                    <div class="form-field">
 
-                    <div class="readonly-box single-line">
-                        @Display(
-                                                _referenceDetail?.PhoneNumber)
+                        <label>Ad / Ünvan</label>
+
+                        <InputText class="form-control"
+                                   maxlength="200"
+                                   disabled="@IsReferenceManualDisabled()"
+                                   @bind-Value="State.Model.ReferenceAccount.Title" />
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label>Telefon</label>
+
+                        <InputText class="form-control"
+                                   maxlength="20"
+                                   inputmode="tel"
+                                   disabled="@IsReferenceManualDisabled()"
+                                   @bind-Value="State.Model.ReferenceAccount.PhoneNumber" />
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label>TC No</label>
+
+                        <InputText class="form-control"
+                                   maxlength="11"
+                                   inputmode="numeric"
+                                   disabled="@IsReferenceManualDisabled()"
+                                   @bind-Value="State.Model.ReferenceAccount.IdentityNumber" />
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label>Vergi No</label>
+
+                        <InputText class="form-control"
+                                   maxlength="10"
+                                   inputmode="numeric"
+                                   disabled="@IsReferenceManualDisabled()"
+                                   @bind-Value="State.Model.ReferenceAccount.TaxNumber" />
+
+                    </div>
+
+
+                    <div class="form-field full-width">
+
+                        <label>E-posta</label>
+
+                        <InputText class="form-control"
+                                   maxlength="150"
+                                   disabled="@IsReferenceManualDisabled()"
+                                   @bind-Value="State.Model.ReferenceAccount.Email" />
+
+                    </div>
+
+
+                    <div class="form-field full-width">
+
+                        <label>Adres</label>
+
+                        <InputTextArea class="form-control address-input"
+                                       rows="2"
+                                       maxlength="500"
+                                       disabled="@IsReferenceManualDisabled()"
+                                       @bind-Value="State.Model.ReferenceAccount.Address" />
+
                     </div>
 
                 </div>
+
+
+                <ValidationMessage For="@(() => State.Model.ReferenceAccount)" />
 
             </div>
 
@@ -258,159 +486,192 @@
 
         <section class="form-section">
 
-            <div class="section-title">
-                Ruhsat ve Cari Bilgileri
+            <div class="section-header">
+
+                <div>
+                    <div class="section-title">
+                        Araç Ruhsat Cari Bilgileri
+                    </div>
+
+                    <div class="section-description">
+                        Mevcut cari seçebilir veya yeni ruhsat carisi oluşturabilirsiniz.
+                    </div>
+                </div>
+
             </div>
 
 
-            <div class="form-grid">
+            @if (State.Model.DriverIsLicenseOwner)
+            {
+                <div class="account-source-info">
 
-                <div class="form-field full-width">
+                    <strong>
+                        Şoför ruhsat carisi olarak kullanılacak.
+                    </strong>
 
-                    <VehicleAccountPicker Label="Araç Ruhsat Carisi"
+                    <span>
+                        Ayrı bir hesap kartı oluşturulmayacak.
+                    </span>
+
+                </div>
+            }
+            else
+            {
+                <div class="picker-wrapper">
+
+                    <VehicleAccountPicker Label="Mevcut Ruhsat Carisi"
                                           Placeholder="Ruhsat carisi ara..."
-                                          Required="true"
                                           Disabled="@IsSubmitting"
                                           SelectedItem="State.LicenseAccount"
                                           OnSelected="LicenseSelectedAsync"
                                           OnCleared="LicenseClearedAsync" />
 
-                    <ValidationMessage For="@(() => State.Model.LicenseAccountCardId)" />
+                </div>
+            }
 
+
+            <div class="account-manual-area">
+
+                <div class="manual-area-title">
+                    @(State.Model.DriverIsLicenseOwner
+                                        ? "Şoförden Alınan Bilgiler"
+                                        : State.LicenseAccount is null
+                                        ? "Yeni Ruhsat Cari Bilgileri"
+                                        : "Seçili Ruhsat Cari Bilgileri")
                 </div>
 
 
-                <div class="form-field full-width checkbox-field">
+                <div class="form-grid">
 
-                    <label class="checkbox-label">
+                    <div class="form-field">
 
-                        <input type="checkbox"
-                               checked="@State.Model.DriverIsLicenseOwner"
-                               disabled="@(IsSubmitting || State.Driver is null)"
-                               @onchange="DriverIsLicenseOwnerChangedAsync" />
+                        <label>Ad / Ünvan</label>
 
-                        <span>
-                            Şoför Ruhsat Sahibidir
-                        </span>
+                        <InputText class="form-control"
+                                   maxlength="200"
+                                   disabled="@IsLicenseManualDisabled()"
+                                   @bind-Value="State.Model.LicenseAccount.Title" />
 
-                    </label>
-
-                </div>
+                    </div>
 
 
-                <div class="form-field">
+                    <div class="form-field">
 
-                    <label>
-                        Ruhsat Sahibi
-                        <span class="required-mark">*</span>
-                    </label>
+                        <label>Telefon</label>
 
-                    <InputText class="form-control"
-                               maxlength="200"
-                               disabled="@IsLicenseSnapshotLocked()"
-                               @bind-Value="State.Model.LicenseOwnerName" />
+                        <InputText class="form-control"
+                                   maxlength="20"
+                                   inputmode="tel"
+                                   disabled="@IsLicenseManualDisabled()"
+                                   @bind-Value="State.Model.LicenseAccount.PhoneNumber" />
 
-                    <ValidationMessage For="@(() => State.Model.LicenseOwnerName)" />
-
-                </div>
+                    </div>
 
 
-                <div class="form-field">
+                    <div class="form-field">
 
-                    <label>Vergi No</label>
+                        <label>TC No</label>
 
-                    <InputText class="form-control"
-                               maxlength="10"
-                               inputmode="numeric"
-                               disabled="@IsLicenseSnapshotLocked()"
-                               @bind-Value="State.Model.LicenseOwnerTaxNumber" />
+                        <InputText class="form-control"
+                                   maxlength="11"
+                                   inputmode="numeric"
+                                   disabled="@IsLicenseManualDisabled()"
+                                   @bind-Value="State.Model.LicenseAccount.IdentityNumber" />
 
-                    <ValidationMessage For="@(() => State.Model.LicenseOwnerTaxNumber)" />
-
-                </div>
+                    </div>
 
 
-                <div class="form-field">
+                    <div class="form-field">
 
-                    <label>TC No</label>
+                        <label>Vergi No</label>
 
-                    <InputText class="form-control"
-                               maxlength="11"
-                               inputmode="numeric"
-                               disabled="@IsLicenseSnapshotLocked()"
-                               @bind-Value="State.Model.LicenseOwnerIdentityNumber" />
+                        <InputText class="form-control"
+                                   maxlength="10"
+                                   inputmode="numeric"
+                                   disabled="@IsLicenseManualDisabled()"
+                                   @bind-Value="State.Model.LicenseAccount.TaxNumber" />
 
-                    <ValidationMessage For="@(() => State.Model.LicenseOwnerIdentityNumber)" />
-
-                </div>
+                    </div>
 
 
-                <div class="form-field">
+                    <div class="form-field">
 
-                    <label>
-                        Şehir
-                        <span class="required-mark">*</span>
-                    </label>
+                        <label>Şehir</label>
 
-                    <select class="form-control"
-                            value="@State.Model.LicenseOwnerCityId"
-                            disabled="@IsLicenseSnapshotLocked()"
-                            @onchange="CityChangedAsync">
+                        <select class="form-control"
+                                value="@GetNullableIdValue(State.Model.LicenseAccount.CityId)"
+                                disabled="@IsLicenseManualDisabled()"
+                                @onchange="LicenseCityChangedAsync">
 
-                        <option value="0">
-                            Şehir seçiniz
-                        </option>
-
-                        @foreach (var city in _cities)
-                        {
-                            <option value="@city.Id">
-                                @city.CityCode - @city.Name
+                            <option value="">
+                                Şehir seçiniz
                             </option>
-                        }
 
-                    </select>
+                            @foreach (var city in _cities)
+                            {
+                                <option value="@city.Id">
+                                    @city.CityCode - @city.Name
+                                </option>
+                            }
 
-                    <ValidationMessage For="@(() => State.Model.LicenseOwnerCityId)" />
+                        </select>
 
-                </div>
-
-
-                <div class="form-field full-width">
-
-                    <label>Adres</label>
-
-                    <InputTextArea class="form-control address-input"
-                                   rows="2"
-                                   maxlength="500"
-                                   disabled="@IsLicenseSnapshotLocked()"
-                                   @bind-Value="State.Model.LicenseOwnerAddress" />
-
-                </div>
+                    </div>
 
 
-                <div class="form-field">
+                    <div class="form-field">
 
-                    <label>Vergi Dairesi</label>
+                        <label>Vergi Dairesi</label>
 
-                    <select class="form-control"
-                            value="@GetTaxOfficeValue()"
-                            disabled="@IsLicenseSnapshotLocked()"
-                            @onchange="TaxOfficeChanged">
+                        <select class="form-control"
+                                value="@GetNullableIdValue(State.Model.LicenseAccount.TaxOfficeId)"
+                                disabled="@IsLicenseManualDisabled()"
+                                @onchange="LicenseTaxOfficeChanged">
 
-                        <option value="">
-                            Vergi dairesi seçiniz
-                        </option>
-
-                        @foreach (var office in _taxOffices)
-                        {
-                            <option value="@office.Id">
-                                @office.Name
+                            <option value="">
+                                Vergi dairesi seçiniz
                             </option>
-                        }
 
-                    </select>
+                            @foreach (var office in _taxOffices)
+                            {
+                                <option value="@office.Id">
+                                    @office.Name
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-field full-width">
+
+                        <label>E-posta</label>
+
+                        <InputText class="form-control"
+                                   maxlength="150"
+                                   disabled="@IsLicenseManualDisabled()"
+                                   @bind-Value="State.Model.LicenseAccount.Email" />
+
+                    </div>
+
+
+                    <div class="form-field full-width">
+
+                        <label>Adres</label>
+
+                        <InputTextArea class="form-control address-input"
+                                       rows="2"
+                                       maxlength="500"
+                                       disabled="@IsLicenseManualDisabled()"
+                                       @bind-Value="State.Model.LicenseAccount.Address" />
+
+                    </div>
 
                 </div>
+
+
+                <ValidationMessage For="@(() => State.Model.LicenseAccount)" />
 
             </div>
 
@@ -423,8 +684,18 @@
 
         <section class="form-section">
 
-            <div class="section-title">
-                Fatura Bilgileri
+            <div class="section-header">
+
+                <div>
+                    <div class="section-title">
+                        Fatura Bilgileri
+                    </div>
+
+                    <div class="section-description">
+                        Listede Müşteri ve Navluncu carileri gösterilir. Yeni kayıt Müşteri / Müşteri olarak açılır.
+                    </div>
+                </div>
+
             </div>
 
 
@@ -434,11 +705,11 @@
 
                     <input type="checkbox"
                            checked="@State.Model.ReferenceIsInvoiceAccount"
-                           disabled="@(IsSubmitting || State.Reference is null)"
+                           disabled="@(IsSubmitting || !HasReferenceSource())"
                            @onchange="ReferenceInvoiceChangedAsync" />
 
                     <span>
-                        Referans Fatura Caridir
+                        Referans Fatura Carisidir
                     </span>
 
                 </label>
@@ -448,11 +719,11 @@
 
                     <input type="checkbox"
                            checked="@State.Model.LicenseOwnerIsInvoiceAccount"
-                           disabled="@(IsSubmitting || State.LicenseAccount is null)"
+                           disabled="@(IsSubmitting || !HasLicenseSource())"
                            @onchange="LicenseInvoiceChangedAsync" />
 
                     <span>
-                        Ruhsat Cari Fatura Caridir
+                        Ruhsat Carisi Fatura Carisidir
                     </span>
 
                 </label>
@@ -460,16 +731,134 @@
             </div>
 
 
-            <VehicleAccountPicker Label="Fatura Hesabı"
-                                  Placeholder="Fatura hesabı ara..."
-                                  Required="true"
-                                  InvoiceOnly="true"
-                                  Disabled="@(IsSubmitting || IsInvoiceLocked())"
-                                  SelectedItem="State.InvoiceAccount"
-                                  OnSelected="InvoiceSelectedAsync"
-                                  OnCleared="InvoiceClearedAsync" />
+            @if (State.Model.ReferenceIsInvoiceAccount)
+            {
+                <div class="account-source-info">
 
-            <ValidationMessage For="@(() => State.Model.InvoiceAccountCardId)" />
+                    <strong>
+                        Fatura hesabı olarak referans kullanılacak.
+                    </strong>
+
+                </div>
+            }
+            else if (State.Model.LicenseOwnerIsInvoiceAccount)
+            {
+                <div class="account-source-info">
+
+                    <strong>
+                        Fatura hesabı olarak ruhsat carisi kullanılacak.
+                    </strong>
+
+                </div>
+            }
+            else
+            {
+                <div class="picker-wrapper">
+
+                    <VehicleAccountPicker Label="Mevcut Fatura Hesabı"
+                                          Placeholder="Müşteri veya navluncu ara..."
+                                          InvoiceOnly="true"
+                                          Disabled="@IsSubmitting"
+                                          SelectedItem="State.InvoiceAccount"
+                                          OnSelected="InvoiceSelectedAsync"
+                                          OnCleared="InvoiceClearedAsync" />
+
+                </div>
+
+
+                <div class="account-manual-area">
+
+                    <div class="manual-area-title">
+                        @(State.InvoiceAccount is null
+                                            ? "Yeni Fatura Cari Bilgileri"
+                                            : "Seçili Fatura Cari Bilgileri")
+                </div>
+
+
+                    <div class="form-grid">
+
+                        <div class="form-field">
+
+                            <label>Ad / Ünvan</label>
+
+                            <InputText class="form-control"
+                                       maxlength="200"
+                                       disabled="@IsInvoiceManualDisabled()"
+                                       @bind-Value="State.Model.InvoiceAccount.Title" />
+
+                        </div>
+
+
+                        <div class="form-field">
+
+                            <label>Telefon</label>
+
+                            <InputText class="form-control"
+                                       maxlength="20"
+                                       inputmode="tel"
+                                       disabled="@IsInvoiceManualDisabled()"
+                                       @bind-Value="State.Model.InvoiceAccount.PhoneNumber" />
+
+                        </div>
+
+
+                        <div class="form-field">
+
+                            <label>TC No</label>
+
+                            <InputText class="form-control"
+                                       maxlength="11"
+                                       inputmode="numeric"
+                                       disabled="@IsInvoiceManualDisabled()"
+                                       @bind-Value="State.Model.InvoiceAccount.IdentityNumber" />
+
+                        </div>
+
+
+                        <div class="form-field">
+
+                            <label>Vergi No</label>
+
+                            <InputText class="form-control"
+                                       maxlength="10"
+                                       inputmode="numeric"
+                                       disabled="@IsInvoiceManualDisabled()"
+                                       @bind-Value="State.Model.InvoiceAccount.TaxNumber" />
+
+                        </div>
+
+
+                        <div class="form-field full-width">
+
+                            <label>E-posta</label>
+
+                            <InputText class="form-control"
+                                       maxlength="150"
+                                       disabled="@IsInvoiceManualDisabled()"
+                                       @bind-Value="State.Model.InvoiceAccount.Email" />
+
+                        </div>
+
+
+                        <div class="form-field full-width">
+
+                            <label>Adres</label>
+
+                            <InputTextArea class="form-control address-input"
+                                           rows="2"
+                                           maxlength="500"
+                                           disabled="@IsInvoiceManualDisabled()"
+                                           @bind-Value="State.Model.InvoiceAccount.Address" />
+
+                        </div>
+
+                    </div>
+
+
+                    <ValidationMessage For="@(() => State.Model.InvoiceAccount)" />
+
+                </div>
+                        }
 
         </section>
 
@@ -505,6 +894,7 @@
 
                     <InputText class="form-control"
                                maxlength="20"
+                               inputmode="tel"
                                disabled="@IsSubmitting"
                                @bind-Value="State.Model.AuthorizedPhone" />
 
@@ -557,7 +947,7 @@
 
 
         @* =====================================================
-           ACTIONS
+           BUTTONS
            ===================================================== *@
 
         <div class="form-actions">
@@ -574,18 +964,9 @@
                     class="btn btn-primary"
                     disabled="@(IsSubmitting || _isLoading)">
 
-                @if (IsSubmitting)
-                {
-                    <span>
-                        Kaydediliyor...
-                    </span>
-                }
-                else
-                {
-                    <span>
-                        @SubmitText
-                    </span>
-                }
+                @(IsSubmitting
+                                ? "Kaydediliyor..."
+                                : SubmitText)
 
             </button>
 
@@ -597,26 +978,52 @@
 
 
 @code {
-    private List<VehicleTypeListDto> _vehicleTypes = [];
 
-    private List<VehicleKindListDto> _vehicleKinds = [];
+    // =========================================================
+    // LOOKUPS
+    // =========================================================
 
-    private List<VehicleCityLookupDto> _cities = [];
+    private List<VehicleTypeListDto> _vehicleTypes =
+        [];
 
-    private List<VehicleTaxOfficeLookupDto> _taxOffices = [];
+
+    private List<VehicleKindListDto> _vehicleKinds =
+        [];
 
 
-    private VehicleAccountLookupDetailDto? _driverDetail;
+    private List<VehicleCityLookupDto> _cities =
+        [];
 
-    private VehicleAccountLookupDetailDto? _referenceDetail;
 
-    private VehicleAccountLookupDetailDto? _licenseDetail;
+    private List<VehicleTaxOfficeLookupDto> _taxOffices =
+        [];
+
+
+    private VehicleAccountLookupDetailDto?
+        _driverDetail;
+
+
+    private VehicleAccountLookupDetailDto?
+        _referenceDetail;
+
+
+    private VehicleAccountLookupDetailDto?
+        _licenseDetail;
+
+
+    private VehicleAccountLookupDetailDto?
+        _invoiceDetail;
 
 
     private bool _isLoading;
 
+
     private string? _loadErrorMessage;
 
+
+    // =========================================================
+    // PARAMETERS
+    // =========================================================
 
     [Parameter, EditorRequired]
     public VehicleFormState State { get; set; } =
@@ -640,6 +1047,10 @@
     public EventCallback OnCancel { get; set; }
 
 
+    // =========================================================
+    // INITIALIZE
+    // =========================================================
+
     protected override async Task OnInitializedAsync()
     {
         await LoadDefinitionsAsync();
@@ -648,58 +1059,55 @@
     }
 
 
-    // =========================================================
-    // INITIAL LOAD
-    // =========================================================
-
     private async Task LoadDefinitionsAsync()
     {
-        _isLoading = true;
+        _isLoading =
+            true;
 
-        _loadErrorMessage = null;
+
+        _loadErrorMessage =
+            null;
 
 
         try
         {
-            var typesTask =
+            var typeTask =
                 VehicleTypeService.GetAllAsync();
 
-            var kindsTask =
+
+            var kindTask =
                 VehicleKindService.GetAllAsync();
 
-            var citiesTask =
+
+            var cityTask =
                 VehicleLookupService.GetCitiesAsync();
 
 
             await Task.WhenAll(
-                typesTask,
-                kindsTask,
-                citiesTask);
+                typeTask,
+                kindTask,
+                cityTask);
 
 
             _vehicleTypes =
-                (await typesTask)
-                    .OrderBy(x => x.TypeName)
+                (await typeTask)
+                    .OrderBy(
+                        x => x.TypeName)
                     .ToList();
 
 
             _vehicleKinds =
-                (await kindsTask)
-                    .OrderBy(x => x.KindName)
+                (await kindTask)
+                    .OrderBy(
+                        x => x.KindName)
                     .ToList();
 
 
             _cities =
-                (await citiesTask)
-                    .OrderBy(x => x.CityCode)
+                (await cityTask)
+                    .OrderBy(
+                        x => x.CityCode)
                     .ToList();
-
-
-            if (State.Model.LicenseOwnerCityId > 0)
-            {
-                await LoadTaxOfficesAsync(
-                    State.Model.LicenseOwnerCityId);
-            }
         }
         catch (ApiException exception)
         {
@@ -718,38 +1126,218 @@
         }
         finally
         {
-            _isLoading = false;
+            _isLoading =
+                false;
         }
     }
 
 
+    // =========================================================
+    // INITIAL STATE
+    // =========================================================
+
     private async Task InitializeStateDetailsAsync()
     {
-        if (State.Driver is not null)
+        try
         {
+            // =================================================
+            // DRIVER
+            // =================================================
+
+            if (State.Model.DriverAccountCardId.HasValue)
+            {
+                _driverDetail =
+                    await VehicleLookupService
+                        .GetAccountByIdAsync(
+                            State.Model.DriverAccountCardId.Value);
+
+
+                if (_driverDetail is not null)
+                {
+                    State.Driver ??=
+                        ToLookup(
+                            _driverDetail);
+
+
+                    State.Model.DriverAccount =
+                        ToInput(
+                            _driverDetail);
+                }
+            }
+
+
+            // =================================================
+            // REFERENCE
+            // =================================================
+
+            if (State.Model.ReferenceAccountCardId.HasValue)
+            {
+                _referenceDetail =
+                    await VehicleLookupService
+                        .GetAccountByIdAsync(
+                            State.Model.ReferenceAccountCardId.Value);
+
+
+                if (_referenceDetail is not null)
+                {
+                    State.Reference ??=
+                        ToLookup(
+                            _referenceDetail);
+
+
+                    State.Model.ReferenceAccount =
+                        ToInput(
+                            _referenceDetail);
+                }
+            }
+
+
+            // =================================================
+            // LICENSE
+            // =================================================
+
+            if (State.Model.LicenseAccountCardId.HasValue)
+            {
+                _licenseDetail =
+                    await VehicleLookupService
+                        .GetAccountByIdAsync(
+                            State.Model.LicenseAccountCardId.Value);
+
+
+                if (_licenseDetail is not null)
+                {
+                    State.LicenseAccount ??=
+                        ToLookup(
+                            _licenseDetail);
+
+
+                    State.Model.LicenseAccount =
+                        ToInput(
+                            _licenseDetail);
+                }
+            }
+            else if (
+                !State.Model.DriverIsLicenseOwner &&
+                HasLegacyLicenseSnapshot())
+            {
+                State.Model.LicenseAccount =
+                    new VehicleAccountInputDto
+                    {
+                        Title =
+                            State.Model.LicenseOwnerName,
+
+                        IdentityNumber =
+                            State.Model.LicenseOwnerIdentityNumber,
+
+                        TaxNumber =
+                            State.Model.LicenseOwnerTaxNumber,
+
+                        Address =
+                            State.Model.LicenseOwnerAddress,
+
+                        CityId =
+                            State.Model.LicenseOwnerCityId,
+
+                        TaxOfficeId =
+                            State.Model.LicenseOwnerTaxOfficeId
+                    };
+            }
+
+
+            // =================================================
+            // INVOICE
+            // =================================================
+
+            if (State.Model.InvoiceAccountCardId.HasValue)
+            {
+                _invoiceDetail =
+                    await VehicleLookupService
+                        .GetAccountByIdAsync(
+                            State.Model.InvoiceAccountCardId.Value);
+
+
+                if (_invoiceDetail is not null)
+                {
+                    State.InvoiceAccount ??=
+                        ToLookup(
+                            _invoiceDetail);
+
+
+                    State.Model.InvoiceAccount =
+                        ToInput(
+                            _invoiceDetail);
+                }
+            }
+
+
+            // =================================================
+            // DRIVER = LICENSE
+            // =================================================
+
+            if (State.Model.DriverIsLicenseOwner)
+            {
+                ApplyDriverAsLicense();
+            }
+
+
+            await LoadTaxOfficesAsync(
+                State.Model.LicenseAccount.CityId);
+        }
+        catch (ApiException exception)
+        {
+            _loadErrorMessage =
+                exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _loadErrorMessage =
+                "Cari bilgileri yüklenirken API sunucusuna ulaşılamadı.";
+        }
+    }
+
+
+    // =========================================================
+    // NEW DRIVER
+    // =========================================================
+
+    private Task NewDriverChangedAsync(
+        ChangeEventArgs args)
+    {
+        var isChecked =
+            args.Value is bool value &&
+            value;
+
+
+        State.Model.IsNewDriver =
+            isChecked;
+
+
+        if (isChecked)
+        {
+            State.Driver =
+                null;
+
+
+            State.Model.DriverAccountCardId =
+                null;
+
+
             _driverDetail =
-                await VehicleLookupService
-                    .GetAccountByIdAsync(
-                        State.Driver.Id);
+                null;
+
+
+            State.Model.DriverAccount =
+                new VehicleAccountInputDto();
+
+
+            if (State.Model.DriverIsLicenseOwner)
+            {
+                ApplyDriverAsLicense();
+            }
         }
 
 
-        if (State.Reference is not null)
-        {
-            _referenceDetail =
-                await VehicleLookupService
-                    .GetAccountByIdAsync(
-                        State.Reference.Id);
-        }
-
-
-        if (State.LicenseAccount is not null)
-        {
-            _licenseDetail =
-                await VehicleLookupService
-                    .GetAccountByIdAsync(
-                        State.LicenseAccount.Id);
-        }
+        return Task.CompletedTask;
     }
 
 
@@ -760,7 +1348,13 @@
     private async Task DriverSelectedAsync(
         VehicleAccountLookupDto item)
     {
-        State.Driver = item;
+        State.Driver =
+            item;
+
+
+        State.Model.IsNewDriver =
+            false;
+
 
         State.Model.DriverAccountCardId =
             item.Id;
@@ -772,29 +1366,60 @@
                     item.Id);
 
 
+        State.Model.DriverAccount =
+            _driverDetail is null
+                ? new VehicleAccountInputDto
+                {
+                    Title =
+                        item.Title,
+
+                    PhoneNumber =
+                        item.PhoneNumber
+                }
+                : ToInput(
+                    _driverDetail);
+
+
         if (State.Model.DriverIsLicenseOwner)
         {
-            await ApplyDriverSnapshotAsync();
+            ApplyDriverAsLicense();
         }
     }
 
 
     private Task DriverClearedAsync()
     {
-        State.Driver = null;
+        State.Driver =
+            null;
 
-        State.Model.DriverAccountCardId = 0;
 
-        State.Model.DriverIsLicenseOwner = false;
+        State.Model.DriverAccountCardId =
+            null;
 
-        _driverDetail = null;
+
+        State.Model.IsNewDriver =
+            false;
+
+
+        _driverDetail =
+            null;
+
+
+        State.Model.DriverAccount =
+            new VehicleAccountInputDto();
+
+
+        if (State.Model.DriverIsLicenseOwner)
+        {
+            ApplyDriverAsLicense();
+        }
 
 
         return Task.CompletedTask;
     }
 
 
-    private async Task DriverIsLicenseOwnerChangedAsync(
+    private Task DriverIsLicenseOwnerChangedAsync(
         ChangeEventArgs args)
     {
         var isChecked =
@@ -808,37 +1433,43 @@
 
         if (isChecked)
         {
-            await ApplyDriverSnapshotAsync();
+            State.LicenseAccount =
+                null;
+
+
+            State.Model.LicenseAccountCardId =
+                null;
+
+
+            _licenseDetail =
+                null;
+
+
+            ApplyDriverAsLicense();
         }
         else
         {
-            await ApplyLicenseSnapshotAsync();
+            State.Model.LicenseAccount =
+                new VehicleAccountInputDto();
+
+
+            ClearLegacyLicenseSnapshot();
         }
+
+
+        return Task.CompletedTask;
     }
 
 
-    private async Task ApplyDriverSnapshotAsync()
+    private void ApplyDriverAsLicense()
     {
-        if (State.Driver is null)
-        {
-            return;
-        }
+        State.Model.LicenseAccount =
+            CloneAccount(
+                State.Model.DriverAccount);
 
 
-        _driverDetail ??=
-            await VehicleLookupService
-                .GetAccountByIdAsync(
-                    State.Driver.Id);
-
-
-        if (_driverDetail is null)
-        {
-            return;
-        }
-
-
-        ApplySnapshot(
-            _driverDetail);
+        SyncLegacyLicenseSnapshot(
+            State.Model.LicenseAccount);
     }
 
 
@@ -852,6 +1483,7 @@
         State.Reference =
             item;
 
+
         State.Model.ReferenceAccountCardId =
             item.Id;
 
@@ -862,34 +1494,45 @@
                     item.Id);
 
 
-        if (State.Model.ReferenceIsInvoiceAccount)
-        {
-            ApplyReferenceAsInvoice();
-        }
+        State.Model.ReferenceAccount =
+            _referenceDetail is null
+                ? new VehicleAccountInputDto
+                {
+                    Title =
+                        item.Title,
+
+                    PhoneNumber =
+                        item.PhoneNumber
+                }
+                : ToInput(
+                    _referenceDetail);
     }
 
 
     private Task ReferenceClearedAsync()
     {
-        var wasInvoice =
-            State.Model.ReferenceIsInvoiceAccount;
-
-
         State.Reference =
             null;
+
 
         State.Model.ReferenceAccountCardId =
             null;
 
-        State.Model.ReferenceIsInvoiceAccount =
-            false;
 
         _referenceDetail =
             null;
 
 
-        if (wasInvoice)
+        State.Model.ReferenceAccount =
+            new VehicleAccountInputDto();
+
+
+        if (State.Model.ReferenceIsInvoiceAccount)
         {
+            State.Model.ReferenceIsInvoiceAccount =
+                false;
+
+
             ClearInvoice();
         }
 
@@ -899,14 +1542,21 @@
 
 
     // =========================================================
-    // LICENSE ACCOUNT
+    // LICENSE
     // =========================================================
 
     private async Task LicenseSelectedAsync(
         VehicleAccountLookupDto item)
     {
+        if (State.Model.DriverIsLicenseOwner)
+        {
+            return;
+        }
+
+
         State.LicenseAccount =
             item;
+
 
         State.Model.LicenseAccountCardId =
             item.Id;
@@ -918,155 +1568,95 @@
                     item.Id);
 
 
-        if (!State.Model.DriverIsLicenseOwner)
-        {
-            await ApplyLicenseSnapshotAsync();
-        }
+        State.Model.LicenseAccount =
+            _licenseDetail is null
+                ? new VehicleAccountInputDto
+                {
+                    Title =
+                        item.Title,
+
+                    PhoneNumber =
+                        item.PhoneNumber
+                }
+                : ToInput(
+                    _licenseDetail);
 
 
-        if (State.Model.LicenseOwnerIsInvoiceAccount)
-        {
-            ApplyLicenseAsInvoice();
-        }
+        SyncLegacyLicenseSnapshot(
+            State.Model.LicenseAccount);
+
+
+        await LoadTaxOfficesAsync(
+            State.Model.LicenseAccount.CityId);
     }
 
 
     private Task LicenseClearedAsync()
     {
-        var wasInvoice =
-            State.Model.LicenseOwnerIsInvoiceAccount;
-
-
         State.LicenseAccount =
             null;
 
-        State.Model.LicenseAccountCardId =
-            0;
 
-        State.Model.LicenseOwnerIsInvoiceAccount =
-            false;
+        State.Model.LicenseAccountCardId =
+            null;
+
 
         _licenseDetail =
             null;
 
 
-        if (!State.Model.DriverIsLicenseOwner)
-        {
-            ClearSnapshot();
-        }
+        State.Model.LicenseAccount =
+            new VehicleAccountInputDto();
 
 
-        if (wasInvoice)
+        ClearLegacyLicenseSnapshot();
+
+
+        if (State.Model.LicenseOwnerIsInvoiceAccount)
         {
+            State.Model.LicenseOwnerIsInvoiceAccount =
+                false;
+
+
             ClearInvoice();
         }
+
+
+        _taxOffices.Clear();
 
 
         return Task.CompletedTask;
     }
 
 
-    private async Task ApplyLicenseSnapshotAsync()
-    {
-        if (State.LicenseAccount is null)
-        {
-            ClearSnapshot();
-
-            return;
-        }
-
-
-        _licenseDetail ??=
-            await VehicleLookupService
-                .GetAccountByIdAsync(
-                    State.LicenseAccount.Id);
-
-
-        if (_licenseDetail is null)
-        {
-            return;
-        }
-
-
-        ApplySnapshot(
-            _licenseDetail);
-    }
-
-
-    // =========================================================
-    // SNAPSHOT
-    // =========================================================
-
-    private void ApplySnapshot(
-        VehicleAccountLookupDetailDto account)
-    {
-        State.Model.LicenseOwnerName =
-            account.Title;
-
-        State.Model.LicenseOwnerTaxNumber =
-            account.TaxNumber;
-
-        State.Model.LicenseOwnerIdentityNumber =
-            account.IdentityNumber;
-
-        State.Model.LicenseOwnerAddress =
-            account.Address;
-
-        State.Model.LicenseOwnerCityId =
-            account.CityId ?? 0;
-
-        State.Model.LicenseOwnerTaxOfficeId =
-            account.TaxOfficeId;
-
-
-        _ =
-            LoadTaxOfficesAsync(
-                State.Model.LicenseOwnerCityId);
-    }
-
-
-    private void ClearSnapshot()
-    {
-        State.Model.LicenseOwnerName =
-            string.Empty;
-
-        State.Model.LicenseOwnerTaxNumber =
-            null;
-
-        State.Model.LicenseOwnerIdentityNumber =
-            null;
-
-        State.Model.LicenseOwnerAddress =
-            null;
-
-        State.Model.LicenseOwnerCityId =
-            0;
-
-        State.Model.LicenseOwnerTaxOfficeId =
-            null;
-
-
-        _taxOffices.Clear();
-    }
-
-
-    // =========================================================
-    // CITY / TAX OFFICE
-    // =========================================================
-
-    private async Task CityChangedAsync(
+    private async Task LicenseCityChangedAsync(
         ChangeEventArgs args)
     {
-        if (!int.TryParse(
+        int? cityId =
+            null;
+
+
+        if (int.TryParse(
                 args.Value?.ToString(),
-                out var cityId))
+                out var parsedCityId) &&
+            parsedCityId > 0)
         {
-            cityId = 0;
+            cityId =
+                parsedCityId;
         }
+
+
+        State.Model.LicenseAccount.CityId =
+            cityId;
+
+
+        State.Model.LicenseAccount.TaxOfficeId =
+            null;
 
 
         State.Model.LicenseOwnerCityId =
             cityId;
+
 
         State.Model.LicenseOwnerTaxOfficeId =
             null;
@@ -1077,8 +1667,34 @@
     }
 
 
+    private void LicenseTaxOfficeChanged(
+        ChangeEventArgs args)
+    {
+        int? taxOfficeId =
+            null;
+
+
+        if (int.TryParse(
+                args.Value?.ToString(),
+                out var parsedTaxOfficeId) &&
+            parsedTaxOfficeId > 0)
+        {
+            taxOfficeId =
+                parsedTaxOfficeId;
+        }
+
+
+        State.Model.LicenseAccount.TaxOfficeId =
+            taxOfficeId;
+
+
+        State.Model.LicenseOwnerTaxOfficeId =
+            taxOfficeId;
+    }
+
+
     private async Task LoadTaxOfficesAsync(
-    int? cityId)
+        int? cityId)
     {
         _taxOffices.Clear();
 
@@ -1098,26 +1714,9 @@
 
         _taxOffices =
             items
-                .OrderBy(x => x.Name)
+                .OrderBy(
+                    x => x.Name)
                 .ToList();
-    }
-
-
-    private void TaxOfficeChanged(
-        ChangeEventArgs args)
-    {
-        if (int.TryParse(
-                args.Value?.ToString(),
-                out var taxOfficeId))
-        {
-            State.Model.LicenseOwnerTaxOfficeId =
-                taxOfficeId;
-        }
-        else
-        {
-            State.Model.LicenseOwnerTaxOfficeId =
-                null;
-        }
     }
 
 
@@ -1125,17 +1724,43 @@
     // INVOICE
     // =========================================================
 
-    private Task InvoiceSelectedAsync(
+    private async Task InvoiceSelectedAsync(
         VehicleAccountLookupDto item)
     {
         State.InvoiceAccount =
             item;
 
+
         State.Model.InvoiceAccountCardId =
             item.Id;
 
 
-        return Task.CompletedTask;
+        State.Model.ReferenceIsInvoiceAccount =
+            false;
+
+
+        State.Model.LicenseOwnerIsInvoiceAccount =
+            false;
+
+
+        _invoiceDetail =
+            await VehicleLookupService
+                .GetAccountByIdAsync(
+                    item.Id);
+
+
+        State.Model.InvoiceAccount =
+            _invoiceDetail is null
+                ? new VehicleAccountInputDto
+                {
+                    Title =
+                        item.Title,
+
+                    PhoneNumber =
+                        item.PhoneNumber
+                }
+                : ToInput(
+                    _invoiceDetail);
     }
 
 
@@ -1164,10 +1789,7 @@
             State.Model.LicenseOwnerIsInvoiceAccount =
                 false;
 
-            ApplyReferenceAsInvoice();
-        }
-        else
-        {
+
             ClearInvoice();
         }
 
@@ -1193,10 +1815,7 @@
             State.Model.ReferenceIsInvoiceAccount =
                 false;
 
-            ApplyLicenseAsInvoice();
-        }
-        else
-        {
+
             ClearInvoice();
         }
 
@@ -1205,45 +1824,292 @@
     }
 
 
-    private void ApplyReferenceAsInvoice()
-    {
-        if (State.Reference is null)
-        {
-            return;
-        }
-
-
-        State.InvoiceAccount =
-            State.Reference;
-
-        State.Model.InvoiceAccountCardId =
-            State.Reference.Id;
-    }
-
-
-    private void ApplyLicenseAsInvoice()
-    {
-        if (State.LicenseAccount is null)
-        {
-            return;
-        }
-
-
-        State.InvoiceAccount =
-            State.LicenseAccount;
-
-        State.Model.InvoiceAccountCardId =
-            State.LicenseAccount.Id;
-    }
-
-
     private void ClearInvoice()
     {
         State.InvoiceAccount =
             null;
 
+
         State.Model.InvoiceAccountCardId =
-            0;
+            null;
+
+
+        State.Model.InvoiceAccount =
+            new VehicleAccountInputDto();
+
+
+        _invoiceDetail =
+            null;
+    }
+
+
+    // =========================================================
+    // SNAPSHOT
+    // =========================================================
+
+    private void SyncLegacyLicenseSnapshot(
+        VehicleAccountInputDto input)
+    {
+        State.Model.LicenseOwnerName =
+            input.Title;
+
+
+        State.Model.LicenseOwnerTaxNumber =
+            input.TaxNumber;
+
+
+        State.Model.LicenseOwnerIdentityNumber =
+            input.IdentityNumber;
+
+
+        State.Model.LicenseOwnerAddress =
+            input.Address;
+
+
+        State.Model.LicenseOwnerCityId =
+            input.CityId;
+
+
+        State.Model.LicenseOwnerTaxOfficeId =
+            input.TaxOfficeId;
+    }
+
+
+    private void ClearLegacyLicenseSnapshot()
+    {
+        State.Model.LicenseOwnerName =
+            null;
+
+
+        State.Model.LicenseOwnerTaxNumber =
+            null;
+
+
+        State.Model.LicenseOwnerIdentityNumber =
+            null;
+
+
+        State.Model.LicenseOwnerAddress =
+            null;
+
+
+        State.Model.LicenseOwnerCityId =
+            null;
+
+
+        State.Model.LicenseOwnerTaxOfficeId =
+            null;
+    }
+
+
+    private bool HasLegacyLicenseSnapshot()
+    {
+        return
+            !string.IsNullOrWhiteSpace(
+                State.Model.LicenseOwnerName) ||
+
+            !string.IsNullOrWhiteSpace(
+                State.Model.LicenseOwnerTaxNumber) ||
+
+            !string.IsNullOrWhiteSpace(
+                State.Model.LicenseOwnerIdentityNumber) ||
+
+            !string.IsNullOrWhiteSpace(
+                State.Model.LicenseOwnerAddress) ||
+
+            State.Model.LicenseOwnerCityId.HasValue ||
+
+            State.Model.LicenseOwnerTaxOfficeId.HasValue;
+    }
+
+
+    // =========================================================
+    // STATE HELPERS
+    // =========================================================
+
+    private bool IsDriverManualDisabled()
+    {
+        return
+            IsSubmitting ||
+            State.Driver is not null;
+    }
+
+
+    private bool IsReferenceManualDisabled()
+    {
+        return
+            IsSubmitting ||
+            State.Reference is not null;
+    }
+
+
+    private bool IsLicenseManualDisabled()
+    {
+        return
+            IsSubmitting ||
+
+            State.Model.DriverIsLicenseOwner ||
+
+            State.LicenseAccount is not null;
+    }
+
+
+    private bool IsInvoiceManualDisabled()
+    {
+        return
+            IsSubmitting ||
+
+            State.InvoiceAccount is not null ||
+
+            State.Model.ReferenceIsInvoiceAccount ||
+
+            State.Model.LicenseOwnerIsInvoiceAccount;
+    }
+
+
+    private bool HasDriverSource()
+    {
+        return
+            State.Model.DriverAccountCardId.HasValue ||
+
+            State.Model.DriverAccount.HasAnyValue();
+    }
+
+
+    private bool HasReferenceSource()
+    {
+        return
+            State.Model.ReferenceAccountCardId.HasValue ||
+
+            State.Model.ReferenceAccount.HasAnyValue();
+    }
+
+
+    private bool HasLicenseSource()
+    {
+        if (State.Model.DriverIsLicenseOwner)
+        {
+            return HasDriverSource();
+        }
+
+
+        return
+            State.Model.LicenseAccountCardId.HasValue ||
+
+            State.Model.LicenseAccount.HasAnyValue();
+    }
+
+
+    private static string GetNullableIdValue(
+        int? id)
+    {
+        return id.HasValue &&
+               id.Value > 0
+            ? id.Value.ToString()
+            : string.Empty;
+    }
+
+
+    // =========================================================
+    // MAPPING
+    // =========================================================
+
+    private static VehicleAccountInputDto ToInput(
+        VehicleAccountLookupDetailDto item)
+    {
+        return new VehicleAccountInputDto
+        {
+            Title =
+                item.Title,
+
+            IdentityNumber =
+                item.IdentityNumber,
+
+            TaxNumber =
+                item.TaxNumber,
+
+            PhoneNumber =
+                item.PhoneNumber,
+
+            Email =
+                item.Email,
+
+            Address =
+                item.Address,
+
+            CityId =
+                item.CityId,
+
+            DistrictId =
+                item.DistrictId,
+
+            TaxOfficeId =
+                item.TaxOfficeId
+        };
+    }
+
+
+    private static VehicleAccountLookupDto ToLookup(
+        VehicleAccountLookupDetailDto item)
+    {
+        return new VehicleAccountLookupDto
+        {
+            Id =
+                item.Id,
+
+            AccountCode =
+                item.AccountCode,
+
+            Title =
+                item.Title,
+
+            AccountCardTypeName =
+                item.AccountCardTypeName,
+
+            AccountCardKindName =
+                item.AccountCardKindName,
+
+            PhoneNumber =
+                item.PhoneNumber,
+
+            CityName =
+                item.CityName
+        };
+    }
+
+
+    private static VehicleAccountInputDto CloneAccount(
+        VehicleAccountInputDto source)
+    {
+        return new VehicleAccountInputDto
+        {
+            Title =
+                source.Title,
+
+            IdentityNumber =
+                source.IdentityNumber,
+
+            TaxNumber =
+                source.TaxNumber,
+
+            PhoneNumber =
+                source.PhoneNumber,
+
+            Email =
+                source.Email,
+
+            Address =
+                source.Address,
+
+            CityId =
+                source.CityId,
+
+            DistrictId =
+                source.DistrictId,
+
+            TaxOfficeId =
+                source.TaxOfficeId
+        };
     }
 
 
@@ -1251,58 +2117,29 @@
     // SUBMIT
     // =========================================================
 
-    private Task HandleValidSubmitAsync()
+    private async Task HandleValidSubmitAsync()
     {
-        return OnValidSubmit.InvokeAsync();
+        /*
+         * Manuel ruhsat bilgilerinin snapshot tarafında da
+         * güncel kalmasını sağlıyoruz.
+         */
+        if (State.Model.DriverIsLicenseOwner)
+        {
+            ApplyDriverAsLicense();
+        }
+        else
+        {
+            SyncLegacyLicenseSnapshot(
+                State.Model.LicenseAccount);
+        }
+
+
+        await OnValidSubmit.InvokeAsync();
     }
 
 
-    private Task CancelAsync()
+    private async Task CancelAsync()
     {
-        return OnCancel.InvokeAsync();
-    }
-
-
-    // =========================================================
-    // HELPERS
-    // =========================================================
-
-    private bool IsLicenseSnapshotLocked()
-    {
-        return IsSubmitting ||
-               State.Model.DriverIsLicenseOwner;
-    }
-
-
-    private bool IsInvoiceLocked()
-    {
-        return State.Model.ReferenceIsInvoiceAccount ||
-               State.Model.LicenseOwnerIsInvoiceAccount;
-    }
-
-
-    private string GetTaxOfficeValue()
-    {
-        return State.Model.LicenseOwnerTaxOfficeId
-            ?.ToString()
-            ?? string.Empty;
-    }
-
-
-    private static string Display(
-        string? value)
-    {
-        return string.IsNullOrWhiteSpace(value)
-            ? "-"
-            : value;
-    }
-
-
-    private static string DisplayIdentity(
-        string? value)
-    {
-        return string.IsNullOrWhiteSpace(value)
-            ? "-"
-            : value;
+        await OnCancel.InvokeAsync();
     }
 }

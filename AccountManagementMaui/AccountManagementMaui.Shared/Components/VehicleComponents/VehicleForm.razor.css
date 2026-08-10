@@ -1,22 +1,46 @@
 .vehicle-form {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
+
+/* =========================================================
+   SECTION
+   ========================================================= */
+
 .form-section {
-    padding: 9px;
+    padding: 10px;
     border: 1px solid #e2e8f0;
-    border-radius: 7px;
-    background: #fff;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 9px;
 }
 
 .section-title {
-    margin-bottom: 8px;
     color: #334155;
-    font-size: .7rem;
+    font-size: .72rem;
     font-weight: 750;
 }
+
+.section-description {
+    margin-top: 2px;
+    color: #94a3b8;
+    font-size: .59rem;
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   GRID
+   ========================================================= */
 
 .form-grid {
     display: grid;
@@ -32,6 +56,11 @@
     grid-column: 1 / -1;
 }
 
+
+/* =========================================================
+   FIELD
+   ========================================================= */
+
 .form-field > label {
     display: block;
     margin-bottom: 4px;
@@ -44,33 +73,41 @@
     color: #dc2626;
 }
 
+
+/* =========================================================
+   CONTROL
+   ========================================================= */
+
 .form-control {
     width: 100%;
-    height: 32px;
+    height: 34px;
     box-sizing: border-box;
-    padding: 0 8px;
+    padding: 0 9px;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
-    background: #fff;
+    background: #ffffff;
     color: #0f172a;
-    font-size: .66rem;
+    font-size: .67rem;
     outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
 }
 
     .form-control:focus {
         border-color: #6366f1;
-        box-shadow: 0 0 0 2px rgba(99, 102, 241, .07);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, .08);
     }
 
     .form-control:disabled {
-        background: #f1f5f9;
+        border-color: #e2e8f0;
+        background: #f8fafc;
         color: #64748b;
+        cursor: not-allowed;
     }
 
 textarea.form-control {
     height: auto;
-    min-height: 55px;
-    padding: 7px 8px;
+    min-height: 58px;
+    padding: 7px 9px;
     resize: vertical;
 }
 
@@ -79,26 +116,68 @@ textarea.form-control {
     text-transform: uppercase;
 }
 
-.readonly-box {
-    display: flex;
-    min-height: 32px;
-    box-sizing: border-box;
-    align-items: center;
-    gap: 10px;
-    padding: 5px 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    background: #f8fafc;
-    color: #64748b;
-    font-size: .61rem;
+
+/* =========================================================
+   PICKER
+   ========================================================= */
+
+.picker-wrapper {
+    margin-bottom: 9px;
 }
 
-    .readonly-box.single-line {
-        display: flex;
+
+/* =========================================================
+   MANUAL ACCOUNT
+   ========================================================= */
+
+.account-manual-area {
+    padding: 9px;
+    border: 1px solid #edf0f4;
+    border-radius: 7px;
+    background: #fafbfc;
+}
+
+.manual-area-title {
+    margin-bottom: 8px;
+    color: #64748b;
+    font-size: .62rem;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   ACCOUNT SOURCE
+   ========================================================= */
+
+.account-source-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 9px;
+    padding: 8px 10px;
+    border: 1px solid #c7d2fe;
+    border-radius: 7px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: .62rem;
+}
+
+    .account-source-info strong {
+        font-size: .64rem;
     }
 
-.checkbox-field {
-    padding-top: 2px;
+    .account-source-info span {
+        color: #6366f1;
+        font-size: .58rem;
+    }
+
+
+/* =========================================================
+   CHECKBOX
+   ========================================================= */
+
+.checkbox-row {
+    margin-top: 9px;
 }
 
 .checkbox-label {
@@ -115,24 +194,40 @@ textarea.form-control {
         width: 14px;
         height: 14px;
         margin: 0;
+        cursor: pointer;
     }
+
+        .checkbox-label input:disabled {
+            cursor: not-allowed;
+            opacity: .55;
+        }
+
+.mode-checkbox {
+    flex: 0 0 auto;
+    padding-top: 1px;
+}
 
 .invoice-checkboxes {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 8px;
+    gap: 14px;
+    margin-bottom: 9px;
 }
+
+
+/* =========================================================
+   VALIDATION
+   ========================================================= */
 
 .validation-message {
     display: block;
-    margin-top: 3px;
+    margin-top: 4px;
     color: #dc2626;
-    font-size: .57rem;
+    font-size: .58rem;
 }
 
 .form-message {
-    padding: 7px 9px;
+    padding: 8px 10px;
     border-radius: 6px;
     font-size: .64rem;
 }
@@ -143,21 +238,26 @@ textarea.form-control {
         color: #991b1b;
     }
 
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+
 .form-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 6px;
+    gap: 7px;
     padding-top: 3px;
 }
 
 .btn {
     display: inline-flex;
-    min-width: 80px;
-    height: 32px;
+    min-width: 82px;
+    height: 33px;
     align-items: center;
     justify-content: center;
-    padding: 0 10px;
+    padding: 0 11px;
     border: 1px solid;
     border-radius: 6px;
     font-size: .65rem;
@@ -168,21 +268,45 @@ textarea.form-control {
 .btn-primary {
     border-color: #4f46e5;
     background: #4f46e5;
-    color: #fff;
+    color: #ffffff;
 }
+
+    .btn-primary:hover:not(:disabled) {
+        border-color: #4338ca;
+        background: #4338ca;
+    }
 
 .btn-outline-secondary {
     border-color: #cbd5e1;
-    background: #fff;
+    background: #ffffff;
     color: #475569;
 }
+
+    .btn-outline-secondary:hover:not(:disabled) {
+        background: #f8fafc;
+    }
 
 .btn:disabled {
     cursor: not-allowed;
     opacity: .55;
 }
 
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
 @media (max-width: 700px) {
+
+    .form-section {
+        padding: 9px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        gap: 7px;
+    }
+
     .form-grid {
         grid-template-columns: 1fr;
     }
@@ -194,5 +318,16 @@ textarea.form-control {
     .invoice-checkboxes {
         flex-direction: column;
         gap: 7px;
+    }
+
+    .account-manual-area {
+        padding: 8px;
+    }
+
+    .form-actions {
+        position: sticky;
+        bottom: 0;
+        padding: 8px 0 2px;
+        background: #ffffff;
     }
 }
