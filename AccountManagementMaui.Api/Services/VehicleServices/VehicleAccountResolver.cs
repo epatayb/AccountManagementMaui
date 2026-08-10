@@ -9,12 +9,20 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
     public class VehicleAccountResolver
         : IVehicleAccountResolver
     {
+        // =====================================================
+        // DRIVER
+        // =====================================================
+
         private const string DriverType =
             "Operasyon Cari";
 
         private const string DriverKind =
             "Navluncu";
 
+
+        // =====================================================
+        // REFERENCE
+        // =====================================================
 
         private const string ReferenceType =
             "Cari";
@@ -23,12 +31,20 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
             "Referans";
 
 
+        // =====================================================
+        // LICENSE
+        // =====================================================
+
         private const string LicenseType =
             "Operasyon Cari";
 
         private const string LicenseKind =
             "Navluncu";
 
+
+        // =====================================================
+        // INVOICE
+        // =====================================================
 
         private const string InvoiceType =
             "Müşteri";
@@ -130,9 +146,9 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
             string createKindName,
             CancellationToken cancellationToken)
         {
-            // -------------------------------------------------
-            // 1. EXISTING SELECTED ACCOUNT
-            // -------------------------------------------------
+            // =================================================
+            // EXISTING SELECTED ACCOUNT
+            // =================================================
 
             if (selectedAccountId.HasValue &&
                 selectedAccountId.Value > 0)
@@ -153,14 +169,20 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
                 }
 
 
-                // Mevcut seçili kartın türüne müdahale etmiyoruz.
+                /*
+                 * Mevcut cari seçilmişse Tip / Tür
+                 * kontrolü veya değişikliği yapmıyoruz.
+                 *
+                 * Fatura hesabında bu özellikle önemli:
+                 * API herhangi bir AccountCard kabul edebilir.
+                 */
                 return selected;
             }
 
 
-            // -------------------------------------------------
-            // 2. NOTHING ENTERED
-            // -------------------------------------------------
+            // =================================================
+            // NO MANUAL INPUT
+            // =================================================
 
             if (input is null ||
                 !input.HasAnyValue())
@@ -170,35 +192,43 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
 
 
             var title =
-                Normalize(input.Title);
+                Normalize(
+                    input.Title);
+
 
             var identityNumber =
-                Normalize(input.IdentityNumber);
+                Normalize(
+                    input.IdentityNumber);
+
 
             var taxNumber =
-                Normalize(input.TaxNumber);
+                Normalize(
+                    input.TaxNumber);
+
 
             var phoneNumber =
-                Normalize(input.PhoneNumber);
+                Normalize(
+                    input.PhoneNumber);
 
 
             /*
-             * Backend'de alan zorunlu değil.
+             * AccountCard.Title DB seviyesinde zorunlu.
              *
-             * Ancak AccountCard entity'sinde Title zorunlu.
-             * Kullanıcı isim yazmadıysa AccountCard üretmiyoruz.
+             * Backend vehicle ilişkisini zorunlu tutmuyor.
+             * Title yoksa yeni AccountCard açmıyoruz.
              *
-             * UI tarafı bu durumu zaten engelleyecek.
+             * UI gerekli yerlerde Title kontrol edecek.
              */
-            if (string.IsNullOrWhiteSpace(title))
+            if (string.IsNullOrWhiteSpace(
+                title))
             {
                 return null;
             }
 
 
-            // -------------------------------------------------
-            // 3. FIND EXISTING
-            // -------------------------------------------------
+            // =================================================
+            // FIND EXISTING
+            // =================================================
 
             var existing =
                 await FindExistingAccountAsync(
@@ -215,9 +245,19 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
             }
 
 
-            // -------------------------------------------------
-            // 4. CREATE CLASSIFICATION
-            // -------------------------------------------------
+            // =================================================
+            // LOCATION
+            // =================================================
+
+            var location =
+                await ResolveLocationAsync(
+                    input,
+                    cancellationToken);
+
+
+            // =================================================
+            // CLASSIFICATION
+            // =================================================
 
             var classification =
                 await GetClassificationAsync(
@@ -226,9 +266,9 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
                     cancellationToken);
 
 
-            // -------------------------------------------------
-            // 5. CREATE
-            // -------------------------------------------------
+            // =================================================
+            // CREATE
+            // =================================================
 
             var item =
                 new AccountCard
@@ -251,36 +291,39 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
 
 
                     CityId =
-                        NormalizeId(input.CityId),
+                        location.CityId,
 
                     DistrictId =
-                        NormalizeId(input.DistrictId),
+                        location.DistrictId,
 
                     TaxOfficeId =
-                        NormalizeId(input.TaxOfficeId),
+                        location.TaxOfficeId,
 
-
-                    TaxNumber =
-                        taxNumber,
 
                     IdentityNumber =
                         identityNumber,
+
+                    TaxNumber =
+                        taxNumber,
 
                     PhoneNumber =
                         phoneNumber,
 
                     Email =
-                        Normalize(input.Email),
+                        Normalize(
+                            input.Email),
 
                     Address =
-                        Normalize(input.Address),
+                        Normalize(
+                            input.Address),
 
                     ContactPerson =
                         null
                 };
 
 
-            _context.AccountCards.Add(item);
+            _context.AccountCards.Add(
+                item);
 
 
             return item;
@@ -288,23 +331,62 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
 
 
         // =====================================================
-        // FIND EXISTING
+        // FIND EXISTING ACCOUNT
         // =====================================================
 
-        private async Task<AccountCard?> FindExistingAccountAsync(
-            string title,
-            string? identityNumber,
-            string? taxNumber,
-            string? phoneNumber,
-            CancellationToken cancellationToken)
+        private async Task<AccountCard?>
+            FindExistingAccountAsync(
+                string title,
+                string? identityNumber,
+                string? taxNumber,
+                string? phoneNumber,
+                CancellationToken cancellationToken)
         {
             /*
-             * 1. TC en güçlü eşleşme.
+             * Aynı HTTP request içerisinde daha önce
+             * oluşturulmuş fakat henüz SaveChanges
+             * yapılmamış AccountCard kayıtlarını da arıyoruz.
+             *
+             * Bu özellikle:
+             *
+             * Şoför = Ruhsat Carisi
+             *
+             * olduğunda ikinci AccountCard açılmasını
+             * engeller.
              */
+
+            var trackedAccounts =
+                _context.ChangeTracker
+                    .Entries<AccountCard>()
+                    .Where(x =>
+                        x.State !=
+                        EntityState.Deleted)
+                    .Select(x =>
+                        x.Entity)
+                    .ToList();
+
+
+            // =================================================
+            // 1. TC
+            // =================================================
+
             if (!string.IsNullOrWhiteSpace(
                 identityNumber))
             {
-                var byIdentity =
+                var tracked =
+                    trackedAccounts
+                        .FirstOrDefault(x =>
+                            x.IdentityNumber ==
+                            identityNumber);
+
+
+                if (tracked is not null)
+                {
+                    return tracked;
+                }
+
+
+                var database =
                     await _context.AccountCards
                         .FirstOrDefaultAsync(
                             x =>
@@ -313,20 +395,34 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
                             cancellationToken);
 
 
-                if (byIdentity is not null)
+                if (database is not null)
                 {
-                    return byIdentity;
+                    return database;
                 }
             }
 
 
-            /*
-             * 2. Vergi No
-             */
+            // =================================================
+            // 2. TAX NUMBER
+            // =================================================
+
             if (!string.IsNullOrWhiteSpace(
                 taxNumber))
             {
-                var byTaxNumber =
+                var tracked =
+                    trackedAccounts
+                        .FirstOrDefault(x =>
+                            x.TaxNumber ==
+                            taxNumber);
+
+
+                if (tracked is not null)
+                {
+                    return tracked;
+                }
+
+
+                var database =
                     await _context.AccountCards
                         .FirstOrDefaultAsync(
                             x =>
@@ -335,45 +431,201 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
                             cancellationToken);
 
 
-                if (byTaxNumber is not null)
+                if (database is not null)
                 {
-                    return byTaxNumber;
+                    return database;
                 }
             }
 
 
-            /*
-             * 3. Ad + Telefon
-             *
-             * Sadece ada göre eşleştirmiyoruz.
-             * Aynı isimde iki kişi olabilir.
-             */
+            // =================================================
+            // 3. TITLE + PHONE
+            // =================================================
+
             if (!string.IsNullOrWhiteSpace(
                 phoneNumber))
             {
-                var byTitleAndPhone =
+                var tracked =
+                    trackedAccounts
+                        .FirstOrDefault(x =>
+                            x.Title ==
+                            title &&
+
+                            x.PhoneNumber ==
+                            phoneNumber);
+
+
+                if (tracked is not null)
+                {
+                    return tracked;
+                }
+
+
+                var database =
                     await _context.AccountCards
                         .FirstOrDefaultAsync(
                             x =>
-                                x.Title == title &&
+                                x.Title ==
+                                title &&
+
                                 x.PhoneNumber ==
                                 phoneNumber,
                             cancellationToken);
 
 
-                if (byTitleAndPhone is not null)
+                if (database is not null)
                 {
-                    return byTitleAndPhone;
+                    return database;
                 }
             }
 
 
+            /*
+             * Yalnız isme göre eşleştirmiyoruz.
+             * Aynı isimde farklı kişiler olabilir.
+             */
             return null;
         }
 
 
         // =====================================================
-        // TYPE / KIND
+        // LOCATION
+        // =====================================================
+
+        private async Task<AccountLocation>
+            ResolveLocationAsync(
+                VehicleAccountInputDto input,
+                CancellationToken cancellationToken)
+        {
+            var cityId =
+                NormalizeId(
+                    input.CityId);
+
+
+            var districtId =
+                NormalizeId(
+                    input.DistrictId);
+
+
+            var taxOfficeId =
+                NormalizeId(
+                    input.TaxOfficeId);
+
+
+            // =================================================
+            // DISTRICT
+            // =================================================
+
+            if (districtId.HasValue)
+            {
+                var district =
+                    await _context.Districts
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(
+                            x =>
+                                x.Id ==
+                                districtId.Value,
+                            cancellationToken);
+
+
+                if (district is null)
+                {
+                    throw new VehicleAccountResolverException(
+                        "Seçilen ilçe bulunamadı.");
+                }
+
+
+                if (cityId.HasValue &&
+                    cityId.Value !=
+                    district.CityId)
+                {
+                    throw new VehicleAccountResolverException(
+                        "Seçilen ilçe şehir ile uyumlu değil.");
+                }
+
+
+                cityId ??=
+                    district.CityId;
+            }
+
+
+            // =================================================
+            // TAX OFFICE
+            // =================================================
+
+            if (taxOfficeId.HasValue)
+            {
+                var taxOffice =
+                    await _context.TaxOffices
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(
+                            x =>
+                                x.Id ==
+                                taxOfficeId.Value,
+                            cancellationToken);
+
+
+                if (taxOffice is null)
+                {
+                    throw new VehicleAccountResolverException(
+                        "Seçilen vergi dairesi bulunamadı.");
+                }
+
+
+                if (cityId.HasValue &&
+                    cityId.Value !=
+                    taxOffice.CityId)
+                {
+                    throw new VehicleAccountResolverException(
+                        "Seçilen vergi dairesi şehir ile uyumlu değil.");
+                }
+
+
+                cityId ??=
+                    taxOffice.CityId;
+            }
+
+
+            // =================================================
+            // CITY
+            // =================================================
+
+            if (cityId.HasValue)
+            {
+                var cityExists =
+                    await _context.Cities
+                        .AsNoTracking()
+                        .AnyAsync(
+                            x =>
+                                x.Id ==
+                                cityId.Value,
+                            cancellationToken);
+
+
+                if (!cityExists)
+                {
+                    throw new VehicleAccountResolverException(
+                        "Seçilen şehir bulunamadı.");
+                }
+            }
+
+
+            return new AccountLocation
+            {
+                CityId =
+                    cityId,
+
+                DistrictId =
+                    districtId,
+
+                TaxOfficeId =
+                    taxOfficeId
+            };
+        }
+
+
+        // =====================================================
+        // CLASSIFICATION
         // =====================================================
 
         private async Task<AccountClassification>
@@ -406,6 +658,7 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
                         x =>
                             x.AccountCardTypeId ==
                             type.Id &&
+
                             x.KindName ==
                             kindName,
                         cancellationToken);
@@ -430,7 +683,7 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
 
 
         // =====================================================
-        // NORMALIZE
+        // HELPERS
         // =====================================================
 
         private static string? Normalize(
@@ -454,7 +707,7 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
 
 
         // =====================================================
-        // PRIVATE MODEL
+        // PRIVATE TYPES
         // =====================================================
 
         private sealed class AccountClassification
@@ -462,6 +715,16 @@ namespace AccountManagementMaui.Api.Services.VehicleServices
             public int TypeId { get; set; }
 
             public int KindId { get; set; }
+        }
+
+
+        private sealed class AccountLocation
+        {
+            public int? CityId { get; set; }
+
+            public int? DistrictId { get; set; }
+
+            public int? TaxOfficeId { get; set; }
         }
     }
 }

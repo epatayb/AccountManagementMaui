@@ -361,20 +361,30 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
     private static void ConfigureAccountCard(
     ModelBuilder modelBuilder)
     {
-        var entity = modelBuilder.Entity<AccountCard>();
+        var entity =
+            modelBuilder.Entity<AccountCard>();
+
 
         entity.ToTable("AccountCards");
+
 
         entity.HasKey(x => x.Id);
 
 
-        // HSP00000001, HSP00000002...
+        // =====================================================
+        // ACCOUNT CODE
+        // =====================================================
+
         entity.Property(x => x.AccountCode)
             .HasMaxLength(20)
             .HasComputedColumnSql(
                 "('HSP' + RIGHT('00000000' + CONVERT(varchar(20), [Id]), 8))",
                 stored: true);
 
+
+        // =====================================================
+        // GENERAL
+        // =====================================================
 
         entity.Property(x => x.Title)
             .IsRequired()
@@ -384,6 +394,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         entity.Property(x => x.TaxNumber)
             .HasMaxLength(10);
 
+
         entity.Property(x => x.IdentityNumber)
             .HasMaxLength(11);
 
@@ -391,8 +402,10 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         entity.Property(x => x.PhoneNumber)
             .HasMaxLength(20);
 
+
         entity.Property(x => x.Email)
             .HasMaxLength(150);
+
 
         entity.Property(x => x.ContactPerson)
             .HasMaxLength(100);
@@ -405,54 +418,92 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         ConfigureBaseEntity(entity);
 
 
-        // Hesap kodu her kayıt için benzersiz.
+        // =====================================================
+        // INDEXES
+        // =====================================================
+
         entity.HasIndex(x => x.AccountCode)
             .IsUnique();
 
 
-        // Hesap Tipi
+        /*
+         * TC Kimlik Numarası aktif hesap kartlarında
+         * tek bir kişiye ait olabilir.
+         *
+         * NULL ve boş değerler index dışında bırakılır.
+         */
+        entity.HasIndex(x => x.IdentityNumber)
+            .IsUnique()
+            .HasFilter(
+                "[IdentityNumber] IS NOT NULL " +
+                "AND [IdentityNumber] <> '' " +
+                "AND [IsDeleted] = 0");
+
+
+        // =====================================================
+        // TYPE
+        // =====================================================
+
         entity.HasOne(x => x.AccountCardType)
             .WithMany()
             .HasForeignKey(x => x.AccountCardTypeId)
             .OnDelete(DeleteBehavior.Restrict);
 
 
-        // Hesap Türü
+        // =====================================================
+        // KIND
+        // =====================================================
+
         entity.HasOne(x => x.AccountCardKind)
             .WithMany()
             .HasForeignKey(x => x.AccountCardKindId)
             .OnDelete(DeleteBehavior.Restrict);
 
 
-        // Grup
+        // =====================================================
+        // GROUP
+        // =====================================================
+
         entity.HasOne(x => x.AccountCardGroup)
             .WithMany()
             .HasForeignKey(x => x.AccountCardGroupId)
             .OnDelete(DeleteBehavior.Restrict);
 
 
-        // Alt Grup
+        // =====================================================
+        // SUB GROUP
+        // =====================================================
+
         entity.HasOne(x => x.AccountCardSubGroup)
             .WithMany()
             .HasForeignKey(x => x.AccountCardSubGroupId)
             .OnDelete(DeleteBehavior.Restrict);
 
 
-        // İl
+        // =====================================================
+        // CITY
+        // =====================================================
+
         entity.HasOne(x => x.City)
             .WithMany()
             .HasForeignKey(x => x.CityId)
             .OnDelete(DeleteBehavior.Restrict);
 
 
-        // İlçe
+        // =====================================================
+        // DISTRICT
+        // =====================================================
+
         entity.HasOne(x => x.District)
             .WithMany()
             .HasForeignKey(x => x.DistrictId)
             .OnDelete(DeleteBehavior.Restrict);
 
 
-        // Vergi Dairesi
+        // =====================================================
+        // TAX OFFICE
+        // =====================================================
+
         entity.HasOne(x => x.TaxOffice)
             .WithMany()
             .HasForeignKey(x => x.TaxOfficeId)

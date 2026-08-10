@@ -77,9 +77,7 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         // LICENSE OWNER SNAPSHOT
         // =====================================================
 
-        [Required(ErrorMessage = "Ruhsat sahibi adı veya ünvanı zorunludur.")]
-        [StringLength(200)]
-        public string LicenseOwnerName { get; set; } = string.Empty;
+        public string? LicenseOwnerName { get; set; } = string.Empty;
 
 
         [StringLength(10)]
@@ -135,18 +133,7 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         public IEnumerable<ValidationResult> Validate(
             ValidationContext validationContext)
         {
-            if (string.IsNullOrWhiteSpace(LicenseOwnerTaxNumber) &&
-                string.IsNullOrWhiteSpace(LicenseOwnerIdentityNumber))
-            {
-                yield return new ValidationResult("Vergi No veya TC No alanlarından en az biri girilmelidir.",
-                    new[]
-                    {
-                        nameof(LicenseOwnerTaxNumber),
-                        nameof(LicenseOwnerIdentityNumber)
-                    });
-            }
-
-
+            
             if (!string.IsNullOrWhiteSpace(
                     LicenseOwnerTaxNumber) &&
                 (

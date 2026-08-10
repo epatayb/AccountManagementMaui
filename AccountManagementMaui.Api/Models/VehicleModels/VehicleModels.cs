@@ -231,24 +231,37 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
     public class CreateVehicleRequest
     {
-        [Required(ErrorMessage = "Plaka zorunludur.")]
+        // =====================================================
+        // VEHICLE
+        // =====================================================
+
+        [Required(
+            ErrorMessage =
+                "Plaka zorunludur.")]
         [StringLength(
             20,
-            ErrorMessage = "Plaka en fazla 20 karakter olabilir.")]
-        public string Plate { get; set; } = string.Empty;
+            ErrorMessage =
+                "Plaka en fazla 20 karakter olabilir.")]
+        public string Plate { get; set; } =
+            string.Empty;
 
 
         [Range(
             1,
             int.MaxValue,
-            ErrorMessage = "Araç tipi seçiniz.")]
+            ErrorMessage =
+                "Araç tipi seçiniz.")]
         public int VehicleTypeId { get; set; }
 
 
+        /*
+         * Araç Türü ZORUNLU kalıyor.
+         */
         [Range(
             1,
             int.MaxValue,
-            ErrorMessage = "Araç türü seçiniz.")]
+            ErrorMessage =
+                "Araç türü seçiniz.")]
         public int VehicleKindId { get; set; }
 
 
@@ -268,39 +281,75 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
         public string? Country { get; set; }
 
 
-        // Şoför
+        // =====================================================
+        // DRIVER
+        // =====================================================
+
         public int? DriverAccountCardId { get; set; }
 
-        public VehicleAccountInputDto? DriverAccount { get; set; }
+
+        /*
+         * Manuel şoför bilgileri.
+         *
+         * Backend tarafında Required yok.
+         * UI Ad + Telefon kontrol edecek.
+         */
+        public VehicleAccountInputDto?
+            DriverAccount
+        { get; set; }
+
 
         public bool DriverIsLicenseOwner { get; set; }
 
 
+        // =====================================================
+        // REFERENCE
+        // =====================================================
 
-        // Referans
         public int? ReferenceAccountCardId { get; set; }
 
-        public VehicleAccountInputDto? ReferenceAccount { get; set; }
 
-        // Ruhsat carisi
+        public VehicleAccountInputDto?
+            ReferenceAccount
+        { get; set; }
+
+
+        // =====================================================
+        // LICENSE ACCOUNT
+        // =====================================================
+
         public int? LicenseAccountCardId { get; set; }
 
-        public VehicleAccountInputDto? LicenseAccount { get; set; }
+
+        public VehicleAccountInputDto?
+            LicenseAccount
+        { get; set; }
 
 
-        // Fatura
+        // =====================================================
+        // INVOICE
+        // =====================================================
+
         public int? InvoiceAccountCardId { get; set; }
 
-        public VehicleAccountInputDto? InvoiceAccount { get; set; }
+
+        public VehicleAccountInputDto?
+            InvoiceAccount
+        { get; set; }
+
 
         public bool ReferenceIsInvoiceAccount { get; set; }
+
 
         public bool LicenseOwnerIsInvoiceAccount { get; set; }
 
 
-        // Ruhsat sahibi snapshot
+        // =====================================================
+        // LICENSE OWNER SNAPSHOT
+        // =====================================================
+
         [StringLength(200)]
-        public string LicenseOwnerName { get; set; } = string.Empty;
+        public string? LicenseOwnerName { get; set; }
 
 
         [StringLength(10)]
@@ -315,13 +364,16 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
         public string? LicenseOwnerAddress { get; set; }
 
 
-        public int LicenseOwnerCityId { get; set; }
+        public int? LicenseOwnerCityId { get; set; }
 
 
         public int? LicenseOwnerTaxOfficeId { get; set; }
 
 
-        // Yetkili
+        // =====================================================
+        // AUTHORIZED
+        // =====================================================
+
         [StringLength(100)]
         public string? AuthorizedName { get; set; }
 
@@ -330,8 +382,12 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
         public string? AuthorizedPhone { get; set; }
 
 
-        // Belge
+        // =====================================================
+        // DOCUMENTS
+        // =====================================================
+
         public DateTime? InsuranceExpiryDate { get; set; }
+
 
         public DateTime? InspectionExpiryDate { get; set; }
     }
@@ -417,7 +473,9 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
         public int? CityId { get; set; }
 
+
         public int? DistrictId { get; set; }
+
 
         public int? TaxOfficeId { get; set; }
 
@@ -425,14 +483,28 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
         public bool HasAnyValue()
         {
             return
-                !string.IsNullOrWhiteSpace(Title) ||
-                !string.IsNullOrWhiteSpace(IdentityNumber) ||
-                !string.IsNullOrWhiteSpace(TaxNumber) ||
-                !string.IsNullOrWhiteSpace(PhoneNumber) ||
-                !string.IsNullOrWhiteSpace(Email) ||
-                !string.IsNullOrWhiteSpace(Address) ||
+                !string.IsNullOrWhiteSpace(
+                    Title) ||
+
+                !string.IsNullOrWhiteSpace(
+                    IdentityNumber) ||
+
+                !string.IsNullOrWhiteSpace(
+                    TaxNumber) ||
+
+                !string.IsNullOrWhiteSpace(
+                    PhoneNumber) ||
+
+                !string.IsNullOrWhiteSpace(
+                    Email) ||
+
+                !string.IsNullOrWhiteSpace(
+                    Address) ||
+
                 CityId.HasValue ||
+
                 DistrictId.HasValue ||
+
                 TaxOfficeId.HasValue;
         }
     }

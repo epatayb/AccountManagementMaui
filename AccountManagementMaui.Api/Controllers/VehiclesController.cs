@@ -516,9 +516,13 @@ namespace AccountManagementMaui.Api.Controllers
 
         [HttpPost]
         public async Task<ActionResult<VehicleDetailDto>> Create(
-            [FromBody] CreateVehicleRequest request,
-            CancellationToken cancellationToken)
+    [FromBody] CreateVehicleRequest request,
+    CancellationToken cancellationToken)
         {
+            // =====================================================
+            // PLATE
+            // =====================================================
+
             var plate =
                 NormalizePlateForDisplay(
                     request.Plate);
@@ -538,6 +542,10 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
+            // =====================================================
+            // VEHICLE DEFINITIONS
+            // =====================================================
+
             await ValidateVehicleDefinitionsAsync(
                 request,
                 cancellationToken);
@@ -550,11 +558,11 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
-            // =================================================
-            // PLATE DUPLICATE
-            // =================================================
+            // =====================================================
+            // DUPLICATE PLATE
+            // =====================================================
 
-            var duplicatePlate =
+            var duplicateExists =
                 await _context.Vehicles
                     .AsNoTracking()
                     .AnyAsync(
@@ -565,7 +573,7 @@ namespace AccountManagementMaui.Api.Controllers
                         cancellationToken);
 
 
-            if (duplicatePlate)
+            if (duplicateExists)
             {
                 return Conflict(new
                 {
@@ -576,6 +584,12 @@ namespace AccountManagementMaui.Api.Controllers
                         "Bu plaka ile aktif bir araç kaydı zaten mevcut."
                 });
             }
+
+
+            await using var transaction =
+                await _context.Database
+                    .BeginTransactionAsync(
+                        cancellationToken);
 
 
             try
@@ -621,7 +635,8 @@ namespace AccountManagementMaui.Api.Controllers
                     driver is not null)
                 {
                     /*
-                     * Aynı kişi için ikinci AccountCard yok.
+                     * Aynı AccountCard kullanılır.
+                     * İkinci kayıt açılmaz.
                      */
                     licenseAccount =
                         driver;
@@ -658,10 +673,10 @@ namespace AccountManagementMaui.Api.Controllers
                 else
                 {
                     /*
-                     * Mevcut herhangi bir AccountCard kabul.
+                     * Mevcut herhangi bir AccountCard kabul edilir.
                      *
-                     * Sadece yeni oluşturulan kayıt
-                     * Müşteri / Müşteri olur.
+                     * Resolver yalnız yeni kayıt oluştururken
+                     * Müşteri / Müşteri kullanır.
                      */
                     invoiceAccount =
                         await _vehicleAccountResolver
@@ -710,6 +725,10 @@ namespace AccountManagementMaui.Api.Controllers
                                 request.Country),
 
 
+                        // =========================================
+                        // RELATIONS
+                        // =========================================
+
                         DriverAccountCard =
                             driver,
 
@@ -744,12 +763,14 @@ namespace AccountManagementMaui.Api.Controllers
                             ?? NormalizeOptional(
                                 request.LicenseOwnerName),
 
+
                         LicenseOwnerTaxNumber =
                             licenseAccount?.TaxNumber
                             ?? NormalizeOptional(
                                 licenseInput?.TaxNumber)
                             ?? NormalizeOptional(
                                 request.LicenseOwnerTaxNumber),
+
 
                         LicenseOwnerIdentityNumber =
                             licenseAccount?.IdentityNumber
@@ -758,6 +779,7 @@ namespace AccountManagementMaui.Api.Controllers
                             ?? NormalizeOptional(
                                 request.LicenseOwnerIdentityNumber),
 
+
                         LicenseOwnerAddress =
                             licenseAccount?.Address
                             ?? NormalizeOptional(
@@ -765,12 +787,14 @@ namespace AccountManagementMaui.Api.Controllers
                             ?? NormalizeOptional(
                                 request.LicenseOwnerAddress),
 
+
                         LicenseOwnerCityId =
                             licenseAccount?.CityId
                             ?? NormalizeId(
                                 licenseInput?.CityId)
                             ?? NormalizeId(
                                 request.LicenseOwnerCityId),
+
 
                         LicenseOwnerTaxOfficeId =
                             licenseAccount?.TaxOfficeId
@@ -780,6 +804,10 @@ namespace AccountManagementMaui.Api.Controllers
                                 request.LicenseOwnerTaxOfficeId),
 
 
+                        // =========================================
+                        // AUTHORIZED
+                        // =========================================
+
                         AuthorizedName =
                             NormalizeOptional(
                                 request.AuthorizedName),
@@ -788,6 +816,10 @@ namespace AccountManagementMaui.Api.Controllers
                             NormalizeOptional(
                                 request.AuthorizedPhone),
 
+
+                        // =========================================
+                        // DOCUMENT
+                        // =========================================
 
                         InsuranceExpiryDate =
                             request.InsuranceExpiryDate,
@@ -806,13 +838,14 @@ namespace AccountManagementMaui.Api.Controllers
 
 
                 /*
-                 * AccountCard + Vehicle aynı SaveChanges
-                 * içerisinde kaydolur.
-                 *
-                 * EF Core yeni AccountCard Id'lerini üretip
-                 * Vehicle FK alanlarına otomatik taşır.
+                 * Yeni AccountCard kayıtları ve Vehicle
+                 * aynı transaction içinde kaydedilir.
                  */
                 await _context.SaveChangesAsync(
+                    cancellationToken);
+
+
+                await transaction.CommitAsync(
                     cancellationToken);
 
 
@@ -833,6 +866,10 @@ namespace AccountManagementMaui.Api.Controllers
             }
             catch (VehicleAccountResolverException exception)
             {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+
                 return BadRequest(new
                 {
                     code =
@@ -844,13 +881,17 @@ namespace AccountManagementMaui.Api.Controllers
             }
             catch (DbUpdateException)
             {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+
                 return Conflict(new
                 {
                     code =
                         "VEHICLE_ACCOUNT_CONFLICT",
 
                     message =
-                        "Araç veya hesap kartı kaydedilemedi. Plaka, TC ve diğer benzersiz bilgileri kontrol edin."
+                        "Araç veya hesap kartı kaydedilemedi. Plaka, TC veya diğer benzersiz bilgileri kontrol edin."
                 });
             }
         }
@@ -862,9 +903,9 @@ namespace AccountManagementMaui.Api.Controllers
 
         [HttpPut("{id:int}")]
         public async Task<ActionResult<VehicleDetailDto>> Update(
-            int id,
-            [FromBody] UpdateVehicleRequest request,
-            CancellationToken cancellationToken)
+    int id,
+    [FromBody] UpdateVehicleRequest request,
+    CancellationToken cancellationToken)
         {
             var item =
                 await _context.Vehicles
@@ -887,6 +928,10 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
+            // =====================================================
+            // CONCURRENCY INPUT
+            // =====================================================
+
             if (request.RowVersion is null ||
                 request.RowVersion.Length == 0)
             {
@@ -895,6 +940,10 @@ namespace AccountManagementMaui.Api.Controllers
                     "Kayıt sürüm bilgisi zorunludur.");
             }
 
+
+            // =====================================================
+            // PLATE
+            // =====================================================
 
             var plate =
                 NormalizePlateForDisplay(
@@ -915,6 +964,10 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
+            // =====================================================
+            // DEFINITIONS
+            // =====================================================
+
             await ValidateVehicleDefinitionsAsync(
                 request,
                 cancellationToken);
@@ -927,13 +980,13 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
-            // =================================================
-            // PLATE DUPLICATE
-            // =================================================
+            // =====================================================
+            // DUPLICATE PLATE
+            // =====================================================
 
             if (item.IsActive)
             {
-                var duplicatePlate =
+                var duplicateExists =
                     await _context.Vehicles
                         .AsNoTracking()
                         .AnyAsync(
@@ -945,7 +998,7 @@ namespace AccountManagementMaui.Api.Controllers
                             cancellationToken);
 
 
-                if (duplicatePlate)
+                if (duplicateExists)
                 {
                     return Conflict(new
                     {
@@ -957,6 +1010,12 @@ namespace AccountManagementMaui.Api.Controllers
                     });
                 }
             }
+
+
+            await using var transaction =
+                await _context.Database
+                    .BeginTransactionAsync(
+                        cancellationToken);
 
 
             try
@@ -1051,12 +1110,14 @@ namespace AccountManagementMaui.Api.Controllers
                 item.Plate =
                     plate;
 
+
                 item.NormalizedPlate =
                     normalizedPlate;
 
 
                 item.VehicleTypeId =
                     request.VehicleTypeId;
+
 
                 item.VehicleKindId =
                     request.VehicleKindId;
@@ -1066,27 +1127,37 @@ namespace AccountManagementMaui.Api.Controllers
                     NormalizePlateOptional(
                         request.TrailerPlate);
 
+
                 item.Brand =
                     NormalizeOptional(
                         request.Brand);
 
+
                 item.Model =
                     NormalizeOptional(
                         request.Model);
+
 
                 item.Country =
                     NormalizeOptional(
                         request.Country);
 
 
+                // =================================================
+                // RELATIONS
+                // =================================================
+
                 item.DriverAccountCard =
                     driver;
+
 
                 item.ReferenceAccountCard =
                     reference;
 
+
                 item.LicenseAccountCard =
                     licenseAccount;
+
 
                 item.InvoiceAccountCard =
                     invoiceAccount;
@@ -1095,12 +1166,18 @@ namespace AccountManagementMaui.Api.Controllers
                 item.DriverIsLicenseOwner =
                     request.DriverIsLicenseOwner;
 
+
                 item.ReferenceIsInvoiceAccount =
                     request.ReferenceIsInvoiceAccount;
+
 
                 item.LicenseOwnerIsInvoiceAccount =
                     request.LicenseOwnerIsInvoiceAccount;
 
+
+                // =================================================
+                // SNAPSHOT
+                // =================================================
 
                 item.LicenseOwnerName =
                     licenseAccount?.Title
@@ -1150,9 +1227,14 @@ namespace AccountManagementMaui.Api.Controllers
                         request.LicenseOwnerTaxOfficeId);
 
 
+                // =================================================
+                // OTHER
+                // =================================================
+
                 item.AuthorizedName =
                     NormalizeOptional(
                         request.AuthorizedName);
+
 
                 item.AuthorizedPhone =
                     NormalizeOptional(
@@ -1161,6 +1243,7 @@ namespace AccountManagementMaui.Api.Controllers
 
                 item.InsuranceExpiryDate =
                     request.InsuranceExpiryDate;
+
 
                 item.InspectionExpiryDate =
                     request.InspectionExpiryDate;
@@ -1180,6 +1263,10 @@ namespace AccountManagementMaui.Api.Controllers
                     cancellationToken);
 
 
+                await transaction.CommitAsync(
+                    cancellationToken);
+
+
                 var response =
                     await GetDetailAsync(
                         id,
@@ -1190,6 +1277,10 @@ namespace AccountManagementMaui.Api.Controllers
             }
             catch (VehicleAccountResolverException exception)
             {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+
                 return BadRequest(new
                 {
                     code =
@@ -1201,6 +1292,10 @@ namespace AccountManagementMaui.Api.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+
                 return Conflict(new
                 {
                     code =
@@ -1212,13 +1307,17 @@ namespace AccountManagementMaui.Api.Controllers
             }
             catch (DbUpdateException)
             {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+
                 return Conflict(new
                 {
                     code =
                         "VEHICLE_ACCOUNT_CONFLICT",
 
                     message =
-                        "Araç veya hesap kartı güncellenemedi. Plaka, TC ve diğer benzersiz bilgileri kontrol edin."
+                        "Araç veya hesap kartı güncellenemedi. Plaka, TC veya diğer benzersiz bilgileri kontrol edin."
                 });
             }
         }
@@ -1432,14 +1531,52 @@ namespace AccountManagementMaui.Api.Controllers
         }
 
 
+        private static VehicleAccountInputDto?
+    BuildLegacyLicenseInput(
+        CreateVehicleRequest request)
+        {
+            var model =
+                new VehicleAccountInputDto
+                {
+                    Title =
+                        request.LicenseOwnerName,
+
+                    TaxNumber =
+                        request.LicenseOwnerTaxNumber,
+
+                    IdentityNumber =
+                        request.LicenseOwnerIdentityNumber,
+
+                    Address =
+                        request.LicenseOwnerAddress,
+
+                    CityId =
+                        NormalizeId(
+                            request.LicenseOwnerCityId),
+
+                    TaxOfficeId =
+                        NormalizeId(
+                            request.LicenseOwnerTaxOfficeId)
+                };
+
+
+            return model.HasAnyValue()
+                ? model
+                : null;
+        }
+
         // =====================================================
         // VEHICLE DEFINITIONS VALIDATION
         // =====================================================
 
         private async Task ValidateVehicleDefinitionsAsync(
-            CreateVehicleRequest request,
-            CancellationToken cancellationToken)
+    CreateVehicleRequest request,
+    CancellationToken cancellationToken)
         {
+            // =====================================================
+            // VEHICLE TYPE
+            // =====================================================
+
             var vehicleTypeExists =
                 await _context.VehicleTypes
                     .AsNoTracking()
@@ -1458,40 +1595,40 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
-            if (request.VehicleKindId > 0)
+            // =====================================================
+            // VEHICLE KIND
+            // ZORUNLU
+            // =====================================================
+
+            var vehicleKindExists =
+                await _context.VehicleKinds
+                    .AsNoTracking()
+                    .AnyAsync(
+                        x =>
+                            x.Id ==
+                            request.VehicleKindId,
+                        cancellationToken);
+
+
+            if (!vehicleKindExists)
             {
-                var vehicleKindExists =
-                    await _context.VehicleKinds
-                        .AsNoTracking()
-                        .AnyAsync(
-                            x =>
-                                x.Id ==
-                                request.VehicleKindId,
-                            cancellationToken);
-
-
-                if (!vehicleKindExists)
-                {
-                    ModelState.AddModelError(
-                        nameof(request.VehicleKindId),
-                        "Seçilen araç türü bulunamadı.");
-                }
+                ModelState.AddModelError(
+                    nameof(request.VehicleKindId),
+                    "Seçilen araç türü bulunamadı.");
             }
 
 
-            /*
-             * İki fatura kaynağı aynı anda seçilemez.
-             *
-             * Bu bir zorunlu alan kontrolü değil,
-             * çelişkili veri kontrolüdür.
-             */
+            // =====================================================
+            // INVOICE FLAG CONFLICT
+            // =====================================================
+
             if (request.ReferenceIsInvoiceAccount &&
                 request.LicenseOwnerIsInvoiceAccount)
             {
                 ModelState.AddModelError(
                     nameof(
                         request.ReferenceIsInvoiceAccount),
-                    "Referans ve ruhsat carisi aynı anda fatura hesabı olamaz.");
+                    "Referans ve ruhsat carisi aynı anda fatura hesabı olarak seçilemez.");
             }
         }
 
