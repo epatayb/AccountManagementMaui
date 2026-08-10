@@ -47,10 +47,24 @@
             </NavLink>
 
             <NavLink class="top-nav-link"
+                     href="/vehicles"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Araçlar
+            </NavLink>
+
+            <NavLink class="top-nav-link"
                      href="/users"
                      Match="NavLinkMatch.Prefix"
                      @onclick="CloseMenu">
                 Kullanıcılar
+            </NavLink>
+
+            <NavLink class="top-nav-link"
+                     href="/definitions"
+                     Match="NavLinkMatch.Prefix"
+                     @onclick="CloseMenu">
+                Tanımlar
             </NavLink>
 
             <NavLink class="top-nav-link"
