@@ -264,11 +264,14 @@
                             <span class="required-mark">*</span>
                         </label>
 
-                        <InputText class="form-control"
-                                   maxlength="20"
-                                   inputmode="tel"
-                                   disabled="@IsDriverManualDisabled()"
-                                   @bind-Value="State.Model.DriverAccount.PhoneNumber" />
+                        <input type="tel"
+                               class="form-control"
+                               maxlength="13"
+                               inputmode="numeric"
+                               placeholder="(___)___-____"
+                               disabled="@IsDriverManualDisabled()"
+                               value="@State.Model.DriverAccount.PhoneNumber"
+                               @oninput="HandleDriverPhoneInput" />
 
                     </div>
 
@@ -411,11 +414,14 @@
 
                         <label>Telefon</label>
 
-                        <InputText class="form-control"
-                                   maxlength="20"
-                                   inputmode="tel"
-                                   disabled="@IsReferenceManualDisabled()"
-                                   @bind-Value="State.Model.ReferenceAccount.PhoneNumber" />
+                        <input type="tel"
+                               class="form-control"
+                               maxlength="13"
+                               inputmode="numeric"
+                               placeholder="(___)___-____"
+                               disabled="@IsReferenceManualDisabled()"
+                               value="@State.Model.ReferenceAccount.PhoneNumber"
+                               @oninput="HandleReferencePhoneInput" />
 
                     </div>
 
@@ -559,11 +565,14 @@
 
                         <label>Telefon</label>
 
-                        <InputText class="form-control"
-                                   maxlength="20"
-                                   inputmode="tel"
-                                   disabled="@IsLicenseManualDisabled()"
-                                   @bind-Value="State.Model.LicenseAccount.PhoneNumber" />
+                        <input type="tel"
+                               class="form-control"
+                               maxlength="13"
+                               inputmode="numeric"
+                               placeholder="(___)___-____"
+                               disabled="@IsLicenseManualDisabled()"
+                               value="@State.Model.LicenseAccount.PhoneNumber"
+                               @oninput="HandleLicensePhoneInput" />
 
                     </div>
 
@@ -793,11 +802,14 @@
 
                             <label>Telefon</label>
 
-                            <InputText class="form-control"
-                                       maxlength="20"
-                                       inputmode="tel"
-                                       disabled="@IsInvoiceManualDisabled()"
-                                       @bind-Value="State.Model.InvoiceAccount.PhoneNumber" />
+                            <input type="tel"
+                                   class="form-control"
+                                   maxlength="13"
+                                   inputmode="numeric"
+                                   placeholder="(___)___-____"
+                                   disabled="@IsInvoiceManualDisabled()"
+                                   value="@State.Model.InvoiceAccount.PhoneNumber"
+                                   @oninput="HandleInvoicePhoneInput" />
 
                         </div>
 
@@ -892,11 +904,14 @@
 
                     <label>Yetkili Telefon</label>
 
-                    <InputText class="form-control"
-                               maxlength="20"
-                               inputmode="tel"
-                               disabled="@IsSubmitting"
-                               @bind-Value="State.Model.AuthorizedPhone" />
+                    <input type="tel"
+                           class="form-control"
+                           maxlength="13"
+                           inputmode="numeric"
+                           placeholder="(___)___-____"
+                           disabled="@IsSubmitting"
+                           value="@State.Model.AuthorizedPhone"
+                           @oninput="HandleAuthorizedPhoneInput" />
 
                 </div>
 
@@ -1340,6 +1355,110 @@
         return Task.CompletedTask;
     }
 
+
+    // PHONE MASK
+    // =========================================================
+
+    private void HandleDriverPhoneInput(
+        ChangeEventArgs args)
+    {
+        State.Model.DriverAccount.PhoneNumber =
+            FormatPhoneNumber(
+                args.Value?.ToString());
+    }
+
+
+    private void HandleReferencePhoneInput(
+        ChangeEventArgs args)
+    {
+        State.Model.ReferenceAccount.PhoneNumber =
+            FormatPhoneNumber(
+                args.Value?.ToString());
+    }
+
+
+    private void HandleLicensePhoneInput(
+        ChangeEventArgs args)
+    {
+        State.Model.LicenseAccount.PhoneNumber =
+            FormatPhoneNumber(
+                args.Value?.ToString());
+
+
+        if (State.Model.DriverIsLicenseOwner)
+        {
+            SyncLegacyLicenseSnapshot(
+                State.Model.LicenseAccount);
+        }
+    }
+
+
+    private void HandleInvoicePhoneInput(
+        ChangeEventArgs args)
+    {
+        State.Model.InvoiceAccount.PhoneNumber =
+            FormatPhoneNumber(
+                args.Value?.ToString());
+    }
+
+
+    private void HandleAuthorizedPhoneInput(
+        ChangeEventArgs args)
+    {
+        State.Model.AuthorizedPhone =
+            FormatPhoneNumber(
+                args.Value?.ToString());
+    }
+
+
+    // =========================================================
+    // FORMAT PHONE
+    // =========================================================
+
+    private static string FormatPhoneNumber(
+        string? value)
+    {
+        if (string.IsNullOrWhiteSpace(
+            value))
+        {
+            return string.Empty;
+        }
+
+
+        var digits =
+            new string(
+                value
+                    .Where(char.IsDigit)
+                    .Take(10)
+                    .ToArray());
+
+
+        if (digits.Length == 0)
+        {
+            return string.Empty;
+        }
+
+
+        if (digits.Length <= 3)
+        {
+            return
+                $"({digits}";
+        }
+
+
+        if (digits.Length <= 6)
+        {
+            return
+                $"({digits[..3]})" +
+                digits[3..];
+        }
+
+
+        return
+            $"({digits[..3]})" +
+            $"{digits.Substring(3, 3)}-" +
+            digits[6..];
+    }
 
     // =========================================================
     // DRIVER
@@ -2015,7 +2134,7 @@
     // =========================================================
 
     private static VehicleAccountInputDto ToInput(
-        VehicleAccountLookupDetailDto item)
+    VehicleAccountLookupDetailDto item)
     {
         return new VehicleAccountInputDto
         {
@@ -2029,7 +2148,8 @@
                 item.TaxNumber,
 
             PhoneNumber =
-                item.PhoneNumber,
+                FormatPhoneNumber(
+                    item.PhoneNumber),
 
             Email =
                 item.Email,
@@ -2047,7 +2167,6 @@
                 item.TaxOfficeId
         };
     }
-
 
     private static VehicleAccountLookupDto ToLookup(
         VehicleAccountLookupDetailDto item)
