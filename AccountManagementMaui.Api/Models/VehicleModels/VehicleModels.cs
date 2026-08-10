@@ -28,9 +28,9 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
 
         // Şoför
-        public int DriverAccountCardId { get; set; }
+        public int? DriverAccountCardId { get; set; }
 
-        public string DriverName { get; set; } = string.Empty;
+        public string? DriverName { get; set; } = string.Empty;
 
         public string? DriverIdentityNumber { get; set; }
 
@@ -46,27 +46,27 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
 
         // Ruhsat carisi
-        public int LicenseAccountCardId { get; set; }
+        public int? LicenseAccountCardId { get; set; }
 
-        public string LicenseAccountCardName { get; set; } = string.Empty;
+        public string? LicenseAccountCardName { get; set; }
 
 
         // Fatura hesabı
-        public int InvoiceAccountCardId { get; set; }
+        public int? InvoiceAccountCardId { get; set; }
 
-        public string InvoiceAccountCardName { get; set; } = string.Empty;
+        public string? InvoiceAccountCardName { get; set; }
 
 
         // Ruhsat sahibi snapshot
-        public string LicenseOwnerName { get; set; } = string.Empty;
+        public string? LicenseOwnerName { get; set; }
 
         public string? LicenseOwnerIdentityNumber { get; set; }
 
         public string? LicenseOwnerTaxNumber { get; set; }
 
-        public int LicenseOwnerCityId { get; set; }
+        public int? LicenseOwnerCityId { get; set; }
 
-        public string LicenseOwnerCityName { get; set; } = string.Empty;
+        public string? LicenseOwnerCityName { get; set; }
 
 
         // Yetkili
@@ -123,9 +123,9 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
         public string VehicleTypeName { get; set; } = string.Empty;
 
-        public int VehicleKindId { get; set; }
+        public int? VehicleKindId { get; set; }
 
-        public string VehicleKindName { get; set; } = string.Empty;
+        public string? VehicleKindName { get; set; } = string.Empty;
 
         public string? TrailerPlate { get; set; }
 
@@ -137,9 +137,9 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
 
         // Şoför
-        public int DriverAccountCardId { get; set; }
+        public int? DriverAccountCardId { get; set; }
 
-        public string DriverName { get; set; } = string.Empty;
+        public string? DriverName { get; set; } = string.Empty;
 
         public string? DriverIdentityNumber { get; set; }
 
@@ -157,15 +157,15 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
 
         // Ruhsat carisi
-        public int LicenseAccountCardId { get; set; }
+        public int? LicenseAccountCardId { get; set; }
 
-        public string LicenseAccountCardName { get; set; } = string.Empty;
+        public string? LicenseAccountCardName { get; set; } = string.Empty;
 
 
         // Fatura
-        public int InvoiceAccountCardId { get; set; }
+        public int? InvoiceAccountCardId { get; set; }
 
-        public string InvoiceAccountCardName { get; set; } = string.Empty;
+        public string? InvoiceAccountCardName { get; set; } = string.Empty;
 
         public bool ReferenceIsInvoiceAccount { get; set; }
 
@@ -181,9 +181,9 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
         public string? LicenseOwnerAddress { get; set; }
 
-        public int LicenseOwnerCityId { get; set; }
+        public int? LicenseOwnerCityId { get; set; }
 
-        public string LicenseOwnerCityName { get; set; } = string.Empty;
+        public string? LicenseOwnerCityName { get; set; } = string.Empty;
 
         public int? LicenseOwnerTaxOfficeId { get; set; }
 
@@ -269,35 +269,29 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
 
 
         // Şoför
-        [Range(
-            1,
-            int.MaxValue,
-            ErrorMessage = "Şoför seçiniz.")]
-        public int DriverAccountCardId { get; set; }
+        public int? DriverAccountCardId { get; set; }
 
+        public VehicleAccountInputDto? DriverAccount { get; set; }
 
         public bool DriverIsLicenseOwner { get; set; }
+
 
 
         // Referans
         public int? ReferenceAccountCardId { get; set; }
 
+        public VehicleAccountInputDto? ReferenceAccount { get; set; }
 
         // Ruhsat carisi
-        [Range(
-            1,
-            int.MaxValue,
-            ErrorMessage = "Araç ruhsat carisi seçiniz.")]
-        public int LicenseAccountCardId { get; set; }
+        public int? LicenseAccountCardId { get; set; }
+
+        public VehicleAccountInputDto? LicenseAccount { get; set; }
 
 
         // Fatura
-        [Range(
-            1,
-            int.MaxValue,
-            ErrorMessage = "Fatura hesabı seçiniz.")]
-        public int InvoiceAccountCardId { get; set; }
+        public int? InvoiceAccountCardId { get; set; }
 
+        public VehicleAccountInputDto? InvoiceAccount { get; set; }
 
         public bool ReferenceIsInvoiceAccount { get; set; }
 
@@ -392,5 +386,54 @@ namespace AccountManagementMaui.Api.Models.VehicleModels
         [Required(
         ErrorMessage = "Kayıt sürüm bilgisi zorunludur.")]
         public byte[] RowVersion { get; set; } = [];
+    }
+
+
+    public class VehicleAccountInputDto
+    {
+        [StringLength(200)]
+        public string? Title { get; set; }
+
+
+        [StringLength(11)]
+        public string? IdentityNumber { get; set; }
+
+
+        [StringLength(10)]
+        public string? TaxNumber { get; set; }
+
+
+        [StringLength(20)]
+        public string? PhoneNumber { get; set; }
+
+
+        [StringLength(150)]
+        public string? Email { get; set; }
+
+
+        [StringLength(500)]
+        public string? Address { get; set; }
+
+
+        public int? CityId { get; set; }
+
+        public int? DistrictId { get; set; }
+
+        public int? TaxOfficeId { get; set; }
+
+
+        public bool HasAnyValue()
+        {
+            return
+                !string.IsNullOrWhiteSpace(Title) ||
+                !string.IsNullOrWhiteSpace(IdentityNumber) ||
+                !string.IsNullOrWhiteSpace(TaxNumber) ||
+                !string.IsNullOrWhiteSpace(PhoneNumber) ||
+                !string.IsNullOrWhiteSpace(Email) ||
+                !string.IsNullOrWhiteSpace(Address) ||
+                CityId.HasValue ||
+                DistrictId.HasValue ||
+                TaxOfficeId.HasValue;
+        }
     }
 }

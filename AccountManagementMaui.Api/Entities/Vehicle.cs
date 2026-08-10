@@ -32,9 +32,9 @@ namespace AccountManagementMaui.Api.Entities
 
 
         // ŞOFÖR
-        public int DriverAccountCardId { get; set; }
+        public int? DriverAccountCardId { get; set; }
 
-        public AccountCard DriverAccountCard { get; set; } = null!;
+        public AccountCard? DriverAccountCard { get; set; }
 
         public bool DriverIsLicenseOwner { get; set; }
 
@@ -46,15 +46,15 @@ namespace AccountManagementMaui.Api.Entities
 
 
         // RUHSAT CARİSİ
-        public int LicenseAccountCardId { get; set; }
+        public int? LicenseAccountCardId { get; set; }
 
-        public AccountCard LicenseAccountCard { get; set; } = null!;
+        public AccountCard? LicenseAccountCard { get; set; } = null!;
 
 
         // FATURA HESABI
-        public int InvoiceAccountCardId { get; set; }
+        public int? InvoiceAccountCardId { get; set; }
 
-        public AccountCard InvoiceAccountCard { get; set; } = null!;
+        public AccountCard? InvoiceAccountCard { get; set; } = null!;
 
 
         public bool ReferenceIsInvoiceAccount { get; set; }
@@ -63,7 +63,7 @@ namespace AccountManagementMaui.Api.Entities
 
 
         // RUHSAT SAHİBİ SNAPSHOT
-        public string LicenseOwnerName { get; set; } = string.Empty;
+        public string? LicenseOwnerName { get; set; } = string.Empty;
 
         public string? LicenseOwnerTaxNumber { get; set; }
 
@@ -72,9 +72,9 @@ namespace AccountManagementMaui.Api.Entities
         public string? LicenseOwnerAddress { get; set; }
 
 
-        public int LicenseOwnerCityId { get; set; }
+        public int? LicenseOwnerCityId { get; set; }
 
-        public City LicenseOwnerCity { get; set; } = null!;
+        public City? LicenseOwnerCity { get; set; } = null!;
 
 
         public int? LicenseOwnerTaxOfficeId { get; set; }

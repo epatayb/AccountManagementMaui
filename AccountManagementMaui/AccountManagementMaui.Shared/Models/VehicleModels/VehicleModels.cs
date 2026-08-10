@@ -31,10 +31,9 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
 
 
         // Driver
-        public int DriverAccountCardId { get; set; }
+        public int? DriverAccountCardId { get; set; }
 
-        public string DriverName { get; set; } =
-            string.Empty;
+        public string? DriverName { get; set; } = string.Empty;
 
         public string? DriverIdentityNumber { get; set; }
 
@@ -50,30 +49,30 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
 
 
         // License
-        public int LicenseAccountCardId { get; set; }
+        public int? LicenseAccountCardId { get; set; }
 
-        public string LicenseAccountCardName { get; set; } =
+        public string? LicenseAccountCardName { get; set; } =
             string.Empty;
 
 
         // Invoice
-        public int InvoiceAccountCardId { get; set; }
+        public int? InvoiceAccountCardId { get; set; }
 
-        public string InvoiceAccountCardName { get; set; } =
+        public string? InvoiceAccountCardName { get; set; } =
             string.Empty;
 
 
         // License owner snapshot
-        public string LicenseOwnerName { get; set; } =
+        public string? LicenseOwnerName { get; set; } =
             string.Empty;
 
         public string? LicenseOwnerIdentityNumber { get; set; }
 
         public string? LicenseOwnerTaxNumber { get; set; }
 
-        public int LicenseOwnerCityId { get; set; }
+        public int? LicenseOwnerCityId { get; set; }
 
-        public string LicenseOwnerCityName { get; set; } =
+        public string? LicenseOwnerCityName { get; set; } =
             string.Empty;
 
 
@@ -148,9 +147,9 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
 
 
         // Driver
-        public int DriverAccountCardId { get; set; }
+        public int? DriverAccountCardId { get; set; }
 
-        public string DriverName { get; set; } =
+        public string? DriverName { get; set; } =
             string.Empty;
 
         public string? DriverIdentityNumber { get; set; }
@@ -169,16 +168,15 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
 
 
         // License account
-        public int LicenseAccountCardId { get; set; }
+        public int? LicenseAccountCardId { get; set; }
 
-        public string LicenseAccountCardName { get; set; } =
-            string.Empty;
+        public string? LicenseAccountCardName { get; set; }
 
 
         // Invoice
-        public int InvoiceAccountCardId { get; set; }
+        public int? InvoiceAccountCardId { get; set; }
 
-        public string InvoiceAccountCardName { get; set; } =
+        public string? InvoiceAccountCardName { get; set; } =
             string.Empty;
 
         public bool ReferenceIsInvoiceAccount { get; set; }
@@ -187,7 +185,7 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
 
 
         // License owner
-        public string LicenseOwnerName { get; set; } =
+        public string? LicenseOwnerName { get; set; } =
             string.Empty;
 
         public string? LicenseOwnerTaxNumber { get; set; }
@@ -196,9 +194,9 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
 
         public string? LicenseOwnerAddress { get; set; }
 
-        public int LicenseOwnerCityId { get; set; }
+        public int? LicenseOwnerCityId { get; set; }
 
-        public string LicenseOwnerCityName { get; set; } =
+        public string? LicenseOwnerCityName { get; set; } =
             string.Empty;
 
         public int? LicenseOwnerTaxOfficeId { get; set; }
@@ -281,31 +279,28 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         public string? Country { get; set; }
 
 
-        [Range(
-            1,
-            int.MaxValue,
-            ErrorMessage = "Şoför seçiniz.")]
-        public int DriverAccountCardId { get; set; }
 
+        public int? DriverAccountCardId { get; set; }
+
+        public VehicleAccountInputDto? DriverAccount { get; set; }
 
         public bool DriverIsLicenseOwner { get; set; }
 
 
         public int? ReferenceAccountCardId { get; set; }
 
-
-        [Range(
-            1,
-            int.MaxValue,
-            ErrorMessage = "Araç ruhsat carisi seçiniz.")]
-        public int LicenseAccountCardId { get; set; }
+        public VehicleAccountInputDto? ReferenceAccount { get; set; }
 
 
-        [Range(
-            1,
-            int.MaxValue,
-            ErrorMessage = "Fatura hesabı seçiniz.")]
-        public int InvoiceAccountCardId { get; set; }
+        public int? LicenseAccountCardId { get; set; }
+
+        public VehicleAccountInputDto? LicenseAccount { get; set; }
+
+
+        public int? InvoiceAccountCardId { get; set; }
+
+        public VehicleAccountInputDto? InvoiceAccount { get; set; }
+
 
 
         public bool ReferenceIsInvoiceAccount { get; set; }
@@ -386,5 +381,26 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         [Required(
         ErrorMessage = "Kayıt sürüm bilgisi zorunludur.")]
         public byte[] RowVersion { get; set; } = [];
+    }
+
+    public class VehicleAccountInputDto
+    {
+        public string? Title { get; set; }
+
+        public string? IdentityNumber { get; set; }
+
+        public string? TaxNumber { get; set; }
+
+        public string? PhoneNumber { get; set; }
+
+        public string? Email { get; set; }
+
+        public string? Address { get; set; }
+
+        public int? CityId { get; set; }
+
+        public int? DistrictId { get; set; }
+
+        public int? TaxOfficeId { get; set; }
     }
 }

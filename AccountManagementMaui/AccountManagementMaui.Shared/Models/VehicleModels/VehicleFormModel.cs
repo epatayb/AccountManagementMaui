@@ -42,8 +42,7 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         // DRIVER
         // =====================================================
 
-        [Range(1, int.MaxValue, ErrorMessage = "Şoför seçiniz.")]
-        public int DriverAccountCardId { get; set; }
+        public int? DriverAccountCardId { get; set; }
 
         public bool DriverIsLicenseOwner { get; set; }
 
@@ -59,16 +58,14 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         // LICENSE ACCOUNT
         // =====================================================
 
-        [Range(1, int.MaxValue, ErrorMessage = "Araç ruhsat carisi seçiniz.")]
-        public int LicenseAccountCardId { get; set; }
+        public int? LicenseAccountCardId { get; set; }
 
 
         // =====================================================
         // INVOICE
         // =====================================================
 
-        [Range(1, int.MaxValue, ErrorMessage = "Fatura hesabı seçiniz.")]
-        public int InvoiceAccountCardId { get; set; }
+        public int? InvoiceAccountCardId { get; set; }
 
 
         public bool ReferenceIsInvoiceAccount { get; set; }
@@ -97,8 +94,7 @@ namespace AccountManagementMaui.Shared.Models.VehicleModels
         public string? LicenseOwnerAddress { get; set; }
 
 
-        [Range(1, int.MaxValue, ErrorMessage = "Ruhsat sahibi şehri seçiniz.")]
-        public int LicenseOwnerCityId { get; set; }
+        public int? LicenseOwnerCityId { get; set; }
 
 
         public int? LicenseOwnerTaxOfficeId { get; set; }

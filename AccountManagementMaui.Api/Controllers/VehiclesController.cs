@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using AccountManagementMaui.Api.Data.Context;
 using AccountManagementMaui.Api.Entities;
 using AccountManagementMaui.Api.Models.VehicleModels;
+using AccountManagementMaui.Api.Services.VehicleServices;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,15 +17,6 @@ namespace AccountManagementMaui.Api.Controllers
     [Route("api/[controller]")]
     public class VehiclesController : ControllerBase
     {
-        private const string DriverTypeName =
-            "Operasyon Cari";
-
-        private const string DriverKindName =
-            "Navluncu";
-
-        private const string InvoiceCustomerKindName =
-            "Müşteri";
-
         private static readonly CultureInfo
             TurkishCulture =
                 CultureInfo.GetCultureInfo(
@@ -33,11 +25,19 @@ namespace AccountManagementMaui.Api.Controllers
 
         private readonly AppDbContext _context;
 
+        private readonly IVehicleAccountResolver
+            _vehicleAccountResolver;
+
 
         public VehiclesController(
-            AppDbContext context)
+            AppDbContext context,
+            IVehicleAccountResolver vehicleAccountResolver)
         {
-            _context = context;
+            _context =
+                context;
+
+            _vehicleAccountResolver =
+                vehicleAccountResolver;
         }
 
 
@@ -88,43 +88,73 @@ namespace AccountManagementMaui.Api.Controllers
             // SEARCH
             // =================================================
 
-            if (!string.IsNullOrWhiteSpace(search))
+            if (!string.IsNullOrWhiteSpace(
+                search))
             {
-                query = query.Where(x =>
-                    x.Plate.Contains(search) ||
+                query =
+                    query.Where(x =>
+                        x.Plate.Contains(search) ||
 
-                    (
-                        x.TrailerPlate != null &&
-                        x.TrailerPlate.Contains(search)
-                    ) ||
+                        (
+                            x.TrailerPlate != null &&
+                            x.TrailerPlate.Contains(search)
+                        ) ||
 
-                    x.DriverAccountCard.Title.Contains(search) ||
+                        (
+                            x.DriverAccountCard != null &&
+                            (
+                                x.DriverAccountCard.Title
+                                    .Contains(search) ||
 
-                    (
-                        x.DriverAccountCard.IdentityNumber != null &&
-                        x.DriverAccountCard.IdentityNumber.Contains(search)
-                    ) ||
+                                (
+                                    x.DriverAccountCard
+                                        .IdentityNumber != null &&
 
-                    (
-                        x.DriverAccountCard.PhoneNumber != null &&
-                        x.DriverAccountCard.PhoneNumber.Contains(search)
-                    ) ||
+                                    x.DriverAccountCard
+                                        .IdentityNumber
+                                        .Contains(search)
+                                ) ||
 
-                    x.LicenseAccountCard.Title.Contains(search) ||
+                                (
+                                    x.DriverAccountCard
+                                        .PhoneNumber != null &&
 
-                    x.InvoiceAccountCard.Title.Contains(search) ||
+                                    x.DriverAccountCard
+                                        .PhoneNumber
+                                        .Contains(search)
+                                )
+                            )
+                        ) ||
 
-                    (
-                        x.ReferenceAccountCard != null &&
-                        x.ReferenceAccountCard.Title.Contains(search)
-                    ) ||
+                        (
+                            x.ReferenceAccountCard != null &&
+                            x.ReferenceAccountCard.Title
+                                .Contains(search)
+                        ) ||
 
-                    x.LicenseOwnerName.Contains(search) ||
+                        (
+                            x.LicenseAccountCard != null &&
+                            x.LicenseAccountCard.Title
+                                .Contains(search)
+                        ) ||
 
-                    (
-                        x.AuthorizedName != null &&
-                        x.AuthorizedName.Contains(search)
-                    ));
+                        (
+                            x.InvoiceAccountCard != null &&
+                            x.InvoiceAccountCard.Title
+                                .Contains(search)
+                        ) ||
+
+                        (
+                            x.LicenseOwnerName != null &&
+                            x.LicenseOwnerName
+                                .Contains(search)
+                        ) ||
+
+                        (
+                            x.AuthorizedName != null &&
+                            x.AuthorizedName
+                                .Contains(search)
+                        ));
             }
 
 
@@ -135,35 +165,39 @@ namespace AccountManagementMaui.Api.Controllers
             if (vehicleTypeId.HasValue &&
                 vehicleTypeId.Value > 0)
             {
-                query = query.Where(x =>
-                    x.VehicleTypeId ==
-                    vehicleTypeId.Value);
+                query =
+                    query.Where(x =>
+                        x.VehicleTypeId ==
+                        vehicleTypeId.Value);
             }
 
 
             if (vehicleKindId.HasValue &&
                 vehicleKindId.Value > 0)
             {
-                query = query.Where(x =>
-                    x.VehicleKindId ==
-                    vehicleKindId.Value);
+                query =
+                    query.Where(x =>
+                        x.VehicleKindId ==
+                        vehicleKindId.Value);
             }
 
 
             if (cityId.HasValue &&
                 cityId.Value > 0)
             {
-                query = query.Where(x =>
-                    x.LicenseOwnerCityId ==
-                    cityId.Value);
+                query =
+                    query.Where(x =>
+                        x.LicenseOwnerCityId ==
+                        cityId.Value);
             }
 
 
             if (isActive.HasValue)
             {
-                query = query.Where(x =>
-                    x.IsActive ==
-                    isActive.Value);
+                query =
+                    query.Where(x =>
+                        x.IsActive ==
+                        isActive.Value);
             }
 
 
@@ -194,23 +228,37 @@ namespace AccountManagementMaui.Api.Controllers
                     "type" =>
                         descending
                             ? query.OrderByDescending(
-                                x => x.VehicleType.TypeName)
+                                x =>
+                                    x.VehicleType.TypeName)
                             : query.OrderBy(
-                                x => x.VehicleType.TypeName),
+                                x =>
+                                    x.VehicleType.TypeName),
 
                     "kind" =>
                         descending
                             ? query.OrderByDescending(
-                                x => x.VehicleKind.KindName)
+                                x =>
+                                    x.VehicleKind == null
+                                        ? string.Empty
+                                        : x.VehicleKind.KindName)
                             : query.OrderBy(
-                                x => x.VehicleKind.KindName),
+                                x =>
+                                    x.VehicleKind == null
+                                        ? string.Empty
+                                        : x.VehicleKind.KindName),
 
                     "driver" =>
                         descending
                             ? query.OrderByDescending(
-                                x => x.DriverAccountCard.Title)
+                                x =>
+                                    x.DriverAccountCard == null
+                                        ? string.Empty
+                                        : x.DriverAccountCard.Title)
                             : query.OrderBy(
-                                x => x.DriverAccountCard.Title),
+                                x =>
+                                    x.DriverAccountCard == null
+                                        ? string.Empty
+                                        : x.DriverAccountCard.Title),
 
                     "createddate" =>
                         descending
@@ -241,9 +289,12 @@ namespace AccountManagementMaui.Api.Controllers
                     .Select(x =>
                         new VehicleListDto
                         {
-                            Id = x.Id,
+                            Id =
+                                x.Id,
 
-                            Plate = x.Plate,
+                            Plate =
+                                x.Plate,
+
 
                             VehicleTypeId =
                                 x.VehicleTypeId,
@@ -251,11 +302,15 @@ namespace AccountManagementMaui.Api.Controllers
                             VehicleTypeName =
                                 x.VehicleType.TypeName,
 
+
                             VehicleKindId =
                                 x.VehicleKindId,
 
                             VehicleKindName =
-                                x.VehicleKind.KindName,
+                                x.VehicleKind == null
+                                    ? null
+                                    : x.VehicleKind.KindName,
+
 
                             TrailerPlate =
                                 x.TrailerPlate,
@@ -270,21 +325,31 @@ namespace AccountManagementMaui.Api.Controllers
                                 x.Country,
 
 
-                            // Driver
+                            // DRIVER
+
                             DriverAccountCardId =
                                 x.DriverAccountCardId,
 
                             DriverName =
-                                x.DriverAccountCard.Title,
+                                x.DriverAccountCard == null
+                                    ? null
+                                    : x.DriverAccountCard.Title,
 
                             DriverIdentityNumber =
-                                x.DriverAccountCard.IdentityNumber,
+                                x.DriverAccountCard == null
+                                    ? null
+                                    : x.DriverAccountCard
+                                        .IdentityNumber,
 
                             DriverPhoneNumber =
-                                x.DriverAccountCard.PhoneNumber,
+                                x.DriverAccountCard == null
+                                    ? null
+                                    : x.DriverAccountCard
+                                        .PhoneNumber,
 
 
-                            // Reference
+                            // REFERENCE
+
                             ReferenceAccountCardId =
                                 x.ReferenceAccountCardId,
 
@@ -296,26 +361,34 @@ namespace AccountManagementMaui.Api.Controllers
                             ReferencePhoneNumber =
                                 x.ReferenceAccountCard == null
                                     ? null
-                                    : x.ReferenceAccountCard.PhoneNumber,
+                                    : x.ReferenceAccountCard
+                                        .PhoneNumber,
 
 
-                            // License
+                            // LICENSE
+
                             LicenseAccountCardId =
                                 x.LicenseAccountCardId,
 
                             LicenseAccountCardName =
-                                x.LicenseAccountCard.Title,
+                                x.LicenseAccountCard == null
+                                    ? null
+                                    : x.LicenseAccountCard.Title,
 
 
-                            // Invoice
+                            // INVOICE
+
                             InvoiceAccountCardId =
                                 x.InvoiceAccountCardId,
 
                             InvoiceAccountCardName =
-                                x.InvoiceAccountCard.Title,
+                                x.InvoiceAccountCard == null
+                                    ? null
+                                    : x.InvoiceAccountCard.Title,
 
 
-                            // Snapshot
+                            // SNAPSHOT
+
                             LicenseOwnerName =
                                 x.LicenseOwnerName,
 
@@ -329,7 +402,9 @@ namespace AccountManagementMaui.Api.Controllers
                                 x.LicenseOwnerCityId,
 
                             LicenseOwnerCityName =
-                                x.LicenseOwnerCity.Name,
+                                x.LicenseOwnerCity == null
+                                    ? null
+                                    : x.LicenseOwnerCity.Name,
 
 
                             AuthorizedName =
@@ -385,15 +460,20 @@ namespace AccountManagementMaui.Api.Controllers
             return Ok(
                 new VehicleListResponse
                 {
-                    Items = items,
+                    Items =
+                        items,
 
-                    Page = page,
+                    Page =
+                        page,
 
-                    PageSize = pageSize,
+                    PageSize =
+                        pageSize,
 
-                    TotalCount = totalCount,
+                    TotalCount =
+                        totalCount,
 
-                    TotalPages = totalPages
+                    TotalPages =
+                        totalPages
                 });
         }
 
@@ -417,6 +497,9 @@ namespace AccountManagementMaui.Api.Controllers
             {
                 return NotFound(new
                 {
+                    code =
+                        "VEHICLE_NOT_FOUND",
+
                     message =
                         "Araç kaydı bulunamadı."
                 });
@@ -455,22 +538,25 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
-            var relationResult =
-                await ValidateAndResolveRelationsAsync(
-                    request,
-                    cancellationToken);
+            await ValidateVehicleDefinitionsAsync(
+                request,
+                cancellationToken);
 
 
-            if (!ModelState.IsValid ||
-                relationResult is null)
+            if (!ModelState.IsValid)
             {
                 return ValidationProblem(
                     ModelState);
             }
 
 
-            var duplicateExists =
+            // =================================================
+            // PLATE DUPLICATE
+            // =================================================
+
+            var duplicatePlate =
                 await _context.Vehicles
+                    .AsNoTracking()
                     .AnyAsync(
                         x =>
                             x.IsActive &&
@@ -479,7 +565,7 @@ namespace AccountManagementMaui.Api.Controllers
                         cancellationToken);
 
 
-            if (duplicateExists)
+            if (duplicatePlate)
             {
                 return Conflict(new
                 {
@@ -492,148 +578,281 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
-            var item =
-                new Vehicle
-                {
-                    Plate =
-                        plate,
-
-                    NormalizedPlate =
-                        normalizedPlate,
-
-                    VehicleTypeId =
-                        request.VehicleTypeId,
-
-                    VehicleKindId =
-                        request.VehicleKindId,
-
-                    TrailerPlate =
-                        NormalizePlateOptional(
-                            request.TrailerPlate),
-
-                    Brand =
-                        NormalizeOptional(
-                            request.Brand),
-
-                    Model =
-                        NormalizeOptional(
-                            request.Model),
-
-                    Country =
-                        NormalizeOptional(
-                            request.Country),
-
-
-                    // Driver
-                    DriverAccountCardId =
-                        request.DriverAccountCardId,
-
-                    DriverIsLicenseOwner =
-                        request.DriverIsLicenseOwner,
-
-
-                    // Reference
-                    ReferenceAccountCardId =
-                        request.ReferenceAccountCardId,
-
-
-                    // License
-                    LicenseAccountCardId =
-                        relationResult
-                            .LicenseAccountCardId,
-
-
-                    // Invoice
-                    InvoiceAccountCardId =
-                        relationResult
-                            .InvoiceAccountCardId,
-
-                    ReferenceIsInvoiceAccount =
-                        request.ReferenceIsInvoiceAccount,
-
-                    LicenseOwnerIsInvoiceAccount =
-                        request.LicenseOwnerIsInvoiceAccount,
-
-
-                    // Snapshot
-                    LicenseOwnerName =
-                        relationResult
-                            .LicenseOwnerName,
-
-                    LicenseOwnerTaxNumber =
-                        relationResult
-                            .LicenseOwnerTaxNumber,
-
-                    LicenseOwnerIdentityNumber =
-                        relationResult
-                            .LicenseOwnerIdentityNumber,
-
-                    LicenseOwnerAddress =
-                        relationResult
-                            .LicenseOwnerAddress,
-
-                    LicenseOwnerCityId =
-                        relationResult
-                            .LicenseOwnerCityId,
-
-                    LicenseOwnerTaxOfficeId =
-                        relationResult
-                            .LicenseOwnerTaxOfficeId,
-
-
-                    // Authorized
-                    AuthorizedName =
-                        NormalizeOptional(
-                            request.AuthorizedName),
-
-                    AuthorizedPhone =
-                        NormalizeOptional(
-                            request.AuthorizedPhone),
-
-
-                    // Documents
-                    InsuranceExpiryDate =
-                        request.InsuranceExpiryDate,
-
-                    InspectionExpiryDate =
-                        request.InspectionExpiryDate,
-
-
-                    IsActive = true
-                };
-
-
-            _context.Vehicles.Add(item);
-
-
             try
             {
+                // =================================================
+                // DRIVER
+                // =================================================
+
+                var driver =
+                    await _vehicleAccountResolver
+                        .ResolveDriverAsync(
+                            request.DriverAccountCardId,
+                            request.DriverAccount,
+                            cancellationToken);
+
+
+                // =================================================
+                // REFERENCE
+                // =================================================
+
+                var reference =
+                    await _vehicleAccountResolver
+                        .ResolveReferenceAsync(
+                            request.ReferenceAccountCardId,
+                            request.ReferenceAccount,
+                            cancellationToken);
+
+
+                // =================================================
+                // LICENSE
+                // =================================================
+
+                var licenseInput =
+                    request.LicenseAccount ??
+                    BuildLegacyLicenseInput(
+                        request);
+
+
+                AccountCard? licenseAccount;
+
+
+                if (request.DriverIsLicenseOwner &&
+                    driver is not null)
+                {
+                    /*
+                     * Aynı kişi için ikinci AccountCard yok.
+                     */
+                    licenseAccount =
+                        driver;
+                }
+                else
+                {
+                    licenseAccount =
+                        await _vehicleAccountResolver
+                            .ResolveLicenseAsync(
+                                request.LicenseAccountCardId,
+                                licenseInput,
+                                cancellationToken);
+                }
+
+
+                // =================================================
+                // INVOICE
+                // =================================================
+
+                AccountCard? invoiceAccount;
+
+
+                if (request.ReferenceIsInvoiceAccount)
+                {
+                    invoiceAccount =
+                        reference;
+                }
+                else if (
+                    request.LicenseOwnerIsInvoiceAccount)
+                {
+                    invoiceAccount =
+                        licenseAccount;
+                }
+                else
+                {
+                    /*
+                     * Mevcut herhangi bir AccountCard kabul.
+                     *
+                     * Sadece yeni oluşturulan kayıt
+                     * Müşteri / Müşteri olur.
+                     */
+                    invoiceAccount =
+                        await _vehicleAccountResolver
+                            .ResolveInvoiceAsync(
+                                request.InvoiceAccountCardId,
+                                request.InvoiceAccount,
+                                cancellationToken);
+                }
+
+
+                // =================================================
+                // VEHICLE
+                // =================================================
+
+                var item =
+                    new Vehicle
+                    {
+                        Plate =
+                            plate,
+
+                        NormalizedPlate =
+                            normalizedPlate,
+
+
+                        VehicleTypeId =
+                            request.VehicleTypeId,
+
+                        VehicleKindId =
+                            request.VehicleKindId,
+
+
+                        TrailerPlate =
+                            NormalizePlateOptional(
+                                request.TrailerPlate),
+
+                        Brand =
+                            NormalizeOptional(
+                                request.Brand),
+
+                        Model =
+                            NormalizeOptional(
+                                request.Model),
+
+                        Country =
+                            NormalizeOptional(
+                                request.Country),
+
+
+                        DriverAccountCard =
+                            driver,
+
+                        ReferenceAccountCard =
+                            reference,
+
+                        LicenseAccountCard =
+                            licenseAccount,
+
+                        InvoiceAccountCard =
+                            invoiceAccount,
+
+
+                        DriverIsLicenseOwner =
+                            request.DriverIsLicenseOwner,
+
+                        ReferenceIsInvoiceAccount =
+                            request.ReferenceIsInvoiceAccount,
+
+                        LicenseOwnerIsInvoiceAccount =
+                            request.LicenseOwnerIsInvoiceAccount,
+
+
+                        // =========================================
+                        // LICENSE SNAPSHOT
+                        // =========================================
+
+                        LicenseOwnerName =
+                            licenseAccount?.Title
+                            ?? NormalizeOptional(
+                                licenseInput?.Title)
+                            ?? NormalizeOptional(
+                                request.LicenseOwnerName),
+
+                        LicenseOwnerTaxNumber =
+                            licenseAccount?.TaxNumber
+                            ?? NormalizeOptional(
+                                licenseInput?.TaxNumber)
+                            ?? NormalizeOptional(
+                                request.LicenseOwnerTaxNumber),
+
+                        LicenseOwnerIdentityNumber =
+                            licenseAccount?.IdentityNumber
+                            ?? NormalizeOptional(
+                                licenseInput?.IdentityNumber)
+                            ?? NormalizeOptional(
+                                request.LicenseOwnerIdentityNumber),
+
+                        LicenseOwnerAddress =
+                            licenseAccount?.Address
+                            ?? NormalizeOptional(
+                                licenseInput?.Address)
+                            ?? NormalizeOptional(
+                                request.LicenseOwnerAddress),
+
+                        LicenseOwnerCityId =
+                            licenseAccount?.CityId
+                            ?? NormalizeId(
+                                licenseInput?.CityId)
+                            ?? NormalizeId(
+                                request.LicenseOwnerCityId),
+
+                        LicenseOwnerTaxOfficeId =
+                            licenseAccount?.TaxOfficeId
+                            ?? NormalizeId(
+                                licenseInput?.TaxOfficeId)
+                            ?? NormalizeId(
+                                request.LicenseOwnerTaxOfficeId),
+
+
+                        AuthorizedName =
+                            NormalizeOptional(
+                                request.AuthorizedName),
+
+                        AuthorizedPhone =
+                            NormalizeOptional(
+                                request.AuthorizedPhone),
+
+
+                        InsuranceExpiryDate =
+                            request.InsuranceExpiryDate,
+
+                        InspectionExpiryDate =
+                            request.InspectionExpiryDate,
+
+
+                        IsActive =
+                            true
+                    };
+
+
+                _context.Vehicles.Add(
+                    item);
+
+
+                /*
+                 * AccountCard + Vehicle aynı SaveChanges
+                 * içerisinde kaydolur.
+                 *
+                 * EF Core yeni AccountCard Id'lerini üretip
+                 * Vehicle FK alanlarına otomatik taşır.
+                 */
                 await _context.SaveChangesAsync(
                     cancellationToken);
+
+
+                var response =
+                    await GetDetailAsync(
+                        item.Id,
+                        cancellationToken);
+
+
+                return CreatedAtAction(
+                    nameof(GetById),
+                    new
+                    {
+                        id =
+                            item.Id
+                    },
+                    response);
+            }
+            catch (VehicleAccountResolverException exception)
+            {
+                return BadRequest(new
+                {
+                    code =
+                        "VEHICLE_ACCOUNT_INVALID",
+
+                    message =
+                        exception.Message
+                });
             }
             catch (DbUpdateException)
             {
                 return Conflict(new
                 {
                     code =
-                        "VEHICLE_PLATE_EXISTS",
+                        "VEHICLE_ACCOUNT_CONFLICT",
 
                     message =
-                        "Bu plaka ile aktif bir araç kaydı zaten mevcut."
+                        "Araç veya hesap kartı kaydedilemedi. Plaka, TC ve diğer benzersiz bilgileri kontrol edin."
                 });
             }
-
-
-            var response =
-                await GetDetailAsync(
-                    item.Id,
-                    cancellationToken);
-
-
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = item.Id },
-                response);
         }
 
 
@@ -650,7 +869,8 @@ namespace AccountManagementMaui.Api.Controllers
             var item =
                 await _context.Vehicles
                     .FirstOrDefaultAsync(
-                        x => x.Id == id,
+                        x =>
+                            x.Id == id,
                         cancellationToken);
 
 
@@ -658,13 +878,17 @@ namespace AccountManagementMaui.Api.Controllers
             {
                 return NotFound(new
                 {
+                    code =
+                        "VEHICLE_NOT_FOUND",
+
                     message =
                         "Güncellenecek araç kaydı bulunamadı."
                 });
             }
 
 
-            if (request.RowVersion.Length == 0)
+            if (request.RowVersion is null ||
+                request.RowVersion.Length == 0)
             {
                 ModelState.AddModelError(
                     nameof(request.RowVersion),
@@ -682,30 +906,381 @@ namespace AccountManagementMaui.Api.Controllers
                     plate);
 
 
-            var relationResult =
-                await ValidateAndResolveRelationsAsync(
-                    request,
-                    cancellationToken);
+            if (string.IsNullOrWhiteSpace(
+                normalizedPlate))
+            {
+                ModelState.AddModelError(
+                    nameof(request.Plate),
+                    "Plaka zorunludur.");
+            }
 
 
-            if (!ModelState.IsValid ||
-                relationResult is null)
+            await ValidateVehicleDefinitionsAsync(
+                request,
+                cancellationToken);
+
+
+            if (!ModelState.IsValid)
             {
                 return ValidationProblem(
                     ModelState);
             }
 
 
+            // =================================================
+            // PLATE DUPLICATE
+            // =================================================
+
             if (item.IsActive)
             {
-                var duplicateExists =
+                var duplicatePlate =
                     await _context.Vehicles
+                        .AsNoTracking()
                         .AnyAsync(
                             x =>
                                 x.Id != id &&
                                 x.IsActive &&
                                 x.NormalizedPlate ==
                                 normalizedPlate,
+                            cancellationToken);
+
+
+                if (duplicatePlate)
+                {
+                    return Conflict(new
+                    {
+                        code =
+                            "VEHICLE_PLATE_EXISTS",
+
+                        message =
+                            "Bu plaka ile aktif bir araç kaydı zaten mevcut."
+                    });
+                }
+            }
+
+
+            try
+            {
+                // =================================================
+                // DRIVER
+                // =================================================
+
+                var driver =
+                    await _vehicleAccountResolver
+                        .ResolveDriverAsync(
+                            request.DriverAccountCardId,
+                            request.DriverAccount,
+                            cancellationToken);
+
+
+                // =================================================
+                // REFERENCE
+                // =================================================
+
+                var reference =
+                    await _vehicleAccountResolver
+                        .ResolveReferenceAsync(
+                            request.ReferenceAccountCardId,
+                            request.ReferenceAccount,
+                            cancellationToken);
+
+
+                // =================================================
+                // LICENSE
+                // =================================================
+
+                var licenseInput =
+                    request.LicenseAccount ??
+                    BuildLegacyLicenseInput(
+                        request);
+
+
+                AccountCard? licenseAccount;
+
+
+                if (request.DriverIsLicenseOwner &&
+                    driver is not null)
+                {
+                    licenseAccount =
+                        driver;
+                }
+                else
+                {
+                    licenseAccount =
+                        await _vehicleAccountResolver
+                            .ResolveLicenseAsync(
+                                request.LicenseAccountCardId,
+                                licenseInput,
+                                cancellationToken);
+                }
+
+
+                // =================================================
+                // INVOICE
+                // =================================================
+
+                AccountCard? invoiceAccount;
+
+
+                if (request.ReferenceIsInvoiceAccount)
+                {
+                    invoiceAccount =
+                        reference;
+                }
+                else if (
+                    request.LicenseOwnerIsInvoiceAccount)
+                {
+                    invoiceAccount =
+                        licenseAccount;
+                }
+                else
+                {
+                    invoiceAccount =
+                        await _vehicleAccountResolver
+                            .ResolveInvoiceAsync(
+                                request.InvoiceAccountCardId,
+                                request.InvoiceAccount,
+                                cancellationToken);
+                }
+
+
+                // =================================================
+                // VEHICLE
+                // =================================================
+
+                item.Plate =
+                    plate;
+
+                item.NormalizedPlate =
+                    normalizedPlate;
+
+
+                item.VehicleTypeId =
+                    request.VehicleTypeId;
+
+                item.VehicleKindId =
+                    request.VehicleKindId;
+
+
+                item.TrailerPlate =
+                    NormalizePlateOptional(
+                        request.TrailerPlate);
+
+                item.Brand =
+                    NormalizeOptional(
+                        request.Brand);
+
+                item.Model =
+                    NormalizeOptional(
+                        request.Model);
+
+                item.Country =
+                    NormalizeOptional(
+                        request.Country);
+
+
+                item.DriverAccountCard =
+                    driver;
+
+                item.ReferenceAccountCard =
+                    reference;
+
+                item.LicenseAccountCard =
+                    licenseAccount;
+
+                item.InvoiceAccountCard =
+                    invoiceAccount;
+
+
+                item.DriverIsLicenseOwner =
+                    request.DriverIsLicenseOwner;
+
+                item.ReferenceIsInvoiceAccount =
+                    request.ReferenceIsInvoiceAccount;
+
+                item.LicenseOwnerIsInvoiceAccount =
+                    request.LicenseOwnerIsInvoiceAccount;
+
+
+                item.LicenseOwnerName =
+                    licenseAccount?.Title
+                    ?? NormalizeOptional(
+                        licenseInput?.Title)
+                    ?? NormalizeOptional(
+                        request.LicenseOwnerName);
+
+
+                item.LicenseOwnerTaxNumber =
+                    licenseAccount?.TaxNumber
+                    ?? NormalizeOptional(
+                        licenseInput?.TaxNumber)
+                    ?? NormalizeOptional(
+                        request.LicenseOwnerTaxNumber);
+
+
+                item.LicenseOwnerIdentityNumber =
+                    licenseAccount?.IdentityNumber
+                    ?? NormalizeOptional(
+                        licenseInput?.IdentityNumber)
+                    ?? NormalizeOptional(
+                        request.LicenseOwnerIdentityNumber);
+
+
+                item.LicenseOwnerAddress =
+                    licenseAccount?.Address
+                    ?? NormalizeOptional(
+                        licenseInput?.Address)
+                    ?? NormalizeOptional(
+                        request.LicenseOwnerAddress);
+
+
+                item.LicenseOwnerCityId =
+                    licenseAccount?.CityId
+                    ?? NormalizeId(
+                        licenseInput?.CityId)
+                    ?? NormalizeId(
+                        request.LicenseOwnerCityId);
+
+
+                item.LicenseOwnerTaxOfficeId =
+                    licenseAccount?.TaxOfficeId
+                    ?? NormalizeId(
+                        licenseInput?.TaxOfficeId)
+                    ?? NormalizeId(
+                        request.LicenseOwnerTaxOfficeId);
+
+
+                item.AuthorizedName =
+                    NormalizeOptional(
+                        request.AuthorizedName);
+
+                item.AuthorizedPhone =
+                    NormalizeOptional(
+                        request.AuthorizedPhone);
+
+
+                item.InsuranceExpiryDate =
+                    request.InsuranceExpiryDate;
+
+                item.InspectionExpiryDate =
+                    request.InspectionExpiryDate;
+
+
+                // =================================================
+                // CONCURRENCY
+                // =================================================
+
+                _context.Entry(item)
+                    .Property(x => x.RowVersion)
+                    .OriginalValue =
+                        request.RowVersion;
+
+
+                await _context.SaveChangesAsync(
+                    cancellationToken);
+
+
+                var response =
+                    await GetDetailAsync(
+                        id,
+                        cancellationToken);
+
+
+                return Ok(response);
+            }
+            catch (VehicleAccountResolverException exception)
+            {
+                return BadRequest(new
+                {
+                    code =
+                        "VEHICLE_ACCOUNT_INVALID",
+
+                    message =
+                        exception.Message
+                });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Conflict(new
+                {
+                    code =
+                        "CONCURRENCY_CONFLICT",
+
+                    message =
+                        "Kayıt başka bir kullanıcı tarafından güncellendi. Verileri yenileyip tekrar deneyin."
+                });
+            }
+            catch (DbUpdateException)
+            {
+                return Conflict(new
+                {
+                    code =
+                        "VEHICLE_ACCOUNT_CONFLICT",
+
+                    message =
+                        "Araç veya hesap kartı güncellenemedi. Plaka, TC ve diğer benzersiz bilgileri kontrol edin."
+                });
+            }
+        }
+
+
+        // =====================================================
+        // CHANGE STATUS
+        // =====================================================
+
+        [HttpPatch("{id:int}/status")]
+        public async Task<ActionResult<VehicleDetailDto>>
+            ChangeStatus(
+                int id,
+                [FromBody] ChangeVehicleStatusRequest request,
+                CancellationToken cancellationToken)
+        {
+            var vehicle =
+                await _context.Vehicles
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.Id == id,
+                        cancellationToken);
+
+
+            if (vehicle is null)
+            {
+                return NotFound(new
+                {
+                    code =
+                        "VEHICLE_NOT_FOUND",
+
+                    message =
+                        "Araç kaydı bulunamadı."
+                });
+            }
+
+
+            if (request.RowVersion is null ||
+                request.RowVersion.Length == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(request.RowVersion),
+                    "Kayıt sürüm bilgisi zorunludur.");
+
+
+                return ValidationProblem(
+                    ModelState);
+            }
+
+
+            if (request.IsActive &&
+                !vehicle.IsActive)
+            {
+                var duplicateExists =
+                    await _context.Vehicles
+                        .AsNoTracking()
+                        .AnyAsync(
+                            x =>
+                                x.Id != vehicle.Id &&
+                                x.IsActive &&
+                                x.NormalizedPlate ==
+                                vehicle.NormalizedPlate,
                             cancellationToken);
 
 
@@ -723,108 +1298,14 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
-            item.Plate =
-                plate;
-
-            item.NormalizedPlate =
-                normalizedPlate;
-
-            item.VehicleTypeId =
-                request.VehicleTypeId;
-
-            item.VehicleKindId =
-                request.VehicleKindId;
-
-            item.TrailerPlate =
-                NormalizePlateOptional(
-                    request.TrailerPlate);
-
-            item.Brand =
-                NormalizeOptional(
-                    request.Brand);
-
-            item.Model =
-                NormalizeOptional(
-                    request.Model);
-
-            item.Country =
-                NormalizeOptional(
-                    request.Country);
-
-
-            item.DriverAccountCardId =
-                request.DriverAccountCardId;
-
-            item.DriverIsLicenseOwner =
-                request.DriverIsLicenseOwner;
-
-
-            item.ReferenceAccountCardId =
-                request.ReferenceAccountCardId;
-
-
-            item.LicenseAccountCardId =
-                relationResult
-                    .LicenseAccountCardId;
-
-
-            item.InvoiceAccountCardId =
-                relationResult
-                    .InvoiceAccountCardId;
-
-
-            item.ReferenceIsInvoiceAccount =
-                request.ReferenceIsInvoiceAccount;
-
-            item.LicenseOwnerIsInvoiceAccount =
-                request.LicenseOwnerIsInvoiceAccount;
-
-
-            item.LicenseOwnerName =
-                relationResult
-                    .LicenseOwnerName;
-
-            item.LicenseOwnerTaxNumber =
-                relationResult
-                    .LicenseOwnerTaxNumber;
-
-            item.LicenseOwnerIdentityNumber =
-                relationResult
-                    .LicenseOwnerIdentityNumber;
-
-            item.LicenseOwnerAddress =
-                relationResult
-                    .LicenseOwnerAddress;
-
-            item.LicenseOwnerCityId =
-                relationResult
-                    .LicenseOwnerCityId;
-
-            item.LicenseOwnerTaxOfficeId =
-                relationResult
-                    .LicenseOwnerTaxOfficeId;
-
-
-            item.AuthorizedName =
-                NormalizeOptional(
-                    request.AuthorizedName);
-
-            item.AuthorizedPhone =
-                NormalizeOptional(
-                    request.AuthorizedPhone);
-
-
-            item.InsuranceExpiryDate =
-                request.InsuranceExpiryDate;
-
-            item.InspectionExpiryDate =
-                request.InspectionExpiryDate;
-
-
-            _context.Entry(item)
+            _context.Entry(vehicle)
                 .Property(x => x.RowVersion)
                 .OriginalValue =
                     request.RowVersion;
+
+
+            vehicle.IsActive =
+                request.IsActive;
 
 
             try
@@ -843,43 +1324,125 @@ namespace AccountManagementMaui.Api.Controllers
                         "Kayıt başka bir kullanıcı tarafından güncellendi. Verileri yenileyip tekrar deneyin."
                 });
             }
-            catch (DbUpdateException)
-            {
-                return Conflict(new
-                {
-                    code =
-                        "VEHICLE_PLATE_EXISTS",
-
-                    message =
-                        "Bu plaka ile aktif bir araç kaydı zaten mevcut."
-                });
-            }
 
 
             var response =
                 await GetDetailAsync(
-                    id,
+                    vehicle.Id,
                     cancellationToken);
 
 
             return Ok(response);
         }
 
+
         // =====================================================
-        // RELATION VALIDATION
+        // DELETE
         // =====================================================
 
-        private async Task<VehicleRelationResult?>
-            ValidateAndResolveRelationsAsync(
-                CreateVehicleRequest request,
-                CancellationToken cancellationToken)
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(
+            int id,
+            [FromBody] DeleteVehicleRequest request,
+            CancellationToken cancellationToken)
         {
-            // =================================================
-            // TYPE
-            // =================================================
+            var vehicle =
+                await _context.Vehicles
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.Id == id,
+                        cancellationToken);
 
+
+            if (vehicle is null)
+            {
+                return NotFound(new
+                {
+                    code =
+                        "VEHICLE_NOT_FOUND",
+
+                    message =
+                        "Silinecek araç kaydı bulunamadı."
+                });
+            }
+
+
+            var deleteReason =
+                request.DeleteReason?.Trim()
+                ?? string.Empty;
+
+
+            if (string.IsNullOrWhiteSpace(
+                deleteReason))
+            {
+                ModelState.AddModelError(
+                    nameof(request.DeleteReason),
+                    "Silme açıklaması zorunludur.");
+            }
+
+
+            if (request.RowVersion is null ||
+                request.RowVersion.Length == 0)
+            {
+                ModelState.AddModelError(
+                    nameof(request.RowVersion),
+                    "Kayıt sürüm bilgisi zorunludur.");
+            }
+
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(
+                    ModelState);
+            }
+
+
+            _context.Entry(vehicle)
+                .Property(x => x.RowVersion)
+                .OriginalValue =
+                    request.RowVersion;
+
+
+            vehicle.IsDeleted =
+                true;
+
+            vehicle.DeleteReason =
+                deleteReason;
+
+
+            try
+            {
+                await _context.SaveChangesAsync(
+                    cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Conflict(new
+                {
+                    code =
+                        "CONCURRENCY_CONFLICT",
+
+                    message =
+                        "Kayıt başka bir kullanıcı tarafından güncellendi. Verileri yenileyip tekrar deneyin."
+                });
+            }
+
+
+            return NoContent();
+        }
+
+
+        // =====================================================
+        // VEHICLE DEFINITIONS VALIDATION
+        // =====================================================
+
+        private async Task ValidateVehicleDefinitionsAsync(
+            CreateVehicleRequest request,
+            CancellationToken cancellationToken)
+        {
             var vehicleTypeExists =
                 await _context.VehicleTypes
+                    .AsNoTracking()
                     .AnyAsync(
                         x =>
                             x.Id ==
@@ -895,428 +1458,41 @@ namespace AccountManagementMaui.Api.Controllers
             }
 
 
-            // =================================================
-            // KIND
-            // =================================================
-
-            var vehicleKindExists =
-                await _context.VehicleKinds
-                    .AnyAsync(
-                        x =>
-                            x.Id ==
-                            request.VehicleKindId,
-                        cancellationToken);
-
-
-            if (!vehicleKindExists)
+            if (request.VehicleKindId > 0)
             {
-                ModelState.AddModelError(
-                    nameof(request.VehicleKindId),
-                    "Seçilen araç türü bulunamadı.");
-            }
-
-
-            // =================================================
-            // DRIVER
-            // =================================================
-
-            var driver =
-                await _context.AccountCards
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.Id ==
-                        request.DriverAccountCardId)
-                    .Select(x =>
-                        new AccountCardSnapshot
-                        {
-                            Id = x.Id,
-
-                            Title =
-                                x.Title,
-
-                            TaxNumber =
-                                x.TaxNumber,
-
-                            IdentityNumber =
-                                x.IdentityNumber,
-
-                            Address =
-                                x.Address,
-
-                            CityId =
-                                x.CityId,
-
-                            TaxOfficeId =
-                                x.TaxOfficeId,
-
-                            TypeName =
-                                x.AccountCardType.TypeName,
-
-                            KindName =
-                                x.AccountCardKind.KindName
-                        })
-                    .FirstOrDefaultAsync(
-                        cancellationToken);
-
-
-            if (driver is null)
-            {
-                ModelState.AddModelError(
-                    nameof(request.DriverAccountCardId),
-                    "Seçilen şoför hesabı bulunamadı.");
-            }
-            else if (
-                !string.Equals(
-                    driver.TypeName,
-                    DriverTypeName,
-                    StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(
-                    driver.KindName,
-                    DriverKindName,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                ModelState.AddModelError(
-                    nameof(request.DriverAccountCardId),
-                    "Şoför yalnızca Operasyon Cari / Navluncu hesap kartlarından seçilebilir.");
-            }
-
-
-            // =================================================
-            // REFERENCE
-            // =================================================
-
-            if (request.ReferenceAccountCardId.HasValue)
-            {
-                var referenceExists =
-                    await _context.AccountCards
+                var vehicleKindExists =
+                    await _context.VehicleKinds
+                        .AsNoTracking()
                         .AnyAsync(
                             x =>
                                 x.Id ==
-                                request.ReferenceAccountCardId.Value,
+                                request.VehicleKindId,
                             cancellationToken);
 
 
-                if (!referenceExists)
+                if (!vehicleKindExists)
                 {
                     ModelState.AddModelError(
-                        nameof(request.ReferenceAccountCardId),
-                        "Seçilen referans hesabı bulunamadı.");
+                        nameof(request.VehicleKindId),
+                        "Seçilen araç türü bulunamadı.");
                 }
             }
 
 
-            // =================================================
-            // INVOICE CHECKBOX CONFLICT
-            // =================================================
-
+            /*
+             * İki fatura kaynağı aynı anda seçilemez.
+             *
+             * Bu bir zorunlu alan kontrolü değil,
+             * çelişkili veri kontrolüdür.
+             */
             if (request.ReferenceIsInvoiceAccount &&
                 request.LicenseOwnerIsInvoiceAccount)
             {
                 ModelState.AddModelError(
-                    nameof(request.ReferenceIsInvoiceAccount),
-                    "Referans ve ruhsat carisi aynı anda fatura hesabı olarak seçilemez.");
+                    nameof(
+                        request.ReferenceIsInvoiceAccount),
+                    "Referans ve ruhsat carisi aynı anda fatura hesabı olamaz.");
             }
-
-
-            if (request.ReferenceIsInvoiceAccount &&
-                !request.ReferenceAccountCardId.HasValue)
-            {
-                ModelState.AddModelError(
-                    nameof(request.ReferenceAccountCardId),
-                    "Referans fatura carisi olarak seçildiyse referans hesabı seçilmelidir.");
-            }
-
-
-            // =================================================
-            // LICENSE ACCOUNT
-            // =================================================
-
-            var resolvedLicenseAccountCardId = request.LicenseAccountCardId;
-
-
-            var licenseAccount =
-                await _context.AccountCards
-                    .AsNoTracking()
-                    .Where(x =>
-                        x.Id ==
-                        resolvedLicenseAccountCardId)
-                    .Select(x =>
-                        new AccountCardSnapshot
-                        {
-                            Id = x.Id,
-
-                            Title =
-                                x.Title,
-
-                            TaxNumber =
-                                x.TaxNumber,
-
-                            IdentityNumber =
-                                x.IdentityNumber,
-
-                            Address =
-                                x.Address,
-
-                            CityId =
-                                x.CityId,
-
-                            TaxOfficeId =
-                                x.TaxOfficeId
-                        })
-                    .FirstOrDefaultAsync(
-                        cancellationToken);
-
-
-            if (licenseAccount is null)
-            {
-                ModelState.AddModelError(
-                    nameof(request.LicenseAccountCardId),
-                    "Seçilen ruhsat carisi bulunamadı.");
-            }
-
-
-            // =================================================
-            // INVOICE ACCOUNT
-            // =================================================
-
-            var resolvedInvoiceAccountCardId =
-                request.ReferenceIsInvoiceAccount &&
-                request.ReferenceAccountCardId.HasValue
-                    ? request.ReferenceAccountCardId.Value
-
-                    : request.LicenseOwnerIsInvoiceAccount
-                        ? resolvedLicenseAccountCardId
-
-                        : request.InvoiceAccountCardId;
-
-
-            var invoiceAccountValid = await _context.AccountCards
-                .AsNoTracking()
-                .AnyAsync(x => x.Id == resolvedInvoiceAccountCardId &&
-                (
-                    x.AccountCardKind.KindName ==
-                        InvoiceCustomerKindName ||
-
-                    x.AccountCardKind.KindName ==
-                        DriverKindName
-                ),
-                cancellationToken);
-
-
-            if (!invoiceAccountValid)
-            {
-                ModelState.AddModelError(
-                    nameof(request.InvoiceAccountCardId),
-                    "Fatura hesabı yalnızca Müşteri veya Navluncu türündeki hesap kartlarından seçilebilir.");
-            }
-
-
-            // =================================================
-            // SNAPSHOT
-            // =================================================
-
-            string licenseOwnerName;
-
-            string? licenseOwnerTaxNumber;
-
-            string? licenseOwnerIdentityNumber;
-
-            string? licenseOwnerAddress;
-
-            int licenseOwnerCityId;
-
-            int? licenseOwnerTaxOfficeId;
-
-
-            if (request.DriverIsLicenseOwner &&
-                driver is not null)
-            {
-                licenseOwnerName =
-                    driver.Title;
-
-                licenseOwnerTaxNumber =
-                    NormalizeOptional(
-                        driver.TaxNumber);
-
-                licenseOwnerIdentityNumber =
-                    NormalizeOptional(
-                        driver.IdentityNumber);
-
-                licenseOwnerAddress =
-                    NormalizeOptional(
-                        driver.Address);
-
-                licenseOwnerCityId =
-                    driver.CityId ?? 0;
-
-                licenseOwnerTaxOfficeId =
-                    driver.TaxOfficeId;
-            }
-            else
-            {
-                licenseOwnerName =
-                    request.LicenseOwnerName
-                        ?.Trim()
-                    ?? string.Empty;
-
-                licenseOwnerTaxNumber =
-                    NormalizeOptional(
-                        request.LicenseOwnerTaxNumber);
-
-                licenseOwnerIdentityNumber =
-                    NormalizeOptional(
-                        request.LicenseOwnerIdentityNumber);
-
-                licenseOwnerAddress =
-                    NormalizeOptional(
-                        request.LicenseOwnerAddress);
-
-                licenseOwnerCityId =
-                    request.LicenseOwnerCityId;
-
-                licenseOwnerTaxOfficeId =
-                    request.LicenseOwnerTaxOfficeId;
-            }
-
-
-            if (string.IsNullOrWhiteSpace(
-                licenseOwnerName))
-            {
-                ModelState.AddModelError(
-                    nameof(request.LicenseOwnerName),
-                    "Ruhsat sahibi adı veya ünvanı zorunludur.");
-            }
-
-
-            if (string.IsNullOrWhiteSpace(
-                    licenseOwnerTaxNumber) &&
-                string.IsNullOrWhiteSpace(
-                    licenseOwnerIdentityNumber))
-            {
-                ModelState.AddModelError(
-                    nameof(request.LicenseOwnerTaxNumber),
-                    "Ruhsat sahibi için Vergi No veya TC No alanlarından en az biri girilmelidir.");
-            }
-
-
-            if (!string.IsNullOrWhiteSpace(
-                    licenseOwnerTaxNumber) &&
-                (
-                    licenseOwnerTaxNumber.Length != 10 ||
-                    !licenseOwnerTaxNumber.All(
-                        char.IsDigit)
-                ))
-            {
-                ModelState.AddModelError(
-                    nameof(request.LicenseOwnerTaxNumber),
-                    "Vergi No 10 haneli ve yalnızca rakamlardan oluşmalıdır.");
-            }
-
-
-            if (!string.IsNullOrWhiteSpace(
-                    licenseOwnerIdentityNumber) &&
-                (
-                    licenseOwnerIdentityNumber.Length != 11 ||
-                    !licenseOwnerIdentityNumber.All(
-                        char.IsDigit)
-                ))
-            {
-                ModelState.AddModelError(
-                    nameof(request.LicenseOwnerIdentityNumber),
-                    "TC No 11 haneli ve yalnızca rakamlardan oluşmalıdır.");
-            }
-
-
-            // =================================================
-            // CITY
-            // =================================================
-
-            if (licenseOwnerCityId <= 0)
-            {
-                ModelState.AddModelError(
-                    nameof(request.LicenseOwnerCityId),
-                    "Ruhsat sahibi şehri zorunludur.");
-            }
-            else
-            {
-                var cityExists =
-                    await _context.Cities
-                        .AnyAsync(
-                            x =>
-                                x.Id ==
-                                licenseOwnerCityId,
-                            cancellationToken);
-
-
-                if (!cityExists)
-                {
-                    ModelState.AddModelError(
-                        nameof(request.LicenseOwnerCityId),
-                        "Seçilen şehir bulunamadı.");
-                }
-            }
-
-
-            // =================================================
-            // TAX OFFICE
-            // =================================================
-
-            if (licenseOwnerTaxOfficeId.HasValue)
-            {
-                var taxOfficeValid =
-                    await _context.TaxOffices
-                        .AnyAsync(
-                            x =>
-                                x.Id ==
-                                licenseOwnerTaxOfficeId.Value &&
-                                x.CityId ==
-                                licenseOwnerCityId,
-                            cancellationToken);
-
-
-                if (!taxOfficeValid)
-                {
-                    ModelState.AddModelError(
-                        nameof(request.LicenseOwnerTaxOfficeId),
-                        "Seçilen vergi dairesi ruhsat sahibinin şehri ile uyumlu değil.");
-                }
-            }
-
-
-            if (!ModelState.IsValid ||
-                licenseAccount is null ||
-                driver is null)
-            {
-                return null;
-            }
-
-
-            return new VehicleRelationResult
-            {
-                LicenseAccountCardId =
-                    resolvedLicenseAccountCardId,
-
-                InvoiceAccountCardId =
-                    resolvedInvoiceAccountCardId,
-
-                LicenseOwnerName =
-                    licenseOwnerName,
-
-                LicenseOwnerTaxNumber =
-                    licenseOwnerTaxNumber,
-
-                LicenseOwnerIdentityNumber =
-                    licenseOwnerIdentityNumber,
-
-                LicenseOwnerAddress =
-                    licenseOwnerAddress,
-
-                LicenseOwnerCityId =
-                    licenseOwnerCityId,
-
-                LicenseOwnerTaxOfficeId =
-                    licenseOwnerTaxOfficeId
-            };
         }
 
 
@@ -1336,9 +1512,12 @@ namespace AccountManagementMaui.Api.Controllers
                 .Select(x =>
                     new VehicleDetailDto
                     {
-                        Id = x.Id,
+                        Id =
+                            x.Id,
 
-                        Plate = x.Plate,
+                        Plate =
+                            x.Plate,
+
 
                         VehicleTypeId =
                             x.VehicleTypeId,
@@ -1346,11 +1525,15 @@ namespace AccountManagementMaui.Api.Controllers
                         VehicleTypeName =
                             x.VehicleType.TypeName,
 
+
                         VehicleKindId =
                             x.VehicleKindId,
 
                         VehicleKindName =
-                            x.VehicleKind.KindName,
+                            x.VehicleKind == null
+                                ? null
+                                : x.VehicleKind.KindName,
+
 
                         TrailerPlate =
                             x.TrailerPlate,
@@ -1365,21 +1548,33 @@ namespace AccountManagementMaui.Api.Controllers
                             x.Country,
 
 
+                        // DRIVER
+
                         DriverAccountCardId =
                             x.DriverAccountCardId,
 
                         DriverName =
-                            x.DriverAccountCard.Title,
+                            x.DriverAccountCard == null
+                                ? null
+                                : x.DriverAccountCard.Title,
 
                         DriverIdentityNumber =
-                            x.DriverAccountCard.IdentityNumber,
+                            x.DriverAccountCard == null
+                                ? null
+                                : x.DriverAccountCard
+                                    .IdentityNumber,
 
                         DriverPhoneNumber =
-                            x.DriverAccountCard.PhoneNumber,
+                            x.DriverAccountCard == null
+                                ? null
+                                : x.DriverAccountCard
+                                    .PhoneNumber,
 
                         DriverIsLicenseOwner =
                             x.DriverIsLicenseOwner,
 
+
+                        // REFERENCE
 
                         ReferenceAccountCardId =
                             x.ReferenceAccountCardId,
@@ -1392,21 +1587,30 @@ namespace AccountManagementMaui.Api.Controllers
                         ReferencePhoneNumber =
                             x.ReferenceAccountCard == null
                                 ? null
-                                : x.ReferenceAccountCard.PhoneNumber,
+                                : x.ReferenceAccountCard
+                                    .PhoneNumber,
 
+
+                        // LICENSE
 
                         LicenseAccountCardId =
                             x.LicenseAccountCardId,
 
                         LicenseAccountCardName =
-                            x.LicenseAccountCard.Title,
+                            x.LicenseAccountCard == null
+                                ? null
+                                : x.LicenseAccountCard.Title,
 
+
+                        // INVOICE
 
                         InvoiceAccountCardId =
                             x.InvoiceAccountCardId,
 
                         InvoiceAccountCardName =
-                            x.InvoiceAccountCard.Title,
+                            x.InvoiceAccountCard == null
+                                ? null
+                                : x.InvoiceAccountCard.Title,
 
                         ReferenceIsInvoiceAccount =
                             x.ReferenceIsInvoiceAccount,
@@ -1414,6 +1618,8 @@ namespace AccountManagementMaui.Api.Controllers
                         LicenseOwnerIsInvoiceAccount =
                             x.LicenseOwnerIsInvoiceAccount,
 
+
+                        // SNAPSHOT
 
                         LicenseOwnerName =
                             x.LicenseOwnerName,
@@ -1431,7 +1637,9 @@ namespace AccountManagementMaui.Api.Controllers
                             x.LicenseOwnerCityId,
 
                         LicenseOwnerCityName =
-                            x.LicenseOwnerCity.Name,
+                            x.LicenseOwnerCity == null
+                                ? null
+                                : x.LicenseOwnerCity.Name,
 
                         LicenseOwnerTaxOfficeId =
                             x.LicenseOwnerTaxOfficeId,
@@ -1458,7 +1666,6 @@ namespace AccountManagementMaui.Api.Controllers
 
                         IsActive =
                             x.IsActive,
-
 
                         RowVersion =
                             x.RowVersion,
@@ -1495,235 +1702,44 @@ namespace AccountManagementMaui.Api.Controllers
         }
 
 
-        // =========================================================
-        // CHANGE STATUS
-        // PATCH: api/vehicles/1/status
-        // =========================================================
+        // =====================================================
+        // LEGACY LICENSE INPUT
+        // =====================================================
 
-        [HttpPatch("{id:int}/status")]
-        public async Task<ActionResult<VehicleDetailDto>> ChangeStatus(
-            int id,
-            [FromBody] ChangeVehicleStatusRequest request,
-            CancellationToken cancellationToken)
+        private static VehicleAccountInputDto?
+            BuildLegacyLicenseInput(
+                CreateVehicleRequest request)
         {
-            var vehicle =
-                await _context.Vehicles
-                    .FirstOrDefaultAsync(
-                        x => x.Id == id,
-                        cancellationToken);
-
-
-            if (vehicle is null)
-            {
-                return NotFound(new
+            var model =
+                new VehicleAccountInputDto
                 {
-                    code = "VEHICLE_NOT_FOUND",
+                    Title =
+                        request.LicenseOwnerName,
 
-                    message =
-                        "Araç kaydı bulunamadı."
-                });
-            }
+                    TaxNumber =
+                        request.LicenseOwnerTaxNumber,
 
+                    IdentityNumber =
+                        request.LicenseOwnerIdentityNumber,
 
-            if (request.RowVersion is null ||
-                request.RowVersion.Length == 0)
-            {
-                ModelState.AddModelError(
-                    nameof(request.RowVersion),
-                    "Kayıt sürüm bilgisi zorunludur.");
+                    Address =
+                        request.LicenseOwnerAddress,
 
-                return ValidationProblem(
-                    ModelState);
-            }
+                    CityId =
+                        NormalizeId(
+                            request.LicenseOwnerCityId),
 
-
-            // -----------------------------------------------------
-            // AKTİF HALE GETİRİLİRKEN PLAKA KONTROLÜ
-            // -----------------------------------------------------
-
-            if (request.IsActive &&
-                !vehicle.IsActive)
-            {
-                var duplicateExists =
-                    await _context.Vehicles
-                        .AsNoTracking()
-                        .AnyAsync(
-                            x =>
-                                x.Id != vehicle.Id &&
-                                x.IsActive &&
-                                x.NormalizedPlate ==
-                                    vehicle.NormalizedPlate,
-                            cancellationToken);
+                    TaxOfficeId =
+                        NormalizeId(
+                            request.LicenseOwnerTaxOfficeId)
+                };
 
 
-                if (duplicateExists)
-                {
-                    return Conflict(new
-                    {
-                        code =
-                            "VEHICLE_PLATE_EXISTS",
-
-                        message =
-                            "Bu plaka ile aktif bir araç kaydı zaten mevcut."
-                    });
-                }
-            }
-
-
-            // -----------------------------------------------------
-            // OPTIMISTIC CONCURRENCY
-            // -----------------------------------------------------
-
-            _context.Entry(vehicle)
-                .Property(x => x.RowVersion)
-                .OriginalValue =
-                    request.RowVersion;
-
-
-            vehicle.IsActive =
-                request.IsActive;
-
-
-            try
-            {
-                await _context.SaveChangesAsync(
-                    cancellationToken);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                return Conflict(new
-                {
-                    code =
-                        "CONCURRENCY_CONFLICT",
-
-                    message =
-                        "Kayıt başka bir kullanıcı tarafından güncellendi. Verileri yenileyip tekrar deneyin."
-                });
-            }
-            catch (DbUpdateException)
-            {
-                return Conflict(new
-                {
-                    message =
-                        "Araç durumu değiştirilirken veritabanı kısıtlaması nedeniyle işlem tamamlanamadı."
-                });
-            }
-
-
-            var response =
-                await GetDetailAsync(
-                    vehicle.Id,
-                    cancellationToken);
-
-
-            if (response is null)
-            {
-                return NotFound(new
-                {
-                    code =
-                        "VEHICLE_NOT_FOUND",
-
-                    message =
-                        "Araç durumu değiştirildi ancak güncel araç bilgileri getirilemedi."
-                });
-            }
-            return Ok(response);
+            return model.HasAnyValue()
+                ? model
+                : null;
         }
 
-
-        // =========================================================
-        // DELETE
-        // DELETE: api/vehicles/1
-        // =========================================================
-
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(
-            int id,
-            [FromBody] DeleteVehicleRequest request,
-            CancellationToken cancellationToken)
-        {
-            var vehicle =
-                await _context.Vehicles
-                    .FirstOrDefaultAsync(
-                        x => x.Id == id,
-                        cancellationToken);
-
-
-            if (vehicle is null)
-            {
-                return NotFound(new
-                {
-                    code =
-                        "VEHICLE_NOT_FOUND",
-
-                    message =
-                        "Silinecek araç kaydı bulunamadı."
-                });
-            }
-
-
-            var deleteReason =
-                request.DeleteReason?.Trim()
-                ?? string.Empty;
-
-
-            if (string.IsNullOrWhiteSpace(
-                deleteReason))
-            {
-                ModelState.AddModelError(
-                    nameof(request.DeleteReason),
-                    "Silme açıklaması zorunludur.");
-
-                return ValidationProblem(
-                    ModelState);
-            }
-
-
-            if (request.RowVersion is null ||
-                request.RowVersion.Length == 0)
-            {
-                ModelState.AddModelError(
-                    nameof(request.RowVersion),
-                    "Kayıt sürüm bilgisi zorunludur.");
-
-                return ValidationProblem(
-                    ModelState);
-            }
-
-            _context.Entry(vehicle)
-                .Property(x => x.RowVersion)
-                .OriginalValue =
-                    request.RowVersion;
-
-
-            // Fiziksel silme YOK.
-            vehicle.IsDeleted =
-                true;
-
-            vehicle.DeleteReason =
-                deleteReason;
-
-
-            try
-            {
-                await _context.SaveChangesAsync(
-                    cancellationToken);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                return Conflict(new
-                {
-                    code =
-                        "CONCURRENCY_CONFLICT",
-
-                    message =
-                        "Kayıt başka bir kullanıcı tarafından güncellendi. Verileri yenileyip tekrar deneyin."
-                });
-            }
-
-
-            return NoContent();
-        }
 
         // =====================================================
         // NORMALIZATION
@@ -1770,15 +1786,11 @@ namespace AccountManagementMaui.Api.Controllers
         private static string? NormalizePlateOptional(
             string? value)
         {
-            if (string.IsNullOrWhiteSpace(
-                value))
-            {
-                return null;
-            }
-
-
-            return NormalizePlateForDisplay(
-                value);
+            return string.IsNullOrWhiteSpace(
+                value)
+                ? null
+                : NormalizePlateForDisplay(
+                    value);
         }
 
 
@@ -1792,51 +1804,13 @@ namespace AccountManagementMaui.Api.Controllers
         }
 
 
-        // =====================================================
-        // PRIVATE TYPES
-        // =====================================================
-
-        private sealed class AccountCardSnapshot
+        private static int? NormalizeId(
+            int? value)
         {
-            public int Id { get; set; }
-
-            public string Title { get; set; } =
-                string.Empty;
-
-            public string? TaxNumber { get; set; }
-
-            public string? IdentityNumber { get; set; }
-
-            public string? Address { get; set; }
-
-            public int? CityId { get; set; }
-
-            public int? TaxOfficeId { get; set; }
-
-            public string? TypeName { get; set; }
-
-            public string? KindName { get; set; }
-        }
-
-
-        private sealed class VehicleRelationResult
-        {
-            public int LicenseAccountCardId { get; set; }
-
-            public int InvoiceAccountCardId { get; set; }
-
-            public string LicenseOwnerName { get; set; } =
-                string.Empty;
-
-            public string? LicenseOwnerTaxNumber { get; set; }
-
-            public string? LicenseOwnerIdentityNumber { get; set; }
-
-            public string? LicenseOwnerAddress { get; set; }
-
-            public int LicenseOwnerCityId { get; set; }
-
-            public int? LicenseOwnerTaxOfficeId { get; set; }
+            return value.HasValue &&
+                   value.Value > 0
+                ? value.Value
+                : null;
         }
     }
 }

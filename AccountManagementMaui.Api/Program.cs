@@ -8,6 +8,7 @@ using AccountManagementMaui.Api.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using AccountManagementMaui.Api.Services.AuthServices;
+using AccountManagementMaui.Api.Services.VehicleServices;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -29,6 +30,10 @@ builder.Services.AddDataProtection();
 builder.Services.AddScoped<
     ICurrentUserService,
     CurrentUserService>();
+
+builder.Services.AddScoped<
+    IVehicleAccountResolver,
+    VehicleAccountResolver>();
 
 builder.Services
     .AddIdentityCore<AppUser>(options =>

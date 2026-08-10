@@ -586,7 +586,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
         // RUHSAT SAHİBİ
         entity.Property(x => x.LicenseOwnerName)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(200);
 
         entity.Property(x => x.LicenseOwnerTaxNumber)
@@ -636,42 +636,48 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         entity.HasOne(x => x.DriverAccountCard)
             .WithMany()
             .HasForeignKey(x => x.DriverAccountCardId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
 
 
         // REFERANS
         entity.HasOne(x => x.ReferenceAccountCard)
             .WithMany()
             .HasForeignKey(x => x.ReferenceAccountCardId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
 
 
         // RUHSAT CARİSİ
         entity.HasOne(x => x.LicenseAccountCard)
             .WithMany()
             .HasForeignKey(x => x.LicenseAccountCardId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
 
 
         // FATURA HESABI
         entity.HasOne(x => x.InvoiceAccountCard)
             .WithMany()
             .HasForeignKey(x => x.InvoiceAccountCardId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
 
 
         // RUHSAT ŞEHİR
         entity.HasOne(x => x.LicenseOwnerCity)
             .WithMany()
             .HasForeignKey(x => x.LicenseOwnerCityId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
 
 
         // RUHSAT VERGİ DAİRESİ
         entity.HasOne(x => x.LicenseOwnerTaxOffice)
             .WithMany()
             .HasForeignKey(x => x.LicenseOwnerTaxOfficeId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
 
 
         // INDEXES
